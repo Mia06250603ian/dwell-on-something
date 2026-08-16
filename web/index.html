@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-<meta name="theme-color" content="#faf9f5" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#262624" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f9f9f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#20201f" media="(prefers-color-scheme: dark)">
 <title>Claude</title>
 
 <link rel="icon" href="icons/favicon-64.png" sizes="64x64" type="image/png">
@@ -30,15 +30,28 @@
 </script>
 <style>
   :root {
-    --bg: #faf9f5;
+    --bg: #f9f9f6;
     --card: #ffffff;
-    --panel: #f0eee6;
-    --line: #e8e5dc;
-    --text: #2b2a27;
-    --dim: #8a867c;
-    --accent: #c96442;        
-    --accent-soft: #d97757;
-    --user-bubble: #f0eee6;
+    /* 2026-08-16：不另外推导新值，直接用所有者已经定好的那两支——
+       按钮底/弹窗条 = 她的气泡色，描边 = 她的包边色。
+       这样整套浅色只有她亲自调出来的四个值，不掺我算的。 */
+    --panel: #f1f1ed;
+    /* 中性色照官端 token 表（claude.com 线上 CSS 的 --theme-* 角色）：
+       line = border-tertiary，text = foreground-primary，dim = foreground-tertiary。
+       原来的 #e8e5dc 比官方 #e8e6dc 差一位十六进制，多半是当年手抄错了一个字符。 */
+    --line: #ecece6;
+    --text: #141413;
+    --dim: #5e5d59;
+    /* 赤陶统一成一支（2026-08-16）：原来按钮 #c96442、花 #e1734f 是两个颜色，
+       所有者要求统一。#e1734f 是她在校准尺上调的那支。 */
+    --accent: #e1734f;
+    --accent-soft: #e1734f;
+    /* 菊花的颜色。8/16 起和 --accent 同为 #e1734f（所有者要求赤陶只有一支），
+       token 保留是为了将来想让花和按钮分开时，改这一行就够。 */
+    --spark: #e1734f;
+    --user-bubble: #f1f1ed;
+    /* 气泡包边：0.5px 在 3 倍屏上约 1.5 个物理像素。深色下不画（设 transparent）。 */
+    --bubble-ring: #ecece6;
     --sage: #96B08F;          
     --sage-track: #E7EDE2;
     --pink-track: #F8E5DE;
@@ -48,14 +61,23 @@
     --amber-track: #f5e6c8;
     --red-track: #f6d8d4;
     --overlay: rgba(40, 38, 34, .4);
-    --serif: SerifNum, "Songti SC", "Noto Serif SC", Georgia, serif;
+    /* 官端衬线是 Copernicus（Anthropic 自家授权字体，拿不到也不能内嵌）。
+       iOS 自带的 New York（ui-serif）是最接近的免费替代——先它，
+       中文没覆盖再落回 Songti SC。数字仍走 SerifNum。 */
+    --serif: SerifNum, ui-serif, "New York", Georgia, "Songti SC", "Noto Serif SC", serif;
     --glass: color-mix(in srgb, var(--card) 70%, transparent);  /* 悬浮层玻璃度（顶栏/菜单——内容条 8/3 改用 --panel 实色） */
     --pink: #E5A192;          
   }
   @media (prefers-color-scheme: dark) {
 html:not([data-theme="light"]) {
-      --bg: #262624; --card: #30302e; --panel: #383836; --line: #3d3d3a;
-      --text: #f5f4ef; --dim: #a3a099; --user-bubble: #35353260;
+      /* 底色照官端深色三层灰：gray-950 页面底 / gray-800 卡片 / gray-750 内容条。
+         来源是 claude.com 线上 CSS 的 --theme-background-* 角色表。
+         原来这三层取的是 800/750/(383836)，整体亮了两级，所以「和官端不一样」。 */
+      /* 深色只用所有者定的那两支：底色 #20201f、气泡 #131312，不再自己发明中间值。
+           --card  = 底色：输入框/卡片的面不比页面亮，靠那圈内描边区分（官端就是这样）
+           --panel = 气泡色：弹窗分组卡、按钮，都是「凹进去」的那一层 */
+      --bg: #20201f; --card: #20201f; --panel: #131312; --line: #3d3d3a;
+      --text: #faf9f5; --dim: #a3a099; --user-bubble: #131312; --bubble-ring: transparent;
       --sage: #A8C0A0; --sage-track: #3A423A; --pink-track: #4A3B34;
       --green: #6fbf85; --red: #e07a6a;
       --amber: #e8b45c; --amber-track: #4a4232; --red-track: #4d3a36;
@@ -63,8 +85,11 @@ html:not([data-theme="light"]) {
     }
 }
 html[data-theme="dark"] {
-      --bg: #262624; --card: #30302e; --panel: #383836; --line: #3d3d3a;
-      --text: #f5f4ef; --dim: #a3a099; --user-bubble: #35353260;
+      /* 深色只用所有者定的那两支：底色 #20201f、气泡 #131312，不再自己发明中间值。
+           --card  = 底色：输入框/卡片的面不比页面亮，靠那圈内描边区分（官端就是这样）
+           --panel = 气泡色：弹窗分组卡、按钮，都是「凹进去」的那一层 */
+      --bg: #20201f; --card: #20201f; --panel: #131312; --line: #3d3d3a;
+      --text: #faf9f5; --dim: #a3a099; --user-bubble: #131312; --bubble-ring: transparent;
       --sage: #A8C0A0; --sage-track: #3A423A; --pink-track: #4A3B34;
       --green: #6fbf85; --red: #e07a6a;
       --amber: #e8b45c; --amber-track: #4a4232; --red-track: #4d3a36;
@@ -198,13 +223,19 @@ html[data-theme="dark"] .glass,
     position: fixed; top: 0; left: 0; right: 0; z-index: 20;
     padding: 8px 12px 20px; padding-top: calc(8px + env(safe-area-inset-top));
     display: flex; align-items: center; gap: 8px;
-    
+    background: transparent;
+    pointer-events: none;
+  }
+  header > * { pointer-events: auto; }
+  /* 渐隐这层挪到伪元素上：原来 mask 挂在 header 上，会把两颗按钮一起吃掉一半 */
+  header::before {
+    content: ''; position: absolute; inset: 0; z-index: -1;
     background: linear-gradient(to bottom,
       color-mix(in srgb, var(--bg) 88%, transparent) 0%,
       color-mix(in srgb, var(--bg) 55%, transparent) 55%,
       transparent 100%);
-    -webkit-backdrop-filter: blur(18px) saturate(1.6);
-    backdrop-filter: blur(18px) saturate(1.6);
+    -webkit-backdrop-filter: blur(10px) saturate(1.3);
+    backdrop-filter: blur(10px) saturate(1.3);
     -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 52%, transparent 100%);
     mask-image: linear-gradient(to bottom, #000 0%, #000 52%, transparent 100%);
   }
@@ -221,9 +252,49 @@ html[data-theme="dark"] .glass,
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
-  .title { flex: 1; text-align: center; min-width: 0; }
+  /* 标题留在 DOM 里（改名/更新还在读它），只是照官端不显示 */
+  .title { display: none; }
   .title h1 { margin: 0; font-size: 17px; font-weight: 600; line-height: 1.3; }
   .title .sub { font-size: 12px; color: var(--dim); line-height: 1.2; }
+
+  /* 照官端：左边一颗玻璃圆，右边一颗玻璃胶囊装两个键。
+     「玻璃」不是只靠模糊——是模糊 + 半透明底 + 上缘一道高光 + 一点外投影，四样一起才像。 */
+  #menuBtn, .headpill {
+    background: color-mix(in srgb, var(--card) 62%, transparent);
+    -webkit-backdrop-filter: blur(22px) saturate(1.9);
+    backdrop-filter: blur(22px) saturate(1.9);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.55),
+      inset 0 0 0 1px color-mix(in srgb, var(--line) 70%, transparent),
+      0 2px 10px rgba(0,0,0,.07);
+  }
+  /* 深色下不能拿 --card 当底——它比背景还闷，玻璃就沉进去了。
+     官端是「浮起来」的：一层很淡的白罩 + 白描边，所以看着比底色亮。 */
+  @media (prefers-color-scheme: dark) {
+    html:not([data-theme="light"]) #menuBtn,
+    html:not([data-theme="light"]) .headpill {
+      background: rgba(255,255,255,.08);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.14),
+        inset 0 0 0 1px rgba(255,255,255,.10),
+        0 2px 14px rgba(0,0,0,.40);
+    }
+  }
+  html[data-theme="dark"] #menuBtn, html[data-theme="dark"] .headpill,
+  html[data-theme="black"] #menuBtn, html[data-theme="black"] .headpill {
+    background: rgba(255,255,255,.08);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.14),
+      inset 0 0 0 1px rgba(255,255,255,.10),
+      0 2px 14px rgba(0,0,0,.40);
+  }
+  .headpill {
+    margin-left: auto; display: flex; align-items: center; gap: 0;
+    padding: 2px 4px; border-radius: 999px;
+  }
+  .headpill .iconbtn { width: 34px; height: 34px; }
+  .headpill .iconbtn .ic { width: 19px; height: 19px; }
+  .headpill .iconbtn:active, #menuBtn:active { opacity: .55; }
 
   /* ============ 消息流 ============ */
   
@@ -243,8 +314,23 @@ html[data-theme="dark"] .glass,
   .bubble {
     background: var(--user-bubble); border-radius: 18px; padding: 10px 16px;
     max-width: 85%; white-space: pre-wrap; word-break: break-word;
+    box-shadow: inset 0 0 0 .5px var(--bubble-ring, transparent);
   }
   .gu { white-space: pre-wrap; word-break: break-word; }
+
+  /* 回复下面那排操作按钮（2026-08-16 新增，照官端那排的形制）。
+     这轮只有「复制」——朗读/赞/踩/重试在 dwell 里没有对应功能，
+     摆上去按了没反应比不摆更难受，所以先不摆。要加时往 .acts 里追加即可。 */
+  .acts { display: flex; gap: 2px; margin: 6px 0 2px; }
+  .acts button {
+    width: 34px; height: 34px; border-radius: 9px; border: 0; background: none;
+    color: var(--dim); display: flex; align-items: center; justify-content: center;
+    transition: background .15s ease, color .15s ease;
+  }
+  .acts button .ic { width: 18px; height: 18px; }
+  .acts button:active { background: var(--panel); color: var(--text); }
+  .acts button.done { color: var(--accent); }
+  @media (hover: hover) { .acts button:hover { background: var(--panel); color: var(--text); } }
   .gu img.chatimg, .bubble img.chatimg {
     max-width: min(240px, 70%); border-radius: 14px; display: block; margin: 6px 0;
   }
@@ -371,14 +457,28 @@ html:not([data-theme="light"]) .nk-say {
     }
 html:not([data-theme="light"]) .composer {
       background: var(--glass);
-      border: 1px solid rgba(255, 255, 255, .12);
-      box-shadow: 0 2px 18px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.08);
+      /* C 方案（8/16）：原来是 border + 顶部高光两道线并排，看着像毛边。
+         改成只画一圈内描边——边只剩一道，圆角处也更服帖。 */
+      border: 0;
+      box-shadow: 0 2px 18px rgba(0,0,0,.3), inset 0 0 0 1px rgba(255,255,255,.12);
     }
 }
+/* 深色下输入框里那三颗按钮：官端是「凹进去的黑槽」，比容器更暗；
+   我们原来用 --panel(#383836) 比容器还亮，方向是反的。
+   按所有者定的规则「按钮底 = 气泡色」套过来（浅色下 --panel 也正是气泡色）。 */
+html:not([data-theme="light"]) #plusBtn,
+html:not([data-theme="light"]) #micBtn,
+html:not([data-theme="light"]) .composer .pill,
+html[data-theme="dark"] #plusBtn,
+html[data-theme="dark"] #micBtn,
+html[data-theme="dark"] .composer .pill { background: var(--user-bubble); }
+
 html[data-theme="dark"] .composer {
       background: var(--glass);
-      border: 1px solid rgba(255, 255, 255, .12);
-      box-shadow: 0 2px 18px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.08);
+      /* C 方案（8/16）：原来是 border + 顶部高光两道线并排，看着像毛边。
+         改成只画一圈内描边——边只剩一道，圆角处也更服帖。 */
+      border: 0;
+      box-shadow: 0 2px 18px rgba(0,0,0,.3), inset 0 0 0 1px rgba(255,255,255,.12);
     }
   #attachStrip { display: none; gap: 8px; padding-bottom: 8px; flex-wrap: wrap; }
   #attachStrip .att {
@@ -426,13 +526,25 @@ html[data-theme="dark"] .composer {
   #lockWrap {
     position: fixed; inset: 0; z-index: 999; background: var(--bg);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: calc(env(safe-area-inset-top) + 26px) 24px calc(env(safe-area-inset-bottom) + 15vh);
+    /* 开屏（2026-08-16）：上下内边距改成对称，块才是真居中。
+       原来下边留 15vh 是给滑杆让位的，滑杆藏了之后那块空白会把内容顶上去
+       （实测偏上 69~76px，屏越大偏越多，因为它跟屏高成比例）。 */
+    padding: env(safe-area-inset-top) 24px env(safe-area-inset-bottom);
     transition: opacity .55s ease, transform .55s cubic-bezier(.4,0,.2,1);
     touch-action: none; user-select: none; -webkit-user-select: none;
     overflow: hidden;
   }
   
   #lockWrap.gone { opacity: 0; transform: translateY(-26px) scale(1.03); pointer-events: none; }
+  /* 开屏（2026-08-16）：照官端那张「菊花 + 一句话」，时钟/日期/滑杆一律不显示。
+     点屏幕任意处进入——所以整层要能接点击。元素只是藏起来没删，想要时钟改回 display 即可。 */
+  #lockWrap .lk-time, #lockWrap .lk-date, #lockWrap .lk-track { display: none; }
+  #lockWrap { cursor: pointer; }
+  /* 贴图墨迹的重心不在方框正中（实测偏右 4.27%、偏下 3.14%，因为花瓣长短本就不一），
+     所以要把它挪回来，看着才和下面那行字对齐。用百分比，换多大都成立。 */
+  .lk-spark { width: 41px; height: 41px; color: var(--spark); margin-bottom: 19px;
+    transform: translate(-4.27%, -3.14%); }
+  .lk-spark svg { width: 100%; height: 100%; display: block; overflow: visible; }
   .lk-time { font-size: 46px; font-weight: 300; letter-spacing: -.01em; color: var(--text);
     line-height: 1.05; font-variant-numeric: tabular-nums; }
   .lk-date { font-size: 14px; color: var(--dim); margin-top: 5px; letter-spacing: .06em; }
@@ -440,9 +552,11 @@ html[data-theme="dark"] .composer {
     animation: lkFloat 6s ease-in-out infinite; }
   @keyframes lkFloat { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-9px) } }
   
-  .lk-word { font-family: var(--serif); font-size: 25px; color: var(--text);
-    letter-spacing: .005em; margin: 34px 24px 38px; font-weight: 700;
-    line-height: 1.42; text-align: center; }
+  .lk-word { font-family: var(--serif); font-size: 30px; color: var(--text);
+    letter-spacing: .005em; margin: 0 24px; font-weight: 400;
+    line-height: 1.42; text-align: center;
+    /* 深浅 81%：用 opacity 而不是写死一个灰，这样深浅两色下都成立 */
+    opacity: .81; }
 
   /* 液态玻璃滑块：半透明 + 背后模糊 + 一道内高光，压在浅底上才有"玻璃"的实感 */
   .lk-track {
@@ -483,16 +597,18 @@ html[data-theme="dark"] .composer {
     box-shadow: 4px 0 24px rgba(0,0,0,.12);
   }
   #drawerWrap.show #drawer { transform: none; }
+  /* 字号照官端：标题 27px 中粗衬线（不是 700，官端那个没那么重），
+     导航 16px、二级 15px、分组标签 13px */
   .brand {
-    font-family: var(--serif); font-size: 30px; font-weight: 700;
-    padding: 6px 24px 18px; letter-spacing: .01em;
+    font-family: var(--serif); font-size: 27px; font-weight: 500;
+    padding: 4px 22px 20px; letter-spacing: .01em;
   }
-  .nav { flex: 1; overflow-y: auto; padding: 0 12px; }
+  .nav { flex: 1; overflow-y: auto; padding: 0 10px; }
   .nav .item {
-    display: flex; align-items: center; gap: 14px; width: 100%;
-    padding: 12px 14px; border-radius: 12px; font-size: 16.5px; text-align: left;
+    display: flex; align-items: center; gap: 15px; width: 100%;
+    padding: 11px 12px; border-radius: 10px; font-size: 16px; text-align: left;
   }
-  .nav .item .ic { width: 21px; height: 21px; }
+  .nav .item .ic { width: 20px; height: 20px; }
   .nav .item.on { background: var(--panel); }
   .nav .item.dis { color: var(--dim); }
   .nav .item.dis .tag {
@@ -500,10 +616,10 @@ html[data-theme="dark"] .composer {
     border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px;
   }
   
-  .nav .sect { font-size: 13.5px; color: var(--dim); padding: 20px 14px 6px; }
+  .nav .sect { font-size: 13px; color: var(--dim); padding: 18px 12px 4px; }
   .nav .recent {
-    display: block; width: 100%; text-align: left; padding: 10px 14px;
-    font-size: 15.5px; border-radius: 10px;
+    display: block; width: 100%; text-align: left; padding: 9px 12px;
+    font-size: 15px; border-radius: 10px;
   }
   .nav .recent:active { background: var(--panel); }
   .drawer-foot { flex: none; display: flex; align-items: center; padding: 10px 20px 0; }
@@ -548,16 +664,45 @@ html[data-theme="dark"] .composer {
   .filecard span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   /* ============ 弹层 ============ */
-  .sheetWrap { position: fixed; inset: 0; z-index: 50; display: none; }
-  .sheetWrap.open { display: flex; align-items: flex-end; justify-content: center; }
-  @media (min-width: 700px) { .sheetWrap.open { align-items: center; } }
-  .sheetWrap .shade { position: absolute; inset: 0; background: var(--overlay); }
+  /* 弹窗动画（2026-08-16 重做）
+     原来是 display:none ↔ flex 硬切：遮罩瞬间出现、抽屉只上移 24px、
+     关闭时更是一帧都没有——所以看着像「跳出来」。
+     改成常驻布局 + visibility 控制，进出都能走过渡：
+       · 遮罩淡入淡出
+       · 抽屉从屏幕外整个推上来（不是挪 24px）
+       · 关闭时 visibility 延后到动画结束再切，退场才看得见
+     缓动用 cubic-bezier(.32,.72,0,1)：起步快、收尾稳，就是 iOS 抽屉那种手感。
+     拖拽关闭那套不受影响——它在 touchstart 里会先把 transition 设成 none。 */
+  .sheetWrap {
+    position: fixed; inset: 0; z-index: 50;
+    display: flex; align-items: flex-end; justify-content: center;
+    visibility: hidden; pointer-events: none;
+    transition: visibility 0s linear .34s;
+  }
+  .sheetWrap.open { visibility: visible; pointer-events: auto; transition-delay: 0s; }
+  @media (min-width: 700px) { .sheetWrap { align-items: center; } }
+  .sheetWrap .shade {
+    position: absolute; inset: 0; background: var(--overlay);
+    opacity: 0; transition: opacity .30s ease;
+  }
+  .sheetWrap.open .shade { opacity: 1; }
   .sheet {
     position: relative; width: 100%; max-width: 640px;
     max-height: 86vh; min-height: 300px;
     background: var(--bg); border-radius: 24px 24px 0 0;
     display: flex; flex-direction: column;
-    animation: rise .22s ease;
+    transform: translateY(102%);
+    transition: transform .34s cubic-bezier(.32,.72,0,1);
+  }
+  .sheetWrap.open .sheet { transform: none; }
+  /* 宽屏上抽屉是居中的对话框，从屏幕底下推上来太远，改成轻微上浮 */
+  @media (min-width: 700px) {
+    .sheet { transform: translateY(14px) scale(.985); opacity: .4;
+             transition: transform .28s cubic-bezier(.32,.72,0,1), opacity .28s ease; }
+    .sheetWrap.open .sheet { transform: none; opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sheet, .sheetWrap .shade { transition-duration: .01s; }
   }
   @media (min-width: 700px) { .sheet { border-radius: 24px; max-height: 80vh; } }
   .sheet::after {   /* 往上拽的时候底下不露缝 */
@@ -569,16 +714,29 @@ html[data-theme="dark"] .composer {
     height: 100dvh; max-height: 100dvh; border-radius: 0;
   }
   .sheetWrap.page .grabber { margin-top: calc(10px + env(safe-area-inset-top)); }
-  @keyframes rise { from { transform: translateY(24px); opacity: .6; } }
+
+  /* 上拉展开（2026-08-16）：官端的抽屉能往上拽满屏，我们原来只能往下拽着关，
+     往上被限死在 34px。往上拖过阈值就加 .tall，高度过渡到满屏；
+     再往下拖一次先收回半屏，第二次才关——和 iOS 抽屉的两段式一致。 */
+  .sheet.tall { height: 100dvh; max-height: 100dvh; border-radius: 0; }
+  .sheet.tall .grabber { margin-top: calc(10px + env(safe-area-inset-top)); }
+  .sheet { transition: transform .34s cubic-bezier(.32,.72,0,1),
+                       height .3s cubic-bezier(.32,.72,0,1),
+                       max-height .3s cubic-bezier(.32,.72,0,1); }
   .sheet .head {
     flex: none; display: flex; align-items: center; padding: 16px 16px 12px;
   }
   .sheet .head .hbtn {   
     width: 40px; height: 40px; flex: none; color: inherit;
     display: flex; align-items: center; justify-content: center;
+    /* 官端那个关闭键是个浮起来的圆钮，不是光秃一个叉 */
+    background: var(--card); border-radius: 50%;
+    /* 加一圈细边：深色下 --card 和弹窗面同色，没这圈边圆钮就看不见了（官端那个也是有边的） */
+    box-shadow: 0 1px 3px rgba(0,0,0,.10), inset 0 0 0 1px var(--line);
   }
+  .sheet .head .hbtn:active { background: var(--panel); }
   .sheet .head .hbtn .ic { width: 19px; height: 19px; }
-  .sheet .head .ht { flex: 1; text-align: center; font-size: 18px; font-weight: 700; padding: 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sheet .head .ht { flex: 1; text-align: center; font-size: 18px; font-weight: 600; padding: 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sheet .head .hspace { width: 40px; flex: none; }
   .sheet .body { flex: 1; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 6px 20px calc(20px + env(safe-area-inset-bottom)); }
 
@@ -586,7 +744,8 @@ html[data-theme="dark"] .composer {
   .group { background: var(--panel); border-radius: 18px; overflow: hidden; }
   .group .grow {
     display: flex; align-items: center; gap: 13px; width: 100%;
-    padding: 15px 18px; font-size: 16px; text-align: left;
+    /* 与模型行同一组值（尺子里它们共用留白和行距） */
+    padding: 16px 18px; font-size: 16px; line-height: 1.35; text-align: left;
   }
   .group .grow + .grow { border-top: 1px solid var(--line); }
   .group .grow .ic { width: 20px; height: 20px; color: var(--text); }
@@ -645,15 +804,20 @@ html[data-theme="dark"] .composer {
   .diff .dl.del { background: rgba(192, 57, 43, .10); color: var(--red); }
 
   /* 选模型 / Effort / More models */
-  .mrow { display: block; width: 100%; text-align: left; padding: 15px 18px; }
+  /* 弹窗排版：所有者在校准尺上调的（2026-08-16）——
+     名字 15px / 描述 12px / 行距 1.35 / 上下留白 16px，每行落在 70px。
+     行距原来是从正文继承的 1.7，界面列表里偏松。 */
+  .mrow { display: block; width: 100%; text-align: left; padding: 16px 18px; }
   .mrow + .mrow { border-top: 1px solid var(--line); }
-  .mrow .mn { font-size: 16.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
-  .mrow .mn .ck { margin-left: auto; color: var(--accent); width: 18px; height: 18px; }
+  .mrow .mn { font-size: 15px; font-weight: 500; line-height: 1.35; display: flex; align-items: center; gap: 8px; }
+  /* 选中的对勾照官端用蓝的。#2c84db 取自 claude.com 线上 CSS 的
+     --theme-switch-secondary-bg-selected，不是我调的。 */
+  .mrow .mn .ck { margin-left: auto; color: #2c84db; width: 18px; height: 18px; }
   .mrow .mn .badge {
     font-size: 11.5px; font-weight: 500; color: var(--dim);
     background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 1px 9px;
   }
-  .mrow .md { font-size: 13.5px; color: var(--dim); margin-top: 2px; font-weight: 400; }
+  .mrow .md { font-size: 12px; color: var(--dim); margin-top: 2px; font-weight: 400; line-height: 1.35; }
 
   /* 全屏房间开着时，聊天的顶栏和输入卡先退场——毛玻璃层在个别浏览器里会钻上来 */
   body:has(.sheetWrap.open) header, body:has(.sheetWrap.open) footer { visibility: hidden; }
@@ -1035,7 +1199,8 @@ html[data-theme="dark"] .composer {
     white-space: pre-wrap; word-break: break-word; }
   .nk-bub.her { margin-left: auto; width: fit-content;
     background: var(--user-bubble); color: var(--text);
-    border-radius: 18px; padding: 10px 16px; }
+    border-radius: 18px; padding: 10px 16px;
+    box-shadow: inset 0 0 0 .5px var(--bubble-ring, transparent); }
   .nk-bub.mine { margin-right: auto; color: var(--text); }
   .nk-bub .t { display: block; font-size: 11.5px; color: var(--dim); margin-top: 5px; }
   .nk-bub.her .t { opacity: .7; }
@@ -1592,20 +1757,94 @@ html[data-theme="dark"] .crow { border-color: rgba(255,255,255,.1); box-shadow: 
   }
   #newSession .ic { width: 15px; height: 15px; }
   @media (prefers-color-scheme: dark) {
-html:not([data-theme="light"]) #newSession { background: #f5f4ef; color: #262624; }
+html:not([data-theme="light"]) #newSession { background: var(--text); color: var(--bg); }
 }
-html[data-theme="dark"] #newSession { background: #f5f4ef; color: #262624; }
+html[data-theme="dark"] #newSession { background: var(--text); color: var(--bg); }
+
+/* ══ 官端那条:菊花 + 两行英文 ═══════════════════════════════════
+   它不是固定在输入框上方,而是跟着对话走 —— 挂在最后一条 AI 回复的下面,
+   还没开始聊的时候不出现。由脚本插进 #log 的末尾。 */
+.brandline {
+  /* width:100% 不能省:#log 是纵向 flex,只写 margin:auto 会让它按内容收缩再居中。
+     这一行和 dwell 自己的 .row 保持一致,所以左右边界和消息对齐。 */
+  width: 100%; max-width: 720px; margin: 2px auto 6px;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+}
+.brandline .spark { width: 30px; height: 30px; flex: none; color: var(--spark); }
+.brandline .spark svg { width: 100%; height: 100%; display: block; overflow: visible;
+                        shape-rendering: geometricPrecision; }
+/* 照官端:浅色模式近黑、深色模式近白 —— 直接跟 --text 走,两种主题自动反过来 */
+.brandline .brandnote {
+  text-align: right; color: var(--text); opacity: .92;
+  font-size: 13px; line-height: 1.45; padding-top: 2px; letter-spacing: .1px;
+}
+@media (max-width: 420px) { .brandline .brandnote { font-size: 12px; } }
+
+/* 花瓣:先转到自己的轴上,只缩长度,再转回去 —— 宽度不跟着缩,短了才不显胖 */
+.spark .rot, .spark .sp { transform-box: view-box; }
+.spark .rot { animation: sparkSpin 6s linear infinite; animation-play-state: paused; }
+@keyframes sparkSpin { to { rotate: 360deg; } }
+
+/* 思考:12 片同相位,一起收一起放,不转 */
+.spark.think .sp { animation: sparkBloom 1.8s ease-in-out infinite; }
+@keyframes sparkBloom { 0%,100% { scale: .04 .3 } 50% { scale: 1 1 } }
+
+/* 流式:窄凹口顺时针跑,整体也在转 */
+.spark.out .rot { animation-play-state: running; }
+.spark.out .sp {
+  animation: sparkNotch 1.9s cubic-bezier(.45,0,.55,1) infinite;
+  animation-delay: calc(var(--i) * 1.9s / 12);
+}
+@keyframes sparkNotch {
+  0%, 48%  { scale: 1 1 }
+  60%      { scale: .72 .82 }
+  72%      { scale: .25 .5 }
+  84%      { scale: .72 .82 }
+  96%,100% { scale: 1 1 }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spark .rot, .spark .sp { animation-duration: 14s !important; }
+}
+
+/* 麦克风:浅底深字,和 + 号同一族 */
+#micBtn { width: 38px; height: 38px; border-radius: 999px; border: 0; flex: none;
+          background: var(--panel); color: var(--text);
+          display: grid; place-items: center; cursor: pointer; }
+#micBtn .ic { width: 18px; height: 18px; }
+
+/* 发送键改成官端那种:浅色模式深底白箭头,深色模式反过来。
+   用 --text / --bg 两个令牌换位,两种主题都自动对。 */
+#send { background: var(--text) !important; color: var(--bg) !important; }
+#send.stop { background: var(--panel) !important; }
+#send.stop::after { background: var(--text); }
+
+/* ══ 底色 ═══════════════════════════════════════════════════════
+   调冷那一版撤了——官端本身就是暖奶油底(#faf9f5 / #262624),
+   文件开头 :root 那套就是官端的值,这里不再覆盖。 */
+
+/* ══ 纯黑模式(OLED)═══════════════════════════════════════════
+   html[data-theme="black"] 打开。真黑底,灰阶跟着官端走暖,不掺蓝。 */
+html[data-theme="black"] {
+  --bg:#000000; --card:#0F0F0E; --panel:#1A1A18; --line:#262624;
+  --text:#F5F4EF; --dim:#8F8C85; --user-bubble:#1C1C1A; --bubble-ring:transparent;
+  --overlay:rgba(0,0,0,.7);
+  --glass:color-mix(in srgb, var(--card) 78%, transparent);
+}
+html[data-theme="black"] #newSession { background:#F5F4EF; color:#000; }
 </style>
 </head>
 <body>
 
 <header>
-  <button class="iconbtn glass" id="menuBtn" title="打开侧边栏"><span class="ic" data-i="chevL"></span></button>
+  <button class="iconbtn glass" id="menuBtn" title="打开侧边栏"><span class="ic" data-i="lines"></span></button>
   <div class="title">
     <h1>Claude</h1>
     <div class="sub">Claude Code</div>
   </div>
-  <button class="iconbtn glass" id="dotsBtn" title="更多"><span class="ic" data-i="dots"></span></button>
+  <div class="headpill">
+    <button class="iconbtn glass" id="newChatTop" title="新对话"><span class="ic" data-i="chatplus"></span></button>
+    <button class="iconbtn glass" id="dotsBtn" title="更多"><span class="ic" data-i="dots"></span></button>
+  </div>
 </header>
 
 <div id="log"></div>
@@ -1615,11 +1854,12 @@ html[data-theme="dark"] #newSession { background: #f5f4ef; color: #262624; }
   <div id="doingLine"><span class="pill"><span class="w"></span><span class="en"></span><span class="t"></span></span></div>
   <div class="composer">
     <div id="attachStrip"></div>
-    <textarea id="box" rows="1" placeholder="说点什么…" autocomplete="off"></textarea>
+    <textarea id="box" rows="1" placeholder="Reply to Claude" autocomplete="off"></textarea>
     <div class="ctlrow">
       <button id="plusBtn" title="添加照片和文件"><span class="ic" data-i="plus"></span></button>
       <button class="pill" id="modelPill">…</button>
       <span class="gap"></span>
+      <button id="micBtn" title="语音输入"><span class="ic" data-i="mic"></span></button>
       <button id="send" title="发送"><span class="ic" data-i="arrowUp"></span></button>
     </div>
   </div>
@@ -1840,6 +2080,7 @@ html[data-theme="dark"] #newSession { background: #f5f4ef; color: #262624; }
 
 <!-- 《每日简报》 -->
 <div id="lockWrap">
+  <div class="lk-spark" id="lkSpark"></div>
   <div class="lk-time" id="lkTime">--:--</div>
   <div class="lk-date" id="lkDate"></div>
   <div class="lk-word" id="lkWord"></div>
@@ -2073,6 +2314,9 @@ const ICONS = {
   expand: S('<polyline points="14 4 20 4 20 10"/><polyline points="10 20 4 20 4 14"/>'),
   plus: S('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>'),
   arrowUp: S('<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>'),
+  mic: S('<rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><line x1="12" y1="17.5" x2="12" y2="21"/>'),
+  lines: S('<line x1="4" y1="7" x2="17" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="13" y2="17"/>'),
+  chatplus: S('<path d="M8.5 4h8a4.5 4.5 0 0 1 4.5 4.5v5a4.5 4.5 0 0 1-4.5 4.5H9l-5 3.5V8.5A4.5 4.5 0 0 1 8.5 4Z"/><line x1="12.5" y1="7.9" x2="12.5" y2="14.1"/><line x1="9.4" y1="11" x2="15.6" y2="11"/>'),
   arrowDown: S('<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>'),
   download: S('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>'),
   activity: S('<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>'),
@@ -2097,6 +2341,12 @@ const ICONS = {
   checkSquare: S('<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'),
   calendar: S('<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'),
   alarm: S('<circle cx="12" cy="13" r="8"/><polyline points="12 9 12 13 14.5 14.5"/><path d="M5 3 2.5 5.5"/><path d="M19 3l2.5 2.5"/>'),
+  /* 2026-08-16 为回复下面那排操作按钮补的三个图标 */
+  play: S('<polygon points="6 4 20 12 6 20 6 4"/>'),
+  thumbUp: S('<path d="M7 10v10H4a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1h3z"/>'
+          + '<path d="M7 10l4.2-7.1a1.6 1.6 0 0 1 2.9 1.1L13.5 8h5a2 2 0 0 1 2 2.4l-1.4 7A2 2 0 0 1 17.1 19H7"/>'),
+  thumbDown: S('<path d="M17 14V4h3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-3z"/>'
+            + '<path d="M17 14l-4.2 7.1a1.6 1.6 0 0 1-2.9-1.1L10.5 16h-5a2 2 0 0 1-2-2.4l1.4-7A2 2 0 0 1 6.9 5H17"/>'),
   refresh: S('<path d="M20.5 12a8.5 8.5 0 1 1-2.6-6.1"/><path d="M20.6 4.2v4.6h-4.6"/>'),
   moon: S('<path d="M20.5 14.4A8.6 8.6 0 0 1 9.6 3.5a8.6 8.6 0 1 0 10.9 10.9z"/>'),
   petal: S('<path d="M2.5 9.2c2.1-2.6 4.3-2.6 6.4 0s4.3 2.6 6.4 0 4.3-2.6 6.2 0"/><path d="M2.5 15.4c2.1-2.6 4.3-2.6 6.4 0s4.3 2.6 6.4 0 4.3-2.6 6.2 0"/>'),
@@ -2657,6 +2907,67 @@ function renderRich(el) {
   }
   renderPlainInto(el, text, true);
   el.dataset.rich = '1';
+  ensureActs(el);
+}
+
+/* 定稿的回复下面挂一排操作按钮。renderRich 是历史回放和实时流共同的收尾点，
+   所以挂这一处就够；未定稿（还在吐字）的不挂，免得中途蹦出来。 */
+function ensureActs(el) {
+  if (!el || !el.classList.contains('gu') || !el._final) return;
+  const row = el.parentElement;
+  if (!row || row.querySelector(':scope > .acts')) return;
+  const txt = (el._raw != null ? el._raw : el.textContent) || '';
+  if (!txt.trim()) return;
+
+  const bar = document.createElement('div');
+  bar.className = 'acts';
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.title = '复制';
+  btn.setAttribute('aria-label', '复制这条回复');
+  btn.appendChild(icEl('copy', 18));
+  btn.onclick = async () => {
+    const t = (el._raw != null ? el._raw : el.textContent) || '';
+    let ok = true;
+    try { await navigator.clipboard.writeText(t); }
+    catch (e) {                       // 非 HTTPS 或旧 Safari 没有剪贴板接口，退回老办法
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = t; ta.style.cssText = 'position:fixed;opacity:0';
+        document.body.appendChild(ta); ta.select();
+        ok = document.execCommand('copy'); ta.remove();
+      } catch (e2) { ok = false; }
+    }
+    if (!ok) { note('（复制没成功，长按选中再复制吧）', 'err'); return; }
+    btn.classList.add('done');
+    btn.innerHTML = ''; btn.appendChild(icEl('check', 18));
+    setTimeout(() => {
+      btn.classList.remove('done');
+      btn.innerHTML = ''; btn.appendChild(icEl('copy', 18));
+    }, 1400);
+  };
+  bar.appendChild(btn);
+
+  /* 其余四颗：所有者要求「先全摆上，样子对就行，功能以后加」（2026-08-16）。
+     它们现在只有样子，点了会说一句实话，不会假装做了事。
+     以后要接，各自缺的东西是：
+       play      → 朗读，需要 TTS（前端目前零语音能力，见交接文档）
+       thumbUp   → 赞，需要一个存反馈的地方（后端或本地）
+       thumbDown → 踩，同上
+       refresh   → 重试，需要一个「重新生成上一条」的后端接口，现有 38 个接口里没有 */
+  [['play', '朗读'], ['thumbUp', '赞'], ['thumbDown', '踩'], ['refresh', '重试']]
+    .forEach(([ic, label]) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.title = label;
+      b.setAttribute('aria-label', label);
+      b.dataset.todo = '1';            // 标记：还没接功能
+      b.appendChild(icEl(ic, 18));
+      b.onclick = () => note('（' + label + '还没接，先摆着）');
+      bar.appendChild(b);
+    });
+
+  row.appendChild(bar);
 }
 
 /* 原来 renderRich 的身子拆出来单用——代码块之间的那些文本还要走它。
@@ -5362,6 +5673,8 @@ Object.entries(sheets).forEach(([k, wrap]) => {
   const doClose = () => {
     if (k === 'tool') sheetStack = [];
     wrap.classList.remove('open');
+    setTimeout(() => sheet.classList.remove('tall'), 360);   // 下次打开回到半屏
+
     if (wrap.classList.contains('page')) openDrawer();
   };
   sheet.addEventListener('touchstart', (e) => {
@@ -5374,14 +5687,27 @@ Object.entries(sheets).forEach(([k, wrap]) => {
     if (!dragging) return;
     const dy = e.touches[0].clientY - startY;
     curY = dy;
-    const shown = dy >= 0 ? dy : Math.max(dy / 3, -34);
+    /* 已经满屏了就没有再往上的余地，仍按原来的阻尼；没满屏时往上给更多行程，
+       让「能拉上去」这件事在手指下就有反馈 */
+    const upLimit = sheet.classList.contains('tall') ? -34 : -110;
+    const shown = dy >= 0 ? dy : Math.max(dy / 2.2, upLimit);
     sheet.style.transform = 'translateY(' + shown + 'px)';
   }, { passive: true });
   sheet.addEventListener('touchend', () => {
     if (!dragging) return;
     dragging = false;
     sheet.style.transition = 'transform .2s ease';
-    if (curY > 110) {
+    const tall = sheet.classList.contains('tall');
+
+    if (curY < -60 && !tall && !wrap.classList.contains('page')) {
+      sheet.classList.add('tall');          // 上拉：展开满屏
+      sheet.style.transform = '';
+      setTimeout(() => { sheet.style.transition = ''; }, 220);
+    } else if (curY > 110 && tall) {
+      sheet.classList.remove('tall');       // 满屏时下拉：先收回半屏，不直接关
+      sheet.style.transform = '';
+      setTimeout(() => { sheet.style.transition = ''; }, 220);
+    } else if (curY > 110) {
       sheet.style.transform = 'translateY(105%)';
       setTimeout(() => { doClose(); sheet.style.transform = ''; sheet.style.transition = ''; }, 180);
     } else {
@@ -5875,7 +6201,8 @@ function wearTheme(t) {
     && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
   document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.remove());
   const m = document.createElement('meta');
-  m.name = 'theme-color'; m.content = dark ? '#262624' : '#faf9f5';
+  /* 跟着页面底走，不同步的话手机状态栏会和页面差一截 */
+  m.name = 'theme-color'; m.content = dark ? '#20201f' : '#f9f9f6';
   document.head.appendChild(m);
   themeSw.classList.remove('wait');
   themeSw.classList.toggle('on', t === 'dark');
@@ -6040,6 +6367,10 @@ document.getElementById('newSession').onclick = () => {
   sheets.chats.classList.remove('open');
   armNewChat();
 };
+/* 顶栏那颗新对话——走的是侧边栏里同一条路，不另开一套逻辑 */
+document.getElementById('newChatTop').onclick = () => {
+  document.getElementById('newSession').click();
+};
 
 /* ---------- 额度 / 容量 ---------- */
 /* 75 以下蓝、75 起黄、90 起红——额度和容量共用这一把尺 */
@@ -6126,7 +6457,7 @@ async function loadUsage() {
 /* ---------- 选模型：main / effort / more 三个子页 ---------- */
 const MODELS_MAIN = [
   { id: 'claude-fable-5', name: 'Fable 5', desc: 'For your toughest challenges' },
-  { id: 'claude-opus-5', name: 'Opus 5', desc: '' },
+  { id: 'claude-opus-5', name: 'Opus 5', desc: 'For complex tasks' },
   { id: 'claude-sonnet-5', name: 'Sonnet 5', desc: 'Most efficient for everyday tasks' },
   { id: 'claude-haiku-4-5-20251001', name: 'Haiku 4.5', desc: 'Fastest for quick answers' },
 ];
@@ -6426,15 +6757,11 @@ document.addEventListener('touchend', (e) => {
   const track = document.getElementById('lkTrack');
   const hint = document.getElementById('lkHint');
 
-  /* 锁屏上那句话：按时候换，不是固定标语 */
-  const LOCK_WORD = 'slide to unlock';
-  const LOCK_WHEN = [
-    [0,  5, 'Still up?'],
-    [5, 10, 'Good morning'],
-    [11, 13, 'Lunch time'],
-    [18, 20, 'Evening'],
-    [22, 24, 'Getting late'],
-  ];
+  /* 2026-08-16：改成开屏，固定一句，不再按时段换。
+     原来那套按时段的文案留在下面注释里，想恢复把它接回 tick() 即可：
+       [0,5,'Still up?'] [5,10,'Good morning'] [11,13,'Lunch time']
+       [18,20,'Evening'] [22,24,'Getting late'] */
+  const LOCK_WORD = '佳佳 returns！';
   function tick() {
     const n = cnNow();
     const hh = String(n.getHours()).padStart(2, '0');
@@ -6442,9 +6769,7 @@ document.addEventListener('touchend', (e) => {
     document.getElementById('lkTime').textContent = hh + ':' + mm;
     document.getElementById('lkDate').textContent =
       (n.getMonth() + 1) + '月' + n.getDate() + '日 周' + '日一二三四五六'[n.getDay()];
-    const nowH = n.getHours();
-    const hit = LOCK_WHEN.find(([a, b]) => nowH >= a && nowH < b);
-    document.getElementById('lkWord').textContent = hit ? hit[2] : LOCK_WORD;
+    document.getElementById('lkWord').textContent = LOCK_WORD;
   }
   tick();
   const timer = setInterval(tick, 20000);
@@ -6482,9 +6807,177 @@ document.addEventListener('touchend', (e) => {
     if (dragging || e.target === knob) return;
     if (e.offsetX > track.clientWidth * 0.6) { move(MAX()); open_(); }
   });
+
+  /* 开屏：点屏幕任意处进入（滑杆已隐藏，上面那套拖拽不会被触发） */
+  wrap.addEventListener('click', () => { if (!dragging) open_(); });
 })();
 
 box.focus();
+</script>
+
+<script>
+/* ══ 输入框上方那朵会动的菊花 ═══════════════════════════════════
+   取 icons.spark 那条原始路径,沿半径谷底切成 12 片独立花瓣,
+   每片能沿自己的方向单独伸缩。状态跟着桌宠走:
+     clawd-working-thinking → 思考(12 片同时收放,不转)
+     clawd-working-typing   → 流式(窄凹口顺时针跑 + 整体转)
+     其余                    → 静止
+   ─────────────────────────────────────────────────────────── */
+(function () {
+  var log = document.getElementById('log');
+  if (!log) return;
+
+  /* 这一条跟着对话走:插在 #log 末尾,也就是最后一条回复的下面。
+     日志清空(换窗口/新对话)时它会一起没掉,下面的观察器负责再放回去。 */
+  var line = document.createElement('div');
+  line.className = 'brandline';
+  line.innerHTML = '<div class="spark" id="sparkMark"></div>'
+                 + '<div class="brandnote">Claude is AI and can make mistakes.<br>'
+                 + 'Please double-check responses.</div>';
+  var host = line.firstChild;
+
+  /* 直接内联原始路径。dwell 里那份在 const SKETCH 里,是块级作用域,外面取不到。 */
+  var D = 'm4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z';
+
+  /* 路径 → 点（三次曲线按 8 段采样，保住圆滑） */
+  function parse(d) {
+    var t = d.match(/[a-zA-Z]|-?\d*\.?\d+(?:e-?\d+)?/g), i = 0, cmd = null;
+    var x = 0, y = 0, sx = 0, sy = 0, pts = [];
+    function num() { return parseFloat(t[i++]); }
+    while (i < t.length) {
+      if (/[a-zA-Z]/.test(t[i])) cmd = t[i++];
+      var rel = cmd === cmd.toLowerCase(), C = cmd.toUpperCase(), a, b;
+      if (C === 'M') { a = num(); b = num(); x = rel ? x + a : a; y = rel ? y + b : b;
+                       sx = x; sy = y; pts.push([x, y]); cmd = rel ? 'l' : 'L'; }
+      else if (C === 'L') { a = num(); b = num(); x = rel ? x + a : a; y = rel ? y + b : b; pts.push([x, y]); }
+      else if (C === 'H') { a = num(); x = rel ? x + a : a; pts.push([x, y]); }
+      else if (C === 'V') { b = num(); y = rel ? y + b : b; pts.push([x, y]); }
+      else if (C === 'C') {
+        var c1 = num(), d1 = num(), c2 = num(), d2 = num(), c3 = num(), d3 = num();
+        var X1 = rel ? x + c1 : c1, Y1 = rel ? y + d1 : d1,
+            X2 = rel ? x + c2 : c2, Y2 = rel ? y + d2 : d2,
+            X3 = rel ? x + c3 : c3, Y3 = rel ? y + d3 : d3;
+        for (var s = 1; s <= 8; s++) {
+          var u = s / 8, v = 1 - u;
+          pts.push([v*v*v*x + 3*v*v*u*X1 + 3*v*u*u*X2 + u*u*u*X3,
+                    v*v*v*y + 3*v*v*u*Y1 + 3*v*u*u*Y2 + u*u*u*Y3]);
+        }
+        x = X3; y = Y3;
+      }
+      else if (C === 'Z') { x = sx; y = sy; }
+      else { num(); }
+    }
+    return pts;
+  }
+
+  var P = parse(D);
+  if (P.length < 24) return;
+  var CX = P.reduce(function (s, p) { return s + p[0]; }, 0) / P.length;
+  var CY = P.reduce(function (s, p) { return s + p[1]; }, 0) / P.length;
+  function rad(p) { return Math.hypot(p[0] - CX, p[1] - CY); }
+
+  /* 半径的谷底 = 相邻两片花瓣的分界 */
+  var N = P.length, raw = [];
+  for (var k = 0; k < N; k++) {
+    var pr = rad(P[(k - 1 + N) % N]), cr = rad(P[k]), nr = rad(P[(k + 1) % N]);
+    if (cr <= pr && cr <= nr && cr < 5) raw.push(k);
+  }
+  var V = [];
+  raw.forEach(function (k) {
+    var last = V[V.length - 1];
+    if (last != null && k - last < 4) { if (rad(P[k]) < rad(P[last])) V[V.length - 1] = k; }
+    else V.push(k);
+  });
+  if (V.length < 6) return;
+
+  /* 相邻两片重叠 2 个点,把拼接的发丝缝压在实体底下 */
+  var EXT = 2, petals = [];
+  for (var v = 0; v < V.length; v++) {
+    var a0 = (V[v] - EXT + N) % N, b0 = (V[(v + 1) % V.length] + EXT) % N;
+    var run = [], j = a0, guard = 0;
+    while (guard++ < N + 2) { run.push(P[j]); if (j === b0) break; j = (j + 1) % N; }
+    var tip = run[0], best = rad(run[0]);
+    run.forEach(function (p) { var r = rad(p); if (r > best) { best = r; tip = p; } });
+    var d = 'M' + CX.toFixed(3) + ' ' + CY.toFixed(3);
+    run.forEach(function (p) { d += ' L' + p[0].toFixed(3) + ' ' + p[1].toFixed(3); });
+    petals.push({ d: d + ' Z', a: Math.atan2(tip[1] - CY, tip[0] - CX) * 180 / Math.PI });
+  }
+
+  /* 花心:不规则的圆,花瓣全收进去时剩下的就是它 */
+  var WOB = [1, .94, 1.06, .97, 1.03, .92, 1.05, .99, 1.07, .95, 1.02, .96];
+  function blob(R) {
+    var n = WOB.length, q = [];
+    for (var i = 0; i < n; i++) {
+      var t = i / n * Math.PI * 2, r = R * WOB[i];
+      q.push([CX + r * Math.cos(t), CY + r * Math.sin(t)]);
+    }
+    var d = 'M' + q[0][0].toFixed(3) + ' ' + q[0][1].toFixed(3);
+    for (var j2 = 0; j2 < n; j2++) {
+      var e0 = q[(j2 - 1 + n) % n], e1 = q[j2], e2 = q[(j2 + 1) % n], e3 = q[(j2 + 2) % n];
+      d += ' C' + (e1[0] + (e2[0] - e0[0]) / 6).toFixed(3) + ' ' + (e1[1] + (e2[1] - e0[1]) / 6).toFixed(3)
+         + ' ' + (e2[0] - (e3[0] - e1[0]) / 6).toFixed(3) + ' ' + (e2[1] - (e3[1] - e1[1]) / 6).toFixed(3)
+         + ' ' + e2[0].toFixed(3) + ' ' + e2[1].toFixed(3);
+    }
+    return d + ' Z';
+  }
+
+  var O = CX.toFixed(3) + 'px ' + CY.toFixed(3) + 'px';
+  var g = petals.map(function (p, i) {
+    return '<g transform="rotate(' + p.a.toFixed(2) + ' ' + CX.toFixed(3) + ' ' + CY.toFixed(3) + ')">'
+         +   '<g class="sp" style="--i:' + i + ';transform-origin:' + O + '">'
+         +     '<g transform="rotate(' + (-p.a).toFixed(2) + ' ' + CX.toFixed(3) + ' ' + CY.toFixed(3) + ')">'
+         +       '<path fill="currentColor" d="' + p.d + '"/>'
+         +     '</g></g></g>';
+  }).join('');
+  host.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">'
+                 + '<g class="rot" style="transform-origin:' + O + '">' + g + '</g>'
+                 + '<path fill="currentColor" d="' + blob(2.1) + '"/></svg>';
+
+  /* 开屏那朵：和这朵是同一份贴图，复制过去即可（静止态，不加 think/out 类） */
+  var lkSpark = document.getElementById('lkSpark');
+  if (lkSpark) lkSpark.innerHTML = host.innerHTML;
+
+  /* 状态跟着桌宠的图走,不改动它原有的逻辑。
+     只有"在想"和"在吐字"这两种会动;答完了就是一张静止的贴图。 */
+  var img = document.getElementById('petImg');
+  function sync() {
+    var s = (img && img.getAttribute('src')) || '';
+    var busy = document.getElementById('doingLine');
+    var working = busy && busy.classList.contains('on');
+    host.className = 'spark' + (
+      /thinking/.test(s) ? ' think' :
+      (/typing/.test(s) || working) ? ' out' : ''
+    );
+  }
+  if (window.MutationObserver) {
+    if (img) new MutationObserver(sync).observe(img, { attributes: true, attributeFilter: ['src'] });
+    var dl = document.getElementById('doingLine');
+    if (dl) new MutationObserver(sync).observe(dl, { attributes: true, attributeFilter: ['class'] });
+  }
+  sync();
+
+  /* 有对话才出现,并且始终待在最末尾 */
+  function place() {
+    var real = 0, c = log.children;
+    for (var i = 0; i < c.length; i++) if (c[i] !== line) real++;
+    if (!real) { if (line.parentNode) line.parentNode.removeChild(line); return; }
+    if (log.lastElementChild !== line) log.appendChild(line);   // 已在末尾就不动,避免自触发
+  }
+  if (window.MutationObserver) new MutationObserver(place).observe(log, { childList: true });
+  place();
+
+  /* 桌宠的图在这份预览里加载不出来(pet/*.svg 没带上),破图不好看,直接藏掉 */
+  if (img) img.addEventListener('error', function () {
+    var box = document.getElementById('pet');
+    if (box) box.style.display = 'none';
+  });
+
+  /* 2026-08-16 删掉两段预览专用代码（所有者批准）:
+     ① 状态循环演示——没有后端时自己在 静止→思考→输出 之间轮播。
+        接上后端后状态自动跟着桌宠走,不需要它。
+     ② 右下角的主题小钮——正式环境换主题走「设置 → 外观」那个开关
+        (wearTheme / localStorage 的 homeTheme),不需要它。 */
+})();
 </script>
 </body>
 </html>
