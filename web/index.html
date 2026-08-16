@@ -8,14 +8,16 @@
 <meta name="theme-color" content="#20201f" media="(prefers-color-scheme: dark)">
 <title>Claude</title>
 
-<link rel="icon" href="icons/favicon-64.png" sizes="64x64" type="image/png">
-<link rel="icon" href="icons/favicon.ico" sizes="any">
-<link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/favicon-64.png?v=2" sizes="64x64" type="image/png">
+<link rel="icon" href="icons/favicon.ico?v=2" sizes="any">
+<!-- ?v= 是给 iOS 用的：主屏图标一旦加过就会被长期缓存，
+     换了图不换 URL 的话，删掉重新添加也可能还是旧那张。换图时把版本号 +1。 -->
+<link rel="apple-touch-icon" href="icons/icon-180.png?v=2">
+<link rel="manifest" href="manifest.json?v=2">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Claude">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <script>
 /* 夜间模式：跟随系统 / 常亮 / 常暗，三态轮换，记在本地。
    写在 <style> 前面执行，页面还没画就把皮穿好，不会闪一下白的。
