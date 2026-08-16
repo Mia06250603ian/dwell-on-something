@@ -380,14 +380,13 @@ html[data-theme="dark"] .glass,
   .cbk-full .cbk-h { box-shadow: inset 0 -1px 0 var(--line); }
   .cbk-full pre { flex: 1; overflow: auto; }
   .cbk-full code { white-space: pre-wrap; word-break: break-all; }
-  /* 光标：原来是一个真实的 <span class=caret> 插在文字末尾，
-     每追加一次字就要连它一起重排。改成伪元素——不占 DOM、不用 JS 摆位置，
-     只靠 .tw 这个类开关，闪烁交给 CSS。 */
-  .gu.tw::after {
-    content: ''; display: inline-block; width: 7px; height: 1.05em; vertical-align: -2px;
-    background: var(--accent-soft); border-radius: 1px; animation: blink 1s steps(2) infinite;
-  }
-  @keyframes blink { 50% { opacity: 0; } }
+  /* 光标已按所有者要求整个去掉（2026-08-16）。
+     它经历过两版：先是真实的 <span class=caret> 节点，后来改成 .gu.tw::after 伪元素。
+     想要回来的话，恢复下面这段并把 paintStream 里的 classList.add('tw') 加回去即可：
+       .gu.tw::after { content:''; display:inline-block; width:7px; height:1.05em;
+         vertical-align:-2px; background:var(--accent-soft); border-radius:1px;
+         animation: blink 1s steps(2) infinite; }
+       @keyframes blink { 50% { opacity: 0; } } */
 
   .toolline .ic { width: 15px; height: 15px; }
   .grabber {
@@ -2734,7 +2733,6 @@ function paintStream(el) {
     const t = (el._raw || '').replace(ORPHAN_TAIL, '')
       .replace(STREAM_FILE_TAIL, '').replace(STREAM_SONG_TAIL, '');
     appendWithImages(el, t, true);
-    el.classList.add('tw');       // 光标是伪元素，挂个类就有
   });
 }
 
@@ -3538,8 +3536,7 @@ function handle(d) {
         closeThink();
       } else if (p.type === 'text' && p.text) {
         const el = ensureGu();
-        el.classList.remove('tw');
-        // 说完了的这份是权威，**无条件盖掉流式攒的那份**。
+            // 说完了的这份是权威，**无条件盖掉流式攒的那份**。
         // 同一条消息里多段文本就接着写，别把前一段冲掉。
         // 这条消息的第一段接在基线后面——基线是同一个泡里"上一条消息"已经说完的话
         // （一轮里连说两段、中间没干活，就共用一个泡；不记基线的话第二条会把第一条吃掉）。
@@ -3568,7 +3565,6 @@ function handle(d) {
 
   if (d.type === 'result') {
     sFlush();                     // 收尾前把最后半句吐完，别吞字
-    guEl?.classList.remove('tw');
     guEl = null; endThink(); closeGroup();
     fetch('api/messages?limit=16', { cache: 'no-store' }).then(r => r.json()).then(dd => {
       const gus = (dd.msgs || []).filter(m => m.kind === 'gu');
@@ -3608,7 +3604,6 @@ function handle(d) {
     return;
   }
   if (d.type === 'system' && d.subtype === 'stopped') {
-    guEl?.classList.remove('tw');
     guEl = null; endThink(); closeGroup();
     setBusy(false); petSet('calm');
     note('（我停下了）');
