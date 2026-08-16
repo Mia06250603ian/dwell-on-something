@@ -8,13 +8,20 @@
 <meta name="theme-color" content="#20201f" media="(prefers-color-scheme: dark)">
 <title>Claude</title>
 
-<link rel="icon" href="icons/favicon-64.png" sizes="64x64" type="image/png">
-<link rel="icon" href="icons/favicon.ico" sizes="any">
-<link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/favicon-64.png?v=3" sizes="64x64" type="image/png">
+<link rel="icon" href="icons/favicon.ico?v=3" sizes="any">
+<!-- ?v= 是给 iOS 用的：主屏图标一旦加过就会被长期缓存，
+     换了图不换 URL 的话，删掉重新添加也可能还是旧那张。换图时把版本号 +1。 -->
+<link rel="apple-touch-icon" href="icons/icon-180.png?v=3">
+<link rel="manifest" href="manifest.json?v=3">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Claude">
+<!-- ⚠️ 别改成 black-translucent。改过一次（2026-08-16），后果是输入框浮到半空：
+     内容延伸到状态栏底下后，window.innerHeight 与 visualViewport.height 差出一个
+     状态栏的高度，而键盘检测正是拿这个差值判断的（见 fitKeyboard 的 kbGap），
+     于是误判成"键盘开着"，把输入卡往上顶。
+     深色模式下顶上那条白边是这个值造成的，但它只是难看；输入框跑位是不能用。 -->
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <script>
 /* 夜间模式：跟随系统 / 常亮 / 常暗，三态轮换，记在本地。
@@ -42,6 +49,7 @@
     --line: #ecece6;
     --text: #141413;
     --dim: #5e5d59;
+    --think: #87867f;   /* 官方 --color-gray-500 */
     /* 赤陶统一成一支（2026-08-16）：原来按钮 #c96442、花 #e1734f 是两个颜色，
        所有者要求统一。#e1734f 是她在校准尺上调的那支。 */
     --accent: #e1734f;
@@ -77,7 +85,7 @@ html:not([data-theme="light"]) {
            --card  = 底色：输入框/卡片的面不比页面亮，靠那圈内描边区分（官端就是这样）
            --panel = 气泡色：弹窗分组卡、按钮，都是「凹进去」的那一层 */
       --bg: #20201f; --card: #20201f; --panel: #131312; --line: #3d3d3a;
-      --text: #faf9f5; --dim: #a3a099; --user-bubble: #131312; --bubble-ring: transparent;
+      --text: #faf9f5; --dim: #a3a099; --think: #9c9a92; --user-bubble: #131312; --bubble-ring: transparent;
       --sage: #A8C0A0; --sage-track: #3A423A; --pink-track: #4A3B34;
       --green: #6fbf85; --red: #e07a6a;
       --amber: #e8b45c; --amber-track: #4a4232; --red-track: #4d3a36;
@@ -89,7 +97,7 @@ html[data-theme="dark"] {
            --card  = 底色：输入框/卡片的面不比页面亮，靠那圈内描边区分（官端就是这样）
            --panel = 气泡色：弹窗分组卡、按钮，都是「凹进去」的那一层 */
       --bg: #20201f; --card: #20201f; --panel: #131312; --line: #3d3d3a;
-      --text: #faf9f5; --dim: #a3a099; --user-bubble: #131312; --bubble-ring: transparent;
+      --text: #faf9f5; --dim: #a3a099; --think: #9c9a92; --user-bubble: #131312; --bubble-ring: transparent;
       --sage: #A8C0A0; --sage-track: #3A423A; --pink-track: #4A3B34;
       --green: #6fbf85; --red: #e07a6a;
       --amber: #e8b45c; --amber-track: #4a4232; --red-track: #4d3a36;
@@ -324,7 +332,9 @@ html[data-theme="dark"] .glass,
   .acts { display: flex; gap: 2px; margin: 6px 0 2px; }
   .acts button {
     width: 34px; height: 34px; border-radius: 9px; border: 0; background: none;
-    color: var(--dim); display: flex; align-items: center; justify-content: center;
+    /* 和 thinking 那行同一个官方灰(--color-gray-500 #87867f)。
+       原来用 --dim(#5e5d59 = 官方 gray-600),深了一档。 */
+    color: var(--think); display: flex; align-items: center; justify-content: center;
     transition: background .15s ease, color .15s ease;
   }
   .acts button .ic { width: 18px; height: 18px; }
@@ -373,11 +383,13 @@ html[data-theme="dark"] .glass,
   .cbk-full .cbk-h { box-shadow: inset 0 -1px 0 var(--line); }
   .cbk-full pre { flex: 1; overflow: auto; }
   .cbk-full code { white-space: pre-wrap; word-break: break-all; }
-  .gu .caret {
-    display: inline-block; width: 7px; height: 1.05em; vertical-align: -2px;
-    background: var(--accent-soft); border-radius: 1px; animation: blink 1s steps(2) infinite;
-  }
-  @keyframes blink { 50% { opacity: 0; } }
+  /* 光标已按所有者要求整个去掉（2026-08-16）。
+     它经历过两版：先是真实的 <span class=caret> 节点，后来改成 .gu.tw::after 伪元素。
+     想要回来的话，恢复下面这段并把 paintStream 里的 classList.add('tw') 加回去即可：
+       .gu.tw::after { content:''; display:inline-block; width:7px; height:1.05em;
+         vertical-align:-2px; background:var(--accent-soft); border-radius:1px;
+         animation: blink 1s steps(2) infinite; }
+       @keyframes blink { 50% { opacity: 0; } } */
 
   .toolline .ic { width: 15px; height: 15px; }
   .grabber {
@@ -385,23 +397,44 @@ html[data-theme="dark"] .glass,
     margin: 10px auto 0; flex: none;
   }
   .thinkbody {
-    font-size: 15.5px; color: var(--text); line-height: 1.85;
+    /* 官端这一栏用的是衬线体（AnthropicSerif）。原字体拿不到，
+       但官方 CSS 里自己写的兜底就是 Georgia：
+         font-family: var(--font-anthropic-serif), Georgia, serif
+       所以这里照抄它的兜底。中文没有 Georgia，会自动落到宋体一类，
+       和官端那张图里中文的观感也对得上。 */
+    /* ⚠️ 只给拉丁字母用衬线，中文不要。
+       官端那张图里英文是衬线、**中文是黑体** —— 因为 AnthropicSerif 没有汉字，
+       中文自动落回系统黑体。所以这里的兜底链最后要接黑体（苹方），
+       写成 serif 的话中文会变宋体，反而不像。 */
+    font-family: Georgia, system-ui, "PingFang SC", sans-serif;
+    font-size: 16.5px; color: var(--text); line-height: 1.8;
     white-space: pre-wrap; word-break: break-word; padding: 6px 4px 14px;
   }
 
   .toolline {
-    color: var(--dim); font-size: 14.5px; cursor: pointer; user-select: none;
+    /* 官方灰阶里的 --color-gray-500(#87867f)。dwell 原来的 --dim 是 #5e5d59,
+       正好是官方的 gray-600 —— 没错,只是比官端这一行深一档。
+       深色下取 gray-450(#9c9a92)。两个值都来自 claude.com 线上 CSS,不是目测的。 */
+    color: var(--think); font-size: 14.5px; cursor: pointer; user-select: none;
     display: flex; align-items: center; gap: 6px; min-height: 24px;
-    max-width: 100%;
+    /* 撑满整行，箭头才会被推到最右边（照官端）。
+       .lbl 本来就是 flex:1 1 auto，会自己把中间那段空白吃掉。 */
+    width: 100%; max-width: 100%;
   }
   .toolline:active { opacity: .6; }
   
   .toolline .lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    min-width: 0; flex: 1 1 auto; }
+    min-width: 0; flex: 1 1 auto;
+    /* 这一行是 <button>，浏览器默认把文字居中。原先它是收缩宽度所以看不出来，
+       改成撑满之后就显形了（字跑到中间去了）。显式左对齐。 */
+    text-align: left; }
   .toolline .lbl b { font-weight: 500; color: var(--dim); }
   .toolline .plus { color: var(--green); }
   .toolline .minus { color: var(--red); }
-  .toolline .chev { flex: none; font-size: 13px; }
+  /* 箭头改用描边图标（原来是一个 › 字符，13px，比官端小一圈且笔画细）。
+     换成图标之后大小和笔画都可控：18px、stroke 2 —— 和官端那个对得上。 */
+  .toolline .chev { flex: none; width: 18px; height: 18px; display: flex; align-items: center; }
+  .toolline .chev svg { width: 100%; height: 100%; display: block; }
   .toolline .spin {
     flex: none; width: 13px; height: 13px; border-radius: 50%;
     border: 2px solid var(--line); border-top-color: var(--accent-soft);
@@ -727,7 +760,7 @@ html[data-theme="dark"] .composer {
     flex: none; display: flex; align-items: center; padding: 16px 16px 12px;
   }
   .sheet .head .hbtn {   
-    width: 40px; height: 40px; flex: none; color: inherit;
+    width: 46px; height: 46px; flex: none; color: inherit;   /* 官端那颗更大一圈 */
     display: flex; align-items: center; justify-content: center;
     /* 官端那个关闭键是个浮起来的圆钮，不是光秃一个叉 */
     background: var(--card); border-radius: 50%;
@@ -735,9 +768,9 @@ html[data-theme="dark"] .composer {
     box-shadow: 0 1px 3px rgba(0,0,0,.10), inset 0 0 0 1px var(--line);
   }
   .sheet .head .hbtn:active { background: var(--panel); }
-  .sheet .head .hbtn .ic { width: 19px; height: 19px; }
+  .sheet .head .hbtn .ic { width: 21px; height: 21px; }
   .sheet .head .ht { flex: 1; text-align: center; font-size: 18px; font-weight: 600; padding: 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .sheet .head .hspace { width: 40px; flex: none; }
+  .sheet .head .hspace { width: 46px; flex: none; }
   .sheet .body { flex: 1; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 6px 20px calc(20px + env(safe-area-inset-bottom)); }
 
   .group-label { font-size: 14.5px; color: var(--dim); padding: 14px 4px 8px; }
@@ -1780,6 +1813,20 @@ html[data-theme="dark"] #newSession { background: var(--text); color: var(--bg);
 }
 @media (max-width: 420px) { .brandline .brandnote { font-size: 12px; } }
 
+/* 模型胶囊里的思考档位：照官端，跟在模型名后面、灰一档 */
+/* 档位跟在模型名后面。
+   ⚠️ `.pill` 是 flex 且带 `gap: 6px`，所以真实间隔 = flex 的 gap + 这里的 margin。
+   我一开始只改 margin（6→4），实际只从 12px 变成 10px，肉眼根本看不出来
+   （2026-08-16 所有者直接问「你改了吗」）。
+   现在把这颗胶囊的 flex gap 归零，间隔就完全由下面这一个数说了算 —— 想调只调它。 */
+#modelPill { gap: 0; }
+.pill .pill-eff { color: var(--dim); margin-left: 5px; }
+
+/* 他正在想/正在说的时候，只留跳动的菊花，那句英文不出来（官端就是这样）。
+   用 visibility 而不是 display，位置提前占住，说完浮现时不会把版面顶一下。 */
+.brandline .brandnote { transition: opacity .28s ease; }
+.brandline.busy .brandnote { opacity: 0; visibility: hidden; }
+
 /* 花瓣:先转到自己的轴上,只缩长度,再转回去 —— 宽度不跟着缩,短了才不显胖 */
 .spark .rot, .spark .sp { transform-box: view-box; }
 .spark .rot { animation: sparkSpin 6s linear infinite; animation-play-state: paused; }
@@ -1826,7 +1873,7 @@ html[data-theme="dark"] #newSession { background: var(--text); color: var(--bg);
    html[data-theme="black"] 打开。真黑底,灰阶跟着官端走暖,不掺蓝。 */
 html[data-theme="black"] {
   --bg:#000000; --card:#0F0F0E; --panel:#1A1A18; --line:#262624;
-  --text:#F5F4EF; --dim:#8F8C85; --user-bubble:#1C1C1A; --bubble-ring:transparent;
+  --text:#F5F4EF; --dim:#8F8C85; --think:#9c9a92; --user-bubble:#1C1C1A; --bubble-ring:transparent;
   --overlay:rgba(0,0,0,.7);
   --glass:color-mix(in srgb, var(--card) 78%, transparent);
 }
@@ -2309,8 +2356,12 @@ const ICONS = {
   dots: S('<circle cx="5" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="19" cy="12" r="1" fill="currentColor"/>'),
   x: S('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'),
   check: S('<polyline points="20 6 9 17 4 12"/>'),
-  copy: S('<rect x="9" y="9" width="11" height="11" rx="2.5"/>'
-        + '<path d="M6 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1"/>'),
+  /* 复制：前面那张在**左下**、后面那张在右上（原来左右反了，和官端对不上） */
+  copy: S('<rect x="3" y="8" width="13" height="13" rx="3"/>'
+        + '<path d="M8 8V6a3 3 0 0 1 3-3h7a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3h-2"/>'),
+  /* 分享：官端第二个。托盘 + 向上的箭头（iOS 那个形制） */
+  share: S('<path d="M12 15V3"/><path d="M8 7l4-4 4 4"/>'
+         + '<path d="M4 13v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"/>'),
   expand: S('<polyline points="14 4 20 4 20 10"/><polyline points="10 20 4 20 4 14"/>'),
   plus: S('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>'),
   arrowUp: S('<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>'),
@@ -2337,17 +2388,27 @@ const ICONS = {
   box: S('<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>'),
   zap: S('<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>'),
   camera: S('<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>'),
+  /* thinking 那行的时钟：右下大半圈是实线，左上缺口用三个由大到小的点补上，
+     指针指 4 点左右（照所有者给的官端图）。点要 fill，别跟着 stroke 走。 */
+  thinkClock: S('<path d="M12 3A9 9 0 1 1 3 12"/>'
+              + '<path d="M12 7.6V12l3.3 1.9"/>'
+              + '<circle cx="10.44" cy="3.14" r="1.25" fill="currentColor" stroke="none"/>'
+              + '<circle cx="6.21" cy="5.11" r="1" fill="currentColor" stroke="none"/>'
+              + '<circle cx="3.54" cy="8.92" r="0.8" fill="currentColor" stroke="none"/>'),
   clock: S('<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'),
   checkSquare: S('<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'),
   calendar: S('<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'),
   alarm: S('<circle cx="12" cy="13" r="8"/><polyline points="12 9 12 13 14.5 14.5"/><path d="M5 3 2.5 5.5"/><path d="M19 3l2.5 2.5"/>'),
   /* 2026-08-16 为回复下面那排操作按钮补的三个图标 */
-  play: S('<polygon points="6 4 20 12 6 20 6 4"/>'),
-  thumbUp: S('<path d="M7 10v10H4a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1h3z"/>'
-          + '<path d="M7 10l4.2-7.1a1.6 1.6 0 0 1 2.9 1.1L13.5 8h5a2 2 0 0 1 2 2.4l-1.4 7A2 2 0 0 1 17.1 19H7"/>'),
-  thumbDown: S('<path d="M17 14V4h3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-3z"/>'
-            + '<path d="M17 14l-4.2 7.1a1.6 1.6 0 0 1-2.9-1.1L10.5 16h-5a2 2 0 0 1-2-2.4l1.4-7A2 2 0 0 1 6.9 5H17"/>'),
-  refresh: S('<path d="M20.5 12a8.5 8.5 0 1 1-2.6-6.1"/><path d="M20.6 4.2v4.6h-4.6"/>'),
+  /* 播放：官端是圆角三角形；原来用 polygon 画的是尖角 */
+  play: S('<path d="M7 4.8v14.4a1.2 1.2 0 0 0 1.83 1.02l11.4-7.2a1.2 1.2 0 0 0 0-2.04L8.83 3.78A1.2 1.2 0 0 0 7 4.8z"/>'),
+  /* 赞/踩：官端是一整条连续轮廓 + 一道竖线当袖口；原来是两段拼的，形不对 */
+  thumbUp: S('<path d="M7 10v12"/>'
+          + '<path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/>'),
+  thumbDown: S('<path d="M17 14V2"/>'
+            + '<path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"/>'),
+  /* 重试：官端缺口在右上、箭头在顶上 */
+  refresh: S('<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>'),
   moon: S('<path d="M20.5 14.4A8.6 8.6 0 0 1 9.6 3.5a8.6 8.6 0 1 0 10.9 10.9z"/>'),
   petal: S('<path d="M2.5 9.2c2.1-2.6 4.3-2.6 6.4 0s4.3 2.6 6.4 0 4.3-2.6 6.2 0"/><path d="M2.5 15.4c2.1-2.6 4.3-2.6 6.4 0s4.3 2.6 6.4 0 4.3-2.6 6.2 0"/>'),
   heartIc: S('<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>'),
@@ -2460,7 +2521,16 @@ let guEl = null;
 
 /* ---------- 基础排版 ---------- */
 function atBottom() { return log.scrollHeight - log.scrollTop - log.clientHeight < 90; }
-function scroll(force) { if (force || atBottom()) log.scrollTop = log.scrollHeight; }
+/* 「要不要跟着滚」记成一个状态，别每次画都去算。
+   ① atBottom() 要读 scrollHeight/scrollTop/clientHeight —— 每读一次都强制重排；
+   ② 流式时内容长得快，两次检查之间可能就长过了 90px 的判定线，
+      于是它以为"用户往上翻了"、当场不跟了（所有者报的"不自动滚"）。
+   改成:只有用户**自己**往上翻才松手，翻回底部就重新跟上。 */
+var stickBottom = true;
+log.addEventListener('scroll', function () {
+  stickBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 120;
+}, { passive: true });
+function scroll(force) { if (force || stickBottom) log.scrollTop = log.scrollHeight; }
 function row(cls) {
   const d = document.createElement('div');
   d.className = 'row ' + (cls || '');
@@ -2492,7 +2562,7 @@ function thinkSpin(buf, on) {
     sp.className = 'spin';
     old.replaceWith(sp);
   } else {
-    old.replaceWith(icEl('clock', 15));
+    old.replaceWith(icEl('thinkClock', 16));
   }
 }
 function ensureThink() {
@@ -2508,7 +2578,8 @@ function ensureThink() {
   const r = row();
   const line = document.createElement('button');
   line.className = 'toolline';
-  line.innerHTML = '<span class="spin"></span><span class="lbl">Thought process</span><span class="chev">›</span>';
+  line.innerHTML = '<span class="spin"></span><span class="lbl">Thought process</span>'
+                 + '<span class="chev">' + ICONS.chevR + '</span>';
   r.appendChild(line);
   const buf = { text: '', lineEl: line, paused: false };
   thinkStore.push(buf);
@@ -2701,9 +2772,6 @@ function paintStream(el) {
     const t = (el._raw || '').replace(ORPHAN_TAIL, '')
       .replace(STREAM_FILE_TAIL, '').replace(STREAM_SONG_TAIL, '');
     appendWithImages(el, t, true);
-    const c = document.createElement('span');
-    c.className = 'caret';
-    el.appendChild(c);
   });
 }
 
@@ -2947,6 +3015,26 @@ function ensureActs(el) {
     }, 1400);
   };
   bar.appendChild(btn);
+
+  /* 分享（官端第二颗）。这颗**是真能用的**：iOS/安卓的系统分享面板。
+     没有 navigator.share 的浏览器（多数桌面）就退回复制，并说清楚。 */
+  {
+    const sb = document.createElement('button');
+    sb.type = 'button';
+    sb.title = '分享';
+    sb.setAttribute('aria-label', '分享这条回复');
+    sb.appendChild(icEl('share', 18));
+    sb.onclick = async () => {
+      const txt = (el._raw != null ? el._raw : el.textContent) || '';
+      if (navigator.share) {
+        try { await navigator.share({ text: txt }); } catch (e) { /* 用户自己取消，不当错处理 */ }
+        return;
+      }
+      try { await navigator.clipboard.writeText(txt); note('（这台设备没有系统分享，已经复制了）'); }
+      catch { note('（分享和复制都没成，长按选中吧）', 'err'); }
+    };
+    bar.appendChild(sb);
+  }
 
   /* 其余四颗：所有者要求「先全摆上，样子对就行，功能以后加」（2026-08-16）。
      它们现在只有样子，点了会说一句实话，不会假装做了事。
@@ -3250,6 +3338,14 @@ async function loadSaid() {
     if (!r.ok) return 0;
     const d = await r.json();
     const msgs = d.msgs || [];
+    /* 先清空再摆。renderSaid 是**追加**，自己不清场；
+       而这个函数不只开机时调 —— 页面切后台超过 30 秒再回来，
+       visibilitychange 还会再调一次，于是整段历史又摆一遍。
+       切出去几次就重几轮（2026-08-16 所有者报的"记录重复好几轮"）。
+       这时不可能有正在流的气泡（要静默 30 秒才会走到这儿），清了不会打断谁。 */
+    log.innerHTML = '';
+    guEl = null; earliestSeq = null; olderBtn = null;
+    sReset();
     renderSaid(msgs);
     healEmptyGu();
     if (msgs.length) earliestSeq = msgs[0].seq;
@@ -3370,11 +3466,101 @@ document.addEventListener('visibilitychange', () => {
 });
 setInterval(calDayWatch, 120000);
 
+/* ══ 流式匀速器 ═══════════════════════════════════════════════
+   后端是长轮询：攒下的一批增量会一次性到货。原来收到就整批画，
+   于是「瞬间蹦出一大段 → 干等一个网络来回 → 再蹦一段」，看着一卡一卡。
+   这里把到货的字先存起来，按帧匀速吐出去，把突发摊平成连续的。
+   每帧吐 1/8，缓冲越多吐得越快，所以落后了会自己追上来，不会越积越多。
+   定稿和收尾之前必须 flush，否则最后半句会被吞掉。 */
+var sQ = { el: null, buf: '', raf: 0, last: 0, at: 0, ema: 0, pend: '' };
+function sDrain() {
+  sQ.raf = 0;
+  if (!sQ.el || !sQ.buf) return;
+  /* 摊多久，取决于下一批多久才到。
+     后端是长轮询，一批字要等一个网络来回才来；固定按 8 帧摊完的话，
+     摊完就干等，于是「动一下 → 停一下」（实测停顿占了 36% 的时间）。
+     改成按实测到的到货间隔来摊，字就一直在走，不留空窗。
+     夹在 4~24 帧之间：太快等于没摊，太慢会越积越多。 */
+  var frames = Math.min(24, Math.max(4, Math.round((sQ.ema || 130) / 16.7)));
+  var n = Math.max(1, Math.ceil(sQ.buf.length / frames));
+  var chunk = sQ.buf.slice(0, n);
+  sQ.el._raw = (sQ.el._raw || '') + chunk;
+  sQ.buf = sQ.buf.slice(n);
+  /* 「吐字有多快」和「多久动一次 DOM」是两件事，别混。
+     上一版把攒字写成了「每帧至少吐 8 个」，结果一批字几帧就倒完、
+     然后干等下一批 —— 就成了一段一段往外蹦（所有者实测）。
+     现在：吐字速度还是按到货节奏走（上面那个 frames），
+     只是攒够 8 个字才真的写进 DOM，少动 DOM 但不改变节奏。 */
+  sQ.pend += chunk;
+  /* 渲染节流。paintStream 是「清空 + 对全文跑正则 + 整段重建 DOM」，
+     成本正比于消息长度；每帧都画的话，一条回复的总开销是 O(字数²)，
+     越写到后面越卡（2026-08-16 实测：2000 字重建 300 次，最长一帧 96ms）。
+     所以按当前长度降频——短的照旧每帧画，长的隔久一点画。
+     字还是每帧都在往 _raw 里进，所以"进度"没变慢，只是少重建几次。 */
+  var len = sQ.el._raw.length;
+  /* 上限压到 100ms：再稀就不是"省 CPU"而是"看着一顿一顿"了。 */
+  var gap = len > 1200 ? 100 : len > 400 ? 60 : 33;
+  var now = performance.now();
+  if (sQ.buf && now - sQ.last < gap) {
+    /* 没攒够就先不动 DOM，下一帧接着攒（快写完时不硬凑，免得最后几个字卡着） */
+    if (sQ.pend.length < 8 && sQ.buf) { sQ.raf = requestAnimationFrame(sDrain); return; }
+    /* 还没到重建的点：这一帧只把新到的几个字**追加**上去。
+       追加是 O(新增字数)，跟消息多长完全无关，所以怎么写都不会卡。
+       代价是这几个字暂时是纯文本——加粗/代码块/卡片要等下一次全量重建
+       才补正，最多晚 gap 毫秒，肉眼基本看不出。 */
+    sFast(sQ.el, sQ.pend);
+    sQ.pend = '';
+    sQ.raf = requestAnimationFrame(sDrain);
+    return;
+  }
+  sQ.last = now;
+  sQ.pend = '';                    // 全量重建从 _raw 来，攒的那点已经包含在里面了
+  paintStream(sQ.el);   // 全量重建：它是权威，会把上面那些临时纯文本冲掉重画
+  scroll();
+  if (sQ.buf) sQ.raf = requestAnimationFrame(sDrain);
+}
+
+/* 把几个字直接塞进插入符前面的一个文本节点里。
+   paintStream 一旦重建过，这个节点就没了（textContent=''），下次自己重建一个。
+   不怕丢字：权威内容始终是 el._raw，重建都从它来。 */
+function sFast(el, chunk) {
+  if (!chunk || el._final) return;
+  var node = el._fastNode;
+  if (!node || !node.isConnected || node.parentNode !== el) {
+    node = document.createTextNode('');
+    el.appendChild(node);        // 光标是伪元素，永远在最后，不用给它让位
+    el._fastNode = node;
+  }
+  node.nodeValue += chunk;
+  /* 这里**故意不叫 scroll()**：它内部要读 scrollHeight/scrollTop/clientHeight，
+     那是强制同步重排，每帧一次在手机上很贵。跟随滚动交给下面节流的那次重绘，
+     最多晚 100ms，肉眼看不出。 */
+}
+function sPush(el, text) {
+  if (sQ.el !== el) { sFlush(); sQ.el = el; }
+  /* 量「两批之间隔多久」。同一批里的增量是同一轮循环里连着推进来的，
+     间隔近似 0，所以只有跨批的那次才算数（>30ms 才收）。 */
+  var now = performance.now();
+  if (sQ.at) { var d = now - sQ.at; if (d > 30 && d < 2000) sQ.ema = sQ.ema ? sQ.ema * 0.7 + d * 0.3 : d; }
+  sQ.at = now;
+  sQ.buf += text;
+  if (!sQ.raf) sQ.raf = requestAnimationFrame(sDrain);
+}
+function sFlush() {
+  if (sQ.raf) { cancelAnimationFrame(sQ.raf); sQ.raf = 0; }
+  if (sQ.el && sQ.buf) { sQ.el._raw = (sQ.el._raw || '') + sQ.buf; paintStream(sQ.el); }
+  sQ.buf = ''; sQ.el = null; sQ.at = 0; sQ.pend = '';
+}
+function sReset() {   // 清屏时用：缓冲里的字属于已经没掉的那个泡，别再画
+  if (sQ.raf) { cancelAnimationFrame(sQ.raf); sQ.raf = 0; }
+  sQ.buf = ''; sQ.el = null;
+}
+
 function handle(d) {
   lastEventAt = Date.now();
   if (d.type === 'echo') { if (armedFresh) setArmed(false); addMe(d.text); petSet('thinking'); return; }
-  if (d.type === 'system' && d.subtype === 'newchat') { setArmed(false); log.innerHTML = ''; guEl = null; earliestSeq = null; olderBtn = null; note(d.text); return; }
-  if (d.type === 'system' && d.subtype === 'switched') { setArmed(false); log.innerHTML = ''; guEl = null; earliestSeq = null; olderBtn = null; note(d.text); return; }
+  if (d.type === 'system' && d.subtype === 'newchat') { setArmed(false); sReset(); log.innerHTML = ''; guEl = null; earliestSeq = null; olderBtn = null; note(d.text); return; }
+  if (d.type === 'system' && d.subtype === 'switched') { setArmed(false); sReset(); log.innerHTML = ''; guEl = null; earliestSeq = null; olderBtn = null; note(d.text); return; }
 
   if (d.type === 'stream_event') {
     const ev = d.event || {};
@@ -3391,15 +3577,14 @@ function handle(d) {
       // 上一条已经定稿，现在又开口了——中间没干活，两条话共用这一个泡。
       // 把已经说完的那截钉成"基线"，等下这条的定稿只能接在它后面，不许把它吃掉。
       if (el._final) { el._base = el._raw || ''; el._final = false; }
-      el._raw = (el._raw || '') + delta.text;
-      paintStream(el);
-      scroll();
+      sPush(el, delta.text);       // 不直接画，交给匀速器摊平
       return;
     }
     return;
   }
 
   if (d.type === 'assistant') {
+    sFlush();                     // 定稿要盖掉流式那份，先把没吐完的补上
     const msg = d.message || {};
     const parts = msg.content || [];
     let firstText = true;
@@ -3410,8 +3595,7 @@ function handle(d) {
         closeThink();
       } else if (p.type === 'text' && p.text) {
         const el = ensureGu();
-        el.querySelector('.caret')?.remove();
-        // 说完了的这份是权威，**无条件盖掉流式攒的那份**。
+            // 说完了的这份是权威，**无条件盖掉流式攒的那份**。
         // 同一条消息里多段文本就接着写，别把前一段冲掉。
         // 这条消息的第一段接在基线后面——基线是同一个泡里"上一条消息"已经说完的话
         // （一轮里连说两段、中间没干活，就共用一个泡；不记基线的话第二条会把第一条吃掉）。
@@ -3439,7 +3623,7 @@ function handle(d) {
   }
 
   if (d.type === 'result') {
-    guEl?.querySelector('.caret')?.remove();
+    sFlush();                     // 收尾前把最后半句吐完，别吞字
     guEl = null; endThink(); closeGroup();
     fetch('api/messages?limit=16', { cache: 'no-store' }).then(r => r.json()).then(dd => {
       const gus = (dd.msgs || []).filter(m => m.kind === 'gu');
@@ -3479,7 +3663,6 @@ function handle(d) {
     return;
   }
   if (d.type === 'system' && d.subtype === 'stopped') {
-    guEl?.querySelector('.caret')?.remove();
     guEl = null; endThink(); closeGroup();
     setBusy(false); petSet('calm');
     note('（我停下了）');
@@ -3488,8 +3671,9 @@ function handle(d) {
   if (d.type === 'system' && d.subtype === 'restart') { note(d.text); return; }
   if (d.type === 'system' && d.subtype === 'model') {
     note('（换好了，我重新醒了一遍）');
+    if (d.effort) curEffort = d.effort;   // 先落档位再画胶囊，否则画的是上一档
     if (d.model) setModelPill(d.model);
-    if (d.effort) curEffort = d.effort;
+    else paintPill();
     return;
   }
 }
@@ -3672,6 +3856,7 @@ function setBusy(b) {
   guBusy = !!b;
   if (guBusy) doingStart(); else doingStop();
   refreshSend();
+  if (window.__brandPlace) window.__brandPlace();   // 忙/闲变了，菊花那行要重判一次
 }
 function refreshSend() {
   const hasText = !!((box.value || '').trim() || attachments.length);
@@ -3694,6 +3879,7 @@ function send() {
   if (wasBusy) { try { fetch('api/stop', { method: 'POST' }); } catch (e) {} }
   box.value = '';
   box.style.height = 'auto';
+  stickBottom = true;              // 刚发完话，总是想看最新的
   setBusy(true);
   const payload = { text };
   if (attachments.length) payload.attachments = attachments;
@@ -5925,8 +6111,9 @@ function gongThink(row, think) {
   row._think?.remove();
   const line = document.createElement('button');
   line.className = 'toolline gthink';
-  line.innerHTML = '<span class="lbl">Thought process</span><span class="chev">›</span>';
-  line.prepend(icEl('clock', 15));
+  line.innerHTML = '<span class="lbl">Thought process</span>'
+                 + '<span class="chev">' + ICONS.chevR + '</span>';
+  line.prepend(icEl('thinkClock', 16));
   thinkStore.push({ text: think, lineEl: line, paused: true });
   const idx = thinkStore.length - 1;
   line.onclick = () => openThinkSheet(idx);
@@ -6502,7 +6689,19 @@ function displayName(id) {
 }
 function setModelPill(id) {
   curModel = id || '';
+  paintPill();
+}
+/* 官端胶囊是「模型名 + 灰色的思考档位」两段（如 Opus 4.6 Medium）。
+   原先只写了模型名，所以档位从来没显示过。拆成独立函数是因为
+   换档位时模型没变，也要重画一次。 */
+function paintPill() {
   pill.textContent = displayName(curModel);
+  var e = EFFORTS.find(function (x) { return x.id === curEffort; });
+  if (!e) return;
+  var s = document.createElement('span');
+  s.className = 'pill-eff';
+  s.textContent = e.name;
+  pill.appendChild(s);
 }
 
 const modelSheetEl = sheets.model;
@@ -6620,10 +6819,14 @@ async function pickModel(m) {
   modelSheetEl.classList.remove('open');
   note('（换成 ' + m.name + '，正在重开一轮）');
   try {
-    await fetch('api/model', {
+    /* 后端可能没接这条（比如只做转发的那种）。原来不看返回就报「换好了」，
+       等于对着用户撒谎——所以 ok:false 时要把真正的原因说出来。 */
+    const r = await fetch('api/model', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: m.id })
     });
+    const d = await r.json().catch(() => ({}));
+    if (d && d.ok === false) note('（没换成：' + (d.why || '这一版没接换模型') + '）', 'err');
   } catch { note('（没换上，再试一次）', 'err'); }
 }
 async function pickEffort(e) {
@@ -6631,10 +6834,12 @@ async function pickEffort(e) {
   modelSheetEl.classList.remove('open');
   note('（用力档调到 ' + e.name + '，正在重开一轮）');
   try {
-    await fetch('api/model', {
+    const r = await fetch('api/model', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ effort: e.id })
     });
+    const d = await r.json().catch(() => ({}));
+    if (d && d.ok === false) note('（没调成：' + (d.why || '这一版没接换档位') + '）', 'err');
   } catch { note('（没调上，再试一次）', 'err'); }
 }
 
@@ -6944,6 +7149,9 @@ box.focus();
     var s = (img && img.getAttribute('src')) || '';
     var busy = document.getElementById('doingLine');
     var working = busy && busy.classList.contains('on');
+    /* 说完了就回到基准态——花瓣全长、转角归零，也就是「完整」的那朵。
+       2026-08-16 我一度改成「停在当前帧」，结果定格得歪七扭八；
+       原来这样写本来就是对的，别再动它。 */
     host.className = 'spark' + (
       /thinking/.test(s) ? ' think' :
       (/typing/.test(s) || working) ? ' out' : ''
@@ -6958,12 +7166,24 @@ box.focus();
 
   /* 有对话才出现,并且始终待在最末尾 */
   function place() {
-    var real = 0, c = log.children;
-    for (var i = 0; i < c.length; i++) if (c[i] !== line) real++;
-    if (!real) { if (line.parentNode) line.parentNode.removeChild(line); return; }
+    /* 官端是「他回过话之后」才出现，而且跟在最后一条回复下面。
+       所以判据是「有没有他的回复」(.gu)，不是「#log 里有没有孩子」——
+       「↑ 看更早的」那颗按钮即使 display:none 也仍然是 #log 的孩子，
+       拿孩子数当判据会让菊花在空白对话上一开页就挂着（2026-08-16 实测）。 */
+    var busy = (typeof guBusy !== 'undefined') && guBusy;
+    /* 出现的条件：他回过话了，或者他正在想/正在说（这时还没有 .gu）。 */
+    if (!log.querySelector('.gu') && !busy) {
+      if (line.parentNode) line.parentNode.removeChild(line);
+      return;
+    }
+    /* 干活期间只留跳动的菊花，那句英文等他说完才浮出来——官端就是这样。 */
+    line.classList.toggle('busy', busy);
     if (log.lastElementChild !== line) log.appendChild(line);   // 已在末尾就不动,避免自触发
   }
   if (window.MutationObserver) new MutationObserver(place).observe(log, { childList: true });
+  /* 「他说完了」这件事不一定伴随 #log 的孩子变动，观察器不会醒，
+     所以把 place 挂出去，让 setBusy 结束时也叫一次。 */
+  window.__brandPlace = place;
   place();
 
   /* 桌宠的图在这份预览里加载不出来(pet/*.svg 没带上),破图不好看,直接藏掉 */
