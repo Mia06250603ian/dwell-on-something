@@ -1804,16 +1804,6 @@ html[data-theme="dark"] #newSession { background: var(--text); color: var(--bg);
 .spark.think .sp { animation: sparkBloom 1.8s ease-in-out infinite; }
 @keyframes sparkBloom { 0%,100% { scale: .04 .3 } 50% { scale: 1 1 } }
 
-/* 定格：说完之后花瓣补齐到最长的那一档，也就是"最完整"的样子。
-   补齐是平滑过渡的，不会"啪"地弹一下；整体转角就停在当下，不倒转回去
-   （倒转看着更奇怪）。 */
-.spark.settle .rot { animation-play-state: paused !important; }
-.spark.settle .sp {
-  animation: none !important;
-  scale: 1 1;
-  transition: scale .38s cubic-bezier(.2,.7,.3,1);
-}
-
 /* 流式:窄凹口顺时针跑,整体也在转 */
 .spark.out .rot { animation-play-state: running; }
 .spark.out .sp {
@@ -7064,18 +7054,17 @@ box.focus();
   /* 状态跟着桌宠的图走,不改动它原有的逻辑。
      只有"在想"和"在吐字"这两种会动;答完了就是一张静止的贴图。 */
   var img = document.getElementById('petImg');
-  var lastActive = '';
   function sync() {
     var s = (img && img.getAttribute('src')) || '';
     var busy = document.getElementById('doingLine');
     var working = busy && busy.classList.contains('on');
-    var next = /thinking/.test(s) ? 'think'
-             : (/typing/.test(s) || working) ? 'out' : '';
-    if (next) { lastActive = next; host.className = 'spark ' + next; }
-    /* 说完了要定在**最完整**的那一档（花瓣全长），不是停在半路。
-       单纯 paused 会卡在动画的任意一帧上，姿势歪七扭八（实测）。 */
-    else if (lastActive) host.className = 'spark ' + lastActive + ' settle';
-    else host.className = 'spark';
+    /* 说完了就回到基准态——花瓣全长、转角归零，也就是「完整」的那朵。
+       2026-08-16 我一度改成「停在当前帧」，结果定格得歪七扭八；
+       原来这样写本来就是对的，别再动它。 */
+    host.className = 'spark' + (
+      /thinking/.test(s) ? ' think' :
+      (/typing/.test(s) || working) ? ' out' : ''
+    );
   }
   if (window.MutationObserver) {
     if (img) new MutationObserver(sync).observe(img, { attributes: true, attributeFilter: ['src'] });
