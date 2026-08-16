@@ -1788,10 +1788,13 @@ html[data-theme="dark"] #newSession { background: var(--text); color: var(--bg);
 @media (max-width: 420px) { .brandline .brandnote { font-size: 12px; } }
 
 /* 模型胶囊里的思考档位：照官端，跟在模型名后面、灰一档 */
-/* 档位跟在模型名后面。官端那个间隔比我第一版(6px)紧，收到 4px。
-   ⚠️ 别靠截图去量这个数——两张图的缩放不一样，量得越精确错得越理直气壮
-   （手册记过这条教训）。要调就让所有者看着说。 */
-.pill .pill-eff { color: var(--dim); margin-left: 4px; }
+/* 档位跟在模型名后面。
+   ⚠️ `.pill` 是 flex 且带 `gap: 6px`，所以真实间隔 = flex 的 gap + 这里的 margin。
+   我一开始只改 margin（6→4），实际只从 12px 变成 10px，肉眼根本看不出来
+   （2026-08-16 所有者直接问「你改了吗」）。
+   现在把这颗胶囊的 flex gap 归零，间隔就完全由下面这一个数说了算 —— 想调只调它。 */
+#modelPill { gap: 0; }
+.pill .pill-eff { color: var(--dim); margin-left: 5px; }
 
 /* 他正在想/正在说的时候，只留跳动的菊花，那句英文不出来（官端就是这样）。
    用 visibility 而不是 display，位置提前占住，说完浮现时不会把版面顶一下。 */
