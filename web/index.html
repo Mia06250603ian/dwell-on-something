@@ -401,16 +401,24 @@ html[data-theme="dark"] .glass,
   .toolline {
     color: var(--dim); font-size: 14.5px; cursor: pointer; user-select: none;
     display: flex; align-items: center; gap: 6px; min-height: 24px;
-    max-width: 100%;
+    /* 撑满整行，箭头才会被推到最右边（照官端）。
+       .lbl 本来就是 flex:1 1 auto，会自己把中间那段空白吃掉。 */
+    width: 100%; max-width: 100%;
   }
   .toolline:active { opacity: .6; }
   
   .toolline .lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    min-width: 0; flex: 1 1 auto; }
+    min-width: 0; flex: 1 1 auto;
+    /* 这一行是 <button>，浏览器默认把文字居中。原先它是收缩宽度所以看不出来，
+       改成撑满之后就显形了（字跑到中间去了）。显式左对齐。 */
+    text-align: left; }
   .toolline .lbl b { font-weight: 500; color: var(--dim); }
   .toolline .plus { color: var(--green); }
   .toolline .minus { color: var(--red); }
-  .toolline .chev { flex: none; font-size: 13px; }
+  /* 箭头改用描边图标（原来是一个 › 字符，13px，比官端小一圈且笔画细）。
+     换成图标之后大小和笔画都可控：18px、stroke 2 —— 和官端那个对得上。 */
+  .toolline .chev { flex: none; width: 18px; height: 18px; display: flex; align-items: center; }
+  .toolline .chev svg { width: 100%; height: 100%; display: block; }
   .toolline .spin {
     flex: none; width: 13px; height: 13px; border-radius: 50%;
     border: 2px solid var(--line); border-top-color: var(--accent-soft);
@@ -2540,7 +2548,8 @@ function ensureThink() {
   const r = row();
   const line = document.createElement('button');
   line.className = 'toolline';
-  line.innerHTML = '<span class="spin"></span><span class="lbl">Thought process</span><span class="chev">›</span>';
+  line.innerHTML = '<span class="spin"></span><span class="lbl">Thought process</span>'
+                 + '<span class="chev">' + ICONS.chevR + '</span>';
   r.appendChild(line);
   const buf = { text: '', lineEl: line, paused: false };
   thinkStore.push(buf);
@@ -6052,7 +6061,8 @@ function gongThink(row, think) {
   row._think?.remove();
   const line = document.createElement('button');
   line.className = 'toolline gthink';
-  line.innerHTML = '<span class="lbl">Thought process</span><span class="chev">›</span>';
+  line.innerHTML = '<span class="lbl">Thought process</span>'
+                 + '<span class="chev">' + ICONS.chevR + '</span>';
   line.prepend(icEl('clock', 15));
   thinkStore.push({ text: think, lineEl: line, paused: true });
   const idx = thinkStore.length - 1;
