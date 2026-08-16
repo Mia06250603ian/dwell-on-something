@@ -1783,6 +1783,11 @@ html[data-theme="dark"] #newSession { background: var(--text); color: var(--bg);
 /* 模型胶囊里的思考档位：照官端，跟在模型名后面、灰一档 */
 .pill .pill-eff { color: var(--dim); margin-left: 6px; }
 
+/* 他正在想/正在说的时候，只留跳动的菊花，那句英文不出来（官端就是这样）。
+   用 visibility 而不是 display，位置提前占住，说完浮现时不会把版面顶一下。 */
+.brandline .brandnote { transition: opacity .28s ease; }
+.brandline.busy .brandnote { opacity: 0; visibility: hidden; }
+
 /* 花瓣:先转到自己的轴上,只缩长度,再转回去 —— 宽度不跟着缩,短了才不显胖 */
 .spark .rot, .spark .sp { transform-box: view-box; }
 .spark .rot { animation: sparkSpin 6s linear infinite; animation-play-state: paused; }
@@ -3373,11 +3378,43 @@ document.addEventListener('visibilitychange', () => {
 });
 setInterval(calDayWatch, 120000);
 
+/* ══ 流式匀速器 ═══════════════════════════════════════════════
+   后端是长轮询：攒下的一批增量会一次性到货。原来收到就整批画，
+   于是「瞬间蹦出一大段 → 干等一个网络来回 → 再蹦一段」，看着一卡一卡。
+   这里把到货的字先存起来，按帧匀速吐出去，把突发摊平成连续的。
+   每帧吐 1/8，缓冲越多吐得越快，所以落后了会自己追上来，不会越积越多。
+   定稿和收尾之前必须 flush，否则最后半句会被吞掉。 */
+var sQ = { el: null, buf: '', raf: 0 };
+function sDrain() {
+  sQ.raf = 0;
+  if (!sQ.el || !sQ.buf) return;
+  var n = Math.max(1, Math.ceil(sQ.buf.length / 8));
+  sQ.el._raw = (sQ.el._raw || '') + sQ.buf.slice(0, n);
+  sQ.buf = sQ.buf.slice(n);
+  paintStream(sQ.el);
+  scroll();
+  if (sQ.buf) sQ.raf = requestAnimationFrame(sDrain);
+}
+function sPush(el, text) {
+  if (sQ.el !== el) { sFlush(); sQ.el = el; }
+  sQ.buf += text;
+  if (!sQ.raf) sQ.raf = requestAnimationFrame(sDrain);
+}
+function sFlush() {
+  if (sQ.raf) { cancelAnimationFrame(sQ.raf); sQ.raf = 0; }
+  if (sQ.el && sQ.buf) { sQ.el._raw = (sQ.el._raw || '') + sQ.buf; paintStream(sQ.el); }
+  sQ.buf = ''; sQ.el = null;
+}
+function sReset() {   // 清屏时用：缓冲里的字属于已经没掉的那个泡，别再画
+  if (sQ.raf) { cancelAnimationFrame(sQ.raf); sQ.raf = 0; }
+  sQ.buf = ''; sQ.el = null;
+}
+
 function handle(d) {
   lastEventAt = Date.now();
   if (d.type === 'echo') { if (armedFresh) setArmed(false); addMe(d.text); petSet('thinking'); return; }
-  if (d.type === 'system' && d.subtype === 'newchat') { setArmed(false); log.innerHTML = ''; guEl = null; earliestSeq = null; olderBtn = null; note(d.text); return; }
-  if (d.type === 'system' && d.subtype === 'switched') { setArmed(false); log.innerHTML = ''; guEl = null; earliestSeq = null; olderBtn = null; note(d.text); return; }
+  if (d.type === 'system' && d.subtype === 'newchat') { setArmed(false); sReset(); log.innerHTML = ''; guEl = null; earliestSeq = null; olderBtn = null; note(d.text); return; }
+  if (d.type === 'system' && d.subtype === 'switched') { setArmed(false); sReset(); log.innerHTML = ''; guEl = null; earliestSeq = null; olderBtn = null; note(d.text); return; }
 
   if (d.type === 'stream_event') {
     const ev = d.event || {};
@@ -3394,15 +3431,14 @@ function handle(d) {
       // 上一条已经定稿，现在又开口了——中间没干活，两条话共用这一个泡。
       // 把已经说完的那截钉成"基线"，等下这条的定稿只能接在它后面，不许把它吃掉。
       if (el._final) { el._base = el._raw || ''; el._final = false; }
-      el._raw = (el._raw || '') + delta.text;
-      paintStream(el);
-      scroll();
+      sPush(el, delta.text);       // 不直接画，交给匀速器摊平
       return;
     }
     return;
   }
 
   if (d.type === 'assistant') {
+    sFlush();                     // 定稿要盖掉流式那份，先把没吐完的补上
     const msg = d.message || {};
     const parts = msg.content || [];
     let firstText = true;
@@ -3442,6 +3478,7 @@ function handle(d) {
   }
 
   if (d.type === 'result') {
+    sFlush();                     // 收尾前把最后半句吐完，别吞字
     guEl?.querySelector('.caret')?.remove();
     guEl = null; endThink(); closeGroup();
     fetch('api/messages?limit=16', { cache: 'no-store' }).then(r => r.json()).then(dd => {
@@ -3676,6 +3713,7 @@ function setBusy(b) {
   guBusy = !!b;
   if (guBusy) doingStart(); else doingStop();
   refreshSend();
+  if (window.__brandPlace) window.__brandPlace();   // 忙/闲变了，菊花那行要重判一次
 }
 function refreshSend() {
   const hasText = !!((box.value || '').trim() || attachments.length);
@@ -6984,10 +7022,20 @@ box.focus();
        所以判据是「有没有他的回复」(.gu)，不是「#log 里有没有孩子」——
        「↑ 看更早的」那颗按钮即使 display:none 也仍然是 #log 的孩子，
        拿孩子数当判据会让菊花在空白对话上一开页就挂着（2026-08-16 实测）。 */
-    if (!log.querySelector('.gu')) { if (line.parentNode) line.parentNode.removeChild(line); return; }
+    var busy = (typeof guBusy !== 'undefined') && guBusy;
+    /* 出现的条件：他回过话了，或者他正在想/正在说（这时还没有 .gu）。 */
+    if (!log.querySelector('.gu') && !busy) {
+      if (line.parentNode) line.parentNode.removeChild(line);
+      return;
+    }
+    /* 干活期间只留跳动的菊花，那句英文等他说完才浮出来——官端就是这样。 */
+    line.classList.toggle('busy', busy);
     if (log.lastElementChild !== line) log.appendChild(line);   // 已在末尾就不动,避免自触发
   }
   if (window.MutationObserver) new MutationObserver(place).observe(log, { childList: true });
+  /* 「他说完了」这件事不一定伴随 #log 的孩子变动，观察器不会醒，
+     所以把 place 挂出去，让 setBusy 结束时也叫一次。 */
+  window.__brandPlace = place;
   place();
 
   /* 桌宠的图在这份预览里加载不出来(pet/*.svg 没带上),破图不好看,直接藏掉 */
