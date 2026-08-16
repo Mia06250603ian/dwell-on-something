@@ -8,16 +8,21 @@
 <meta name="theme-color" content="#20201f" media="(prefers-color-scheme: dark)">
 <title>Claude</title>
 
-<link rel="icon" href="icons/favicon-64.png?v=2" sizes="64x64" type="image/png">
-<link rel="icon" href="icons/favicon.ico?v=2" sizes="any">
+<link rel="icon" href="icons/favicon-64.png?v=3" sizes="64x64" type="image/png">
+<link rel="icon" href="icons/favicon.ico?v=3" sizes="any">
 <!-- ?v= 是给 iOS 用的：主屏图标一旦加过就会被长期缓存，
      换了图不换 URL 的话，删掉重新添加也可能还是旧那张。换图时把版本号 +1。 -->
-<link rel="apple-touch-icon" href="icons/icon-180.png?v=2">
-<link rel="manifest" href="manifest.json?v=2">
+<link rel="apple-touch-icon" href="icons/icon-180.png?v=3">
+<link rel="manifest" href="manifest.json?v=3">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Claude">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- ⚠️ 别改成 black-translucent。改过一次（2026-08-16），后果是输入框浮到半空：
+     内容延伸到状态栏底下后，window.innerHeight 与 visualViewport.height 差出一个
+     状态栏的高度，而键盘检测正是拿这个差值判断的（见 fitKeyboard 的 kbGap），
+     于是误判成"键盘开着"，把输入卡往上顶。
+     深色模式下顶上那条白边是这个值造成的，但它只是难看；输入框跑位是不能用。 -->
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <script>
 /* 夜间模式：跟随系统 / 常亮 / 常暗，三态轮换，记在本地。
    写在 <style> 前面执行，页面还没画就把皮穿好，不会闪一下白的。
@@ -1799,6 +1804,9 @@ html[data-theme="dark"] #newSession { background: var(--text); color: var(--bg);
 .spark.think .sp { animation: sparkBloom 1.8s ease-in-out infinite; }
 @keyframes sparkBloom { 0%,100% { scale: .04 .3 } 50% { scale: 1 1 } }
 
+/* 定格：停下来时保留动画、只暂停，花瓣就停在当前这一帧 */
+.spark.frozen .rot, .spark.frozen .sp { animation-play-state: paused !important; }
+
 /* 流式:窄凹口顺时针跑,整体也在转 */
 .spark.out .rot { animation-play-state: running; }
 .spark.out .sp {
@@ -3386,26 +3394,73 @@ setInterval(calDayWatch, 120000);
    这里把到货的字先存起来，按帧匀速吐出去，把突发摊平成连续的。
    每帧吐 1/8，缓冲越多吐得越快，所以落后了会自己追上来，不会越积越多。
    定稿和收尾之前必须 flush，否则最后半句会被吞掉。 */
-var sQ = { el: null, buf: '', raf: 0 };
+var sQ = { el: null, buf: '', raf: 0, last: 0, at: 0, ema: 0 };
 function sDrain() {
   sQ.raf = 0;
   if (!sQ.el || !sQ.buf) return;
-  var n = Math.max(1, Math.ceil(sQ.buf.length / 8));
-  sQ.el._raw = (sQ.el._raw || '') + sQ.buf.slice(0, n);
+  /* 摊多久，取决于下一批多久才到。
+     后端是长轮询，一批字要等一个网络来回才来；固定按 8 帧摊完的话，
+     摊完就干等，于是「动一下 → 停一下」（实测停顿占了 36% 的时间）。
+     改成按实测到的到货间隔来摊，字就一直在走，不留空窗。
+     夹在 4~24 帧之间：太快等于没摊，太慢会越积越多。 */
+  var frames = Math.min(24, Math.max(4, Math.round((sQ.ema || 130) / 16.7)));
+  var n = Math.max(1, Math.ceil(sQ.buf.length / frames));
+  var chunk = sQ.buf.slice(0, n);
+  sQ.el._raw = (sQ.el._raw || '') + chunk;
   sQ.buf = sQ.buf.slice(n);
-  paintStream(sQ.el);
+  /* 渲染节流。paintStream 是「清空 + 对全文跑正则 + 整段重建 DOM」，
+     成本正比于消息长度；每帧都画的话，一条回复的总开销是 O(字数²)，
+     越写到后面越卡（2026-08-16 实测：2000 字重建 300 次，最长一帧 96ms）。
+     所以按当前长度降频——短的照旧每帧画，长的隔久一点画。
+     字还是每帧都在往 _raw 里进，所以"进度"没变慢，只是少重建几次。 */
+  var len = sQ.el._raw.length;
+  /* 上限压到 100ms：再稀就不是"省 CPU"而是"看着一顿一顿"了。 */
+  var gap = len > 1200 ? 100 : len > 400 ? 60 : 33;
+  var now = performance.now();
+  if (sQ.buf && now - sQ.last < gap) {
+    /* 还没到重建的点：这一帧只把新到的几个字**追加**上去。
+       追加是 O(新增字数)，跟消息多长完全无关，所以怎么写都不会卡。
+       代价是这几个字暂时是纯文本——加粗/代码块/卡片要等下一次全量重建
+       才补正，最多晚 gap 毫秒，肉眼基本看不出。 */
+    sFast(sQ.el, chunk);
+    sQ.raf = requestAnimationFrame(sDrain);
+    return;
+  }
+  sQ.last = now;
+  paintStream(sQ.el);   // 全量重建：它是权威，会把上面那些临时纯文本冲掉重画
   scroll();
   if (sQ.buf) sQ.raf = requestAnimationFrame(sDrain);
 }
+
+/* 把几个字直接塞进插入符前面的一个文本节点里。
+   paintStream 一旦重建过，这个节点就没了（textContent=''），下次自己重建一个。
+   不怕丢字：权威内容始终是 el._raw，重建都从它来。 */
+function sFast(el, chunk) {
+  if (!chunk || el._final) return;
+  var node = el._fastNode;
+  if (!node || !node.isConnected || node.parentNode !== el) {
+    node = document.createTextNode('');
+    var caret = el.querySelector('.caret');
+    if (caret) el.insertBefore(node, caret); else el.appendChild(node);
+    el._fastNode = node;
+  }
+  node.nodeValue += chunk;
+  scroll();
+}
 function sPush(el, text) {
   if (sQ.el !== el) { sFlush(); sQ.el = el; }
+  /* 量「两批之间隔多久」。同一批里的增量是同一轮循环里连着推进来的，
+     间隔近似 0，所以只有跨批的那次才算数（>30ms 才收）。 */
+  var now = performance.now();
+  if (sQ.at) { var d = now - sQ.at; if (d > 30 && d < 2000) sQ.ema = sQ.ema ? sQ.ema * 0.7 + d * 0.3 : d; }
+  sQ.at = now;
   sQ.buf += text;
   if (!sQ.raf) sQ.raf = requestAnimationFrame(sDrain);
 }
 function sFlush() {
   if (sQ.raf) { cancelAnimationFrame(sQ.raf); sQ.raf = 0; }
   if (sQ.el && sQ.buf) { sQ.el._raw = (sQ.el._raw || '') + sQ.buf; paintStream(sQ.el); }
-  sQ.buf = ''; sQ.el = null;
+  sQ.buf = ''; sQ.el = null; sQ.at = 0;
 }
 function sReset() {   // 清屏时用：缓冲里的字属于已经没掉的那个泡，别再画
   if (sQ.raf) { cancelAnimationFrame(sQ.raf); sQ.raf = 0; }
@@ -7002,14 +7057,18 @@ box.focus();
   /* 状态跟着桌宠的图走,不改动它原有的逻辑。
      只有"在想"和"在吐字"这两种会动;答完了就是一张静止的贴图。 */
   var img = document.getElementById('petImg');
+  var lastActive = '';
   function sync() {
     var s = (img && img.getAttribute('src')) || '';
     var busy = document.getElementById('doingLine');
     var working = busy && busy.classList.contains('on');
-    host.className = 'spark' + (
-      /thinking/.test(s) ? ' think' :
-      (/typing/.test(s) || working) ? ' out' : ''
-    );
+    var next = /thinking/.test(s) ? 'think'
+             : (/typing/.test(s) || working) ? 'out' : '';
+    if (next) { lastActive = next; host.className = 'spark ' + next; }
+    /* 说完了不要"啪"地弹回原样——保留刚才那套动画，只把它按停，
+       花瓣就定在停下来的那一帧上（移除动画的话会瞬间复位）。 */
+    else if (lastActive) host.className = 'spark ' + lastActive + ' frozen';
+    else host.className = 'spark';
   }
   if (window.MutationObserver) {
     if (img) new MutationObserver(sync).observe(img, { attributes: true, attributeFilter: ['src'] });
