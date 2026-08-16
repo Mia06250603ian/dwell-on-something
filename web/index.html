@@ -380,8 +380,11 @@ html[data-theme="dark"] .glass,
   .cbk-full .cbk-h { box-shadow: inset 0 -1px 0 var(--line); }
   .cbk-full pre { flex: 1; overflow: auto; }
   .cbk-full code { white-space: pre-wrap; word-break: break-all; }
-  .gu .caret {
-    display: inline-block; width: 7px; height: 1.05em; vertical-align: -2px;
+  /* 光标：原来是一个真实的 <span class=caret> 插在文字末尾，
+     每追加一次字就要连它一起重排。改成伪元素——不占 DOM、不用 JS 摆位置，
+     只靠 .tw 这个类开关，闪烁交给 CSS。 */
+  .gu.tw::after {
+    content: ''; display: inline-block; width: 7px; height: 1.05em; vertical-align: -2px;
     background: var(--accent-soft); border-radius: 1px; animation: blink 1s steps(2) infinite;
   }
   @keyframes blink { 50% { opacity: 0; } }
@@ -2722,9 +2725,7 @@ function paintStream(el) {
     const t = (el._raw || '').replace(ORPHAN_TAIL, '')
       .replace(STREAM_FILE_TAIL, '').replace(STREAM_SONG_TAIL, '');
     appendWithImages(el, t, true);
-    const c = document.createElement('span');
-    c.className = 'caret';
-    el.appendChild(c);
+    el.classList.add('tw');       // 光标是伪元素，挂个类就有
   });
 }
 
@@ -3408,6 +3409,11 @@ function sDrain() {
      夹在 4~24 帧之间：太快等于没摊，太慢会越积越多。 */
   var frames = Math.min(24, Math.max(4, Math.round((sQ.ema || 130) / 16.7)));
   var n = Math.max(1, Math.ceil(sQ.buf.length / frames));
+  /* 攒够一小撮再动 DOM。一个字一更新的话，DOM 操作次数等于字数，
+     而每次都要重排那一行；攒到 8 个字，次数直接降到 1/8，
+     视觉上仍然是连续在写（每帧最多也就多打几个字的差别）。
+     快写完时不硬凑，免得最后几个字卡着不出来。 */
+  if (n < 8 && sQ.buf.length >= 8) n = 8;
   var chunk = sQ.buf.slice(0, n);
   sQ.el._raw = (sQ.el._raw || '') + chunk;
   sQ.buf = sQ.buf.slice(n);
@@ -3443,12 +3449,13 @@ function sFast(el, chunk) {
   var node = el._fastNode;
   if (!node || !node.isConnected || node.parentNode !== el) {
     node = document.createTextNode('');
-    var caret = el.querySelector('.caret');
-    if (caret) el.insertBefore(node, caret); else el.appendChild(node);
+    el.appendChild(node);        // 光标是伪元素，永远在最后，不用给它让位
     el._fastNode = node;
   }
   node.nodeValue += chunk;
-  scroll();
+  /* 这里**故意不叫 scroll()**：它内部要读 scrollHeight/scrollTop/clientHeight，
+     那是强制同步重排，每帧一次在手机上很贵。跟随滚动交给下面节流的那次重绘，
+     最多晚 100ms，肉眼看不出。 */
 }
 function sPush(el, text) {
   if (sQ.el !== el) { sFlush(); sQ.el = el; }
@@ -3509,7 +3516,7 @@ function handle(d) {
         closeThink();
       } else if (p.type === 'text' && p.text) {
         const el = ensureGu();
-        el.querySelector('.caret')?.remove();
+        el.classList.remove('tw');
         // 说完了的这份是权威，**无条件盖掉流式攒的那份**。
         // 同一条消息里多段文本就接着写，别把前一段冲掉。
         // 这条消息的第一段接在基线后面——基线是同一个泡里"上一条消息"已经说完的话
@@ -3539,7 +3546,7 @@ function handle(d) {
 
   if (d.type === 'result') {
     sFlush();                     // 收尾前把最后半句吐完，别吞字
-    guEl?.querySelector('.caret')?.remove();
+    guEl?.classList.remove('tw');
     guEl = null; endThink(); closeGroup();
     fetch('api/messages?limit=16', { cache: 'no-store' }).then(r => r.json()).then(dd => {
       const gus = (dd.msgs || []).filter(m => m.kind === 'gu');
@@ -3579,7 +3586,7 @@ function handle(d) {
     return;
   }
   if (d.type === 'system' && d.subtype === 'stopped') {
-    guEl?.querySelector('.caret')?.remove();
+    guEl?.classList.remove('tw');
     guEl = null; endThink(); closeGroup();
     setBusy(false); petSet('calm');
     note('（我停下了）');
