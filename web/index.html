@@ -2484,7 +2484,16 @@ let guEl = null;
 
 /* ---------- 基础排版 ---------- */
 function atBottom() { return log.scrollHeight - log.scrollTop - log.clientHeight < 90; }
-function scroll(force) { if (force || atBottom()) log.scrollTop = log.scrollHeight; }
+/* 「要不要跟着滚」记成一个状态，别每次画都去算。
+   ① atBottom() 要读 scrollHeight/scrollTop/clientHeight —— 每读一次都强制重排；
+   ② 流式时内容长得快，两次检查之间可能就长过了 90px 的判定线，
+      于是它以为"用户往上翻了"、当场不跟了（所有者报的"不自动滚"）。
+   改成:只有用户**自己**往上翻才松手，翻回底部就重新跟上。 */
+var stickBottom = true;
+log.addEventListener('scroll', function () {
+  stickBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 120;
+}, { passive: true });
+function scroll(force) { if (force || stickBottom) log.scrollTop = log.scrollHeight; }
 function row(cls) {
   const d = document.createElement('div');
   d.className = 'row ' + (cls || '');
@@ -3272,6 +3281,14 @@ async function loadSaid() {
     if (!r.ok) return 0;
     const d = await r.json();
     const msgs = d.msgs || [];
+    /* 先清空再摆。renderSaid 是**追加**，自己不清场；
+       而这个函数不只开机时调 —— 页面切后台超过 30 秒再回来，
+       visibilitychange 还会再调一次，于是整段历史又摆一遍。
+       切出去几次就重几轮（2026-08-16 所有者报的"记录重复好几轮"）。
+       这时不可能有正在流的气泡（要静默 30 秒才会走到这儿），清了不会打断谁。 */
+    log.innerHTML = '';
+    guEl = null; earliestSeq = null; olderBtn = null;
+    sReset();
     renderSaid(msgs);
     healEmptyGu();
     if (msgs.length) earliestSeq = msgs[0].seq;
@@ -3398,7 +3415,7 @@ setInterval(calDayWatch, 120000);
    这里把到货的字先存起来，按帧匀速吐出去，把突发摊平成连续的。
    每帧吐 1/8，缓冲越多吐得越快，所以落后了会自己追上来，不会越积越多。
    定稿和收尾之前必须 flush，否则最后半句会被吞掉。 */
-var sQ = { el: null, buf: '', raf: 0, last: 0, at: 0, ema: 0 };
+var sQ = { el: null, buf: '', raf: 0, last: 0, at: 0, ema: 0, pend: '' };
 function sDrain() {
   sQ.raf = 0;
   if (!sQ.el || !sQ.buf) return;
@@ -3409,14 +3426,15 @@ function sDrain() {
      夹在 4~24 帧之间：太快等于没摊，太慢会越积越多。 */
   var frames = Math.min(24, Math.max(4, Math.round((sQ.ema || 130) / 16.7)));
   var n = Math.max(1, Math.ceil(sQ.buf.length / frames));
-  /* 攒够一小撮再动 DOM。一个字一更新的话，DOM 操作次数等于字数，
-     而每次都要重排那一行；攒到 8 个字，次数直接降到 1/8，
-     视觉上仍然是连续在写（每帧最多也就多打几个字的差别）。
-     快写完时不硬凑，免得最后几个字卡着不出来。 */
-  if (n < 8 && sQ.buf.length >= 8) n = 8;
   var chunk = sQ.buf.slice(0, n);
   sQ.el._raw = (sQ.el._raw || '') + chunk;
   sQ.buf = sQ.buf.slice(n);
+  /* 「吐字有多快」和「多久动一次 DOM」是两件事，别混。
+     上一版把攒字写成了「每帧至少吐 8 个」，结果一批字几帧就倒完、
+     然后干等下一批 —— 就成了一段一段往外蹦（所有者实测）。
+     现在：吐字速度还是按到货节奏走（上面那个 frames），
+     只是攒够 8 个字才真的写进 DOM，少动 DOM 但不改变节奏。 */
+  sQ.pend += chunk;
   /* 渲染节流。paintStream 是「清空 + 对全文跑正则 + 整段重建 DOM」，
      成本正比于消息长度；每帧都画的话，一条回复的总开销是 O(字数²)，
      越写到后面越卡（2026-08-16 实测：2000 字重建 300 次，最长一帧 96ms）。
@@ -3427,15 +3445,19 @@ function sDrain() {
   var gap = len > 1200 ? 100 : len > 400 ? 60 : 33;
   var now = performance.now();
   if (sQ.buf && now - sQ.last < gap) {
+    /* 没攒够就先不动 DOM，下一帧接着攒（快写完时不硬凑，免得最后几个字卡着） */
+    if (sQ.pend.length < 8 && sQ.buf) { sQ.raf = requestAnimationFrame(sDrain); return; }
     /* 还没到重建的点：这一帧只把新到的几个字**追加**上去。
        追加是 O(新增字数)，跟消息多长完全无关，所以怎么写都不会卡。
        代价是这几个字暂时是纯文本——加粗/代码块/卡片要等下一次全量重建
        才补正，最多晚 gap 毫秒，肉眼基本看不出。 */
-    sFast(sQ.el, chunk);
+    sFast(sQ.el, sQ.pend);
+    sQ.pend = '';
     sQ.raf = requestAnimationFrame(sDrain);
     return;
   }
   sQ.last = now;
+  sQ.pend = '';                    // 全量重建从 _raw 来，攒的那点已经包含在里面了
   paintStream(sQ.el);   // 全量重建：它是权威，会把上面那些临时纯文本冲掉重画
   scroll();
   if (sQ.buf) sQ.raf = requestAnimationFrame(sDrain);
@@ -3470,7 +3492,7 @@ function sPush(el, text) {
 function sFlush() {
   if (sQ.raf) { cancelAnimationFrame(sQ.raf); sQ.raf = 0; }
   if (sQ.el && sQ.buf) { sQ.el._raw = (sQ.el._raw || '') + sQ.buf; paintStream(sQ.el); }
-  sQ.buf = ''; sQ.el = null; sQ.at = 0;
+  sQ.buf = ''; sQ.el = null; sQ.at = 0; sQ.pend = '';
 }
 function sReset() {   // 清屏时用：缓冲里的字属于已经没掉的那个泡，别再画
   if (sQ.raf) { cancelAnimationFrame(sQ.raf); sQ.raf = 0; }
@@ -3803,6 +3825,7 @@ function send() {
   if (wasBusy) { try { fetch('api/stop', { method: 'POST' }); } catch (e) {} }
   box.value = '';
   box.style.height = 'auto';
+  stickBottom = true;              // 刚发完话，总是想看最新的
   setBusy(true);
   const payload = { text };
   if (attachments.length) payload.attachments = attachments;
