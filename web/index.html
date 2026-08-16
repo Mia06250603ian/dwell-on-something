@@ -1804,8 +1804,15 @@ html[data-theme="dark"] #newSession { background: var(--text); color: var(--bg);
 .spark.think .sp { animation: sparkBloom 1.8s ease-in-out infinite; }
 @keyframes sparkBloom { 0%,100% { scale: .04 .3 } 50% { scale: 1 1 } }
 
-/* 定格：停下来时保留动画、只暂停，花瓣就停在当前这一帧 */
-.spark.frozen .rot, .spark.frozen .sp { animation-play-state: paused !important; }
+/* 定格：说完之后花瓣补齐到最长的那一档，也就是"最完整"的样子。
+   补齐是平滑过渡的，不会"啪"地弹一下；整体转角就停在当下，不倒转回去
+   （倒转看着更奇怪）。 */
+.spark.settle .rot { animation-play-state: paused !important; }
+.spark.settle .sp {
+  animation: none !important;
+  scale: 1 1;
+  transition: scale .38s cubic-bezier(.2,.7,.3,1);
+}
 
 /* 流式:窄凹口顺时针跑,整体也在转 */
 .spark.out .rot { animation-play-state: running; }
@@ -7065,9 +7072,9 @@ box.focus();
     var next = /thinking/.test(s) ? 'think'
              : (/typing/.test(s) || working) ? 'out' : '';
     if (next) { lastActive = next; host.className = 'spark ' + next; }
-    /* 说完了不要"啪"地弹回原样——保留刚才那套动画，只把它按停，
-       花瓣就定在停下来的那一帧上（移除动画的话会瞬间复位）。 */
-    else if (lastActive) host.className = 'spark ' + lastActive + ' frozen';
+    /* 说完了要定在**最完整**的那一档（花瓣全长），不是停在半路。
+       单纯 paused 会卡在动画的任意一帧上，姿势歪七扭八（实测）。 */
+    else if (lastActive) host.className = 'spark ' + lastActive + ' settle';
     else host.className = 'spark';
   }
   if (window.MutationObserver) {
