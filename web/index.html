@@ -49,6 +49,7 @@
     --line: #ecece6;
     --text: #141413;
     --dim: #5e5d59;
+    --think: #87867f;   /* 官方 --color-gray-500 */
     /* 赤陶统一成一支（2026-08-16）：原来按钮 #c96442、花 #e1734f 是两个颜色，
        所有者要求统一。#e1734f 是她在校准尺上调的那支。 */
     --accent: #e1734f;
@@ -84,7 +85,7 @@ html:not([data-theme="light"]) {
            --card  = 底色：输入框/卡片的面不比页面亮，靠那圈内描边区分（官端就是这样）
            --panel = 气泡色：弹窗分组卡、按钮，都是「凹进去」的那一层 */
       --bg: #20201f; --card: #20201f; --panel: #131312; --line: #3d3d3a;
-      --text: #faf9f5; --dim: #a3a099; --user-bubble: #131312; --bubble-ring: transparent;
+      --text: #faf9f5; --dim: #a3a099; --think: #9c9a92; --user-bubble: #131312; --bubble-ring: transparent;
       --sage: #A8C0A0; --sage-track: #3A423A; --pink-track: #4A3B34;
       --green: #6fbf85; --red: #e07a6a;
       --amber: #e8b45c; --amber-track: #4a4232; --red-track: #4d3a36;
@@ -96,7 +97,7 @@ html[data-theme="dark"] {
            --card  = 底色：输入框/卡片的面不比页面亮，靠那圈内描边区分（官端就是这样）
            --panel = 气泡色：弹窗分组卡、按钮，都是「凹进去」的那一层 */
       --bg: #20201f; --card: #20201f; --panel: #131312; --line: #3d3d3a;
-      --text: #faf9f5; --dim: #a3a099; --user-bubble: #131312; --bubble-ring: transparent;
+      --text: #faf9f5; --dim: #a3a099; --think: #9c9a92; --user-bubble: #131312; --bubble-ring: transparent;
       --sage: #A8C0A0; --sage-track: #3A423A; --pink-track: #4A3B34;
       --green: #6fbf85; --red: #e07a6a;
       --amber: #e8b45c; --amber-track: #4a4232; --red-track: #4d3a36;
@@ -331,7 +332,9 @@ html[data-theme="dark"] .glass,
   .acts { display: flex; gap: 2px; margin: 6px 0 2px; }
   .acts button {
     width: 34px; height: 34px; border-radius: 9px; border: 0; background: none;
-    color: var(--dim); display: flex; align-items: center; justify-content: center;
+    /* 和 thinking 那行同一个官方灰(--color-gray-500 #87867f)。
+       原来用 --dim(#5e5d59 = 官方 gray-600),深了一档。 */
+    color: var(--think); display: flex; align-items: center; justify-content: center;
     transition: background .15s ease, color .15s ease;
   }
   .acts button .ic { width: 18px; height: 18px; }
@@ -394,12 +397,25 @@ html[data-theme="dark"] .glass,
     margin: 10px auto 0; flex: none;
   }
   .thinkbody {
-    font-size: 15.5px; color: var(--text); line-height: 1.85;
+    /* 官端这一栏用的是衬线体（AnthropicSerif）。原字体拿不到，
+       但官方 CSS 里自己写的兜底就是 Georgia：
+         font-family: var(--font-anthropic-serif), Georgia, serif
+       所以这里照抄它的兜底。中文没有 Georgia，会自动落到宋体一类，
+       和官端那张图里中文的观感也对得上。 */
+    /* ⚠️ 只给拉丁字母用衬线，中文不要。
+       官端那张图里英文是衬线、**中文是黑体** —— 因为 AnthropicSerif 没有汉字，
+       中文自动落回系统黑体。所以这里的兜底链最后要接黑体（苹方），
+       写成 serif 的话中文会变宋体，反而不像。 */
+    font-family: Georgia, system-ui, "PingFang SC", sans-serif;
+    font-size: 16.5px; color: var(--text); line-height: 1.8;
     white-space: pre-wrap; word-break: break-word; padding: 6px 4px 14px;
   }
 
   .toolline {
-    color: var(--dim); font-size: 14.5px; cursor: pointer; user-select: none;
+    /* 官方灰阶里的 --color-gray-500(#87867f)。dwell 原来的 --dim 是 #5e5d59,
+       正好是官方的 gray-600 —— 没错,只是比官端这一行深一档。
+       深色下取 gray-450(#9c9a92)。两个值都来自 claude.com 线上 CSS,不是目测的。 */
+    color: var(--think); font-size: 14.5px; cursor: pointer; user-select: none;
     display: flex; align-items: center; gap: 6px; min-height: 24px;
     /* 撑满整行，箭头才会被推到最右边（照官端）。
        .lbl 本来就是 flex:1 1 auto，会自己把中间那段空白吃掉。 */
@@ -744,7 +760,7 @@ html[data-theme="dark"] .composer {
     flex: none; display: flex; align-items: center; padding: 16px 16px 12px;
   }
   .sheet .head .hbtn {   
-    width: 40px; height: 40px; flex: none; color: inherit;
+    width: 46px; height: 46px; flex: none; color: inherit;   /* 官端那颗更大一圈 */
     display: flex; align-items: center; justify-content: center;
     /* 官端那个关闭键是个浮起来的圆钮，不是光秃一个叉 */
     background: var(--card); border-radius: 50%;
@@ -752,9 +768,9 @@ html[data-theme="dark"] .composer {
     box-shadow: 0 1px 3px rgba(0,0,0,.10), inset 0 0 0 1px var(--line);
   }
   .sheet .head .hbtn:active { background: var(--panel); }
-  .sheet .head .hbtn .ic { width: 19px; height: 19px; }
+  .sheet .head .hbtn .ic { width: 21px; height: 21px; }
   .sheet .head .ht { flex: 1; text-align: center; font-size: 18px; font-weight: 600; padding: 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .sheet .head .hspace { width: 40px; flex: none; }
+  .sheet .head .hspace { width: 46px; flex: none; }
   .sheet .body { flex: 1; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 6px 20px calc(20px + env(safe-area-inset-bottom)); }
 
   .group-label { font-size: 14.5px; color: var(--dim); padding: 14px 4px 8px; }
@@ -1857,7 +1873,7 @@ html[data-theme="dark"] #newSession { background: var(--text); color: var(--bg);
    html[data-theme="black"] 打开。真黑底,灰阶跟着官端走暖,不掺蓝。 */
 html[data-theme="black"] {
   --bg:#000000; --card:#0F0F0E; --panel:#1A1A18; --line:#262624;
-  --text:#F5F4EF; --dim:#8F8C85; --user-bubble:#1C1C1A; --bubble-ring:transparent;
+  --text:#F5F4EF; --dim:#8F8C85; --think:#9c9a92; --user-bubble:#1C1C1A; --bubble-ring:transparent;
   --overlay:rgba(0,0,0,.7);
   --glass:color-mix(in srgb, var(--card) 78%, transparent);
 }
@@ -2340,8 +2356,12 @@ const ICONS = {
   dots: S('<circle cx="5" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="19" cy="12" r="1" fill="currentColor"/>'),
   x: S('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'),
   check: S('<polyline points="20 6 9 17 4 12"/>'),
-  copy: S('<rect x="9" y="9" width="11" height="11" rx="2.5"/>'
-        + '<path d="M6 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1"/>'),
+  /* 复制：前面那张在**左下**、后面那张在右上（原来左右反了，和官端对不上） */
+  copy: S('<rect x="3" y="8" width="13" height="13" rx="3"/>'
+        + '<path d="M8 8V6a3 3 0 0 1 3-3h7a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3h-2"/>'),
+  /* 分享：官端第二个。托盘 + 向上的箭头（iOS 那个形制） */
+  share: S('<path d="M12 15V3"/><path d="M8 7l4-4 4 4"/>'
+         + '<path d="M4 13v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"/>'),
   expand: S('<polyline points="14 4 20 4 20 10"/><polyline points="10 20 4 20 4 14"/>'),
   plus: S('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>'),
   arrowUp: S('<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>'),
@@ -2368,17 +2388,27 @@ const ICONS = {
   box: S('<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>'),
   zap: S('<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>'),
   camera: S('<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>'),
+  /* thinking 那行的时钟：右下大半圈是实线，左上缺口用三个由大到小的点补上，
+     指针指 4 点左右（照所有者给的官端图）。点要 fill，别跟着 stroke 走。 */
+  thinkClock: S('<path d="M12 3A9 9 0 1 1 3 12"/>'
+              + '<path d="M12 7.6V12l3.3 1.9"/>'
+              + '<circle cx="10.44" cy="3.14" r="1.25" fill="currentColor" stroke="none"/>'
+              + '<circle cx="6.21" cy="5.11" r="1" fill="currentColor" stroke="none"/>'
+              + '<circle cx="3.54" cy="8.92" r="0.8" fill="currentColor" stroke="none"/>'),
   clock: S('<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'),
   checkSquare: S('<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'),
   calendar: S('<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'),
   alarm: S('<circle cx="12" cy="13" r="8"/><polyline points="12 9 12 13 14.5 14.5"/><path d="M5 3 2.5 5.5"/><path d="M19 3l2.5 2.5"/>'),
   /* 2026-08-16 为回复下面那排操作按钮补的三个图标 */
-  play: S('<polygon points="6 4 20 12 6 20 6 4"/>'),
-  thumbUp: S('<path d="M7 10v10H4a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1h3z"/>'
-          + '<path d="M7 10l4.2-7.1a1.6 1.6 0 0 1 2.9 1.1L13.5 8h5a2 2 0 0 1 2 2.4l-1.4 7A2 2 0 0 1 17.1 19H7"/>'),
-  thumbDown: S('<path d="M17 14V4h3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-3z"/>'
-            + '<path d="M17 14l-4.2 7.1a1.6 1.6 0 0 1-2.9-1.1L10.5 16h-5a2 2 0 0 1-2-2.4l1.4-7A2 2 0 0 1 6.9 5H17"/>'),
-  refresh: S('<path d="M20.5 12a8.5 8.5 0 1 1-2.6-6.1"/><path d="M20.6 4.2v4.6h-4.6"/>'),
+  /* 播放：官端是圆角三角形；原来用 polygon 画的是尖角 */
+  play: S('<path d="M7 4.8v14.4a1.2 1.2 0 0 0 1.83 1.02l11.4-7.2a1.2 1.2 0 0 0 0-2.04L8.83 3.78A1.2 1.2 0 0 0 7 4.8z"/>'),
+  /* 赞/踩：官端是一整条连续轮廓 + 一道竖线当袖口；原来是两段拼的，形不对 */
+  thumbUp: S('<path d="M7 10v12"/>'
+          + '<path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/>'),
+  thumbDown: S('<path d="M17 14V2"/>'
+            + '<path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"/>'),
+  /* 重试：官端缺口在右上、箭头在顶上 */
+  refresh: S('<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>'),
   moon: S('<path d="M20.5 14.4A8.6 8.6 0 0 1 9.6 3.5a8.6 8.6 0 1 0 10.9 10.9z"/>'),
   petal: S('<path d="M2.5 9.2c2.1-2.6 4.3-2.6 6.4 0s4.3 2.6 6.4 0 4.3-2.6 6.2 0"/><path d="M2.5 15.4c2.1-2.6 4.3-2.6 6.4 0s4.3 2.6 6.4 0 4.3-2.6 6.2 0"/>'),
   heartIc: S('<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>'),
@@ -2532,7 +2562,7 @@ function thinkSpin(buf, on) {
     sp.className = 'spin';
     old.replaceWith(sp);
   } else {
-    old.replaceWith(icEl('clock', 15));
+    old.replaceWith(icEl('thinkClock', 16));
   }
 }
 function ensureThink() {
@@ -2985,6 +3015,26 @@ function ensureActs(el) {
     }, 1400);
   };
   bar.appendChild(btn);
+
+  /* 分享（官端第二颗）。这颗**是真能用的**：iOS/安卓的系统分享面板。
+     没有 navigator.share 的浏览器（多数桌面）就退回复制，并说清楚。 */
+  {
+    const sb = document.createElement('button');
+    sb.type = 'button';
+    sb.title = '分享';
+    sb.setAttribute('aria-label', '分享这条回复');
+    sb.appendChild(icEl('share', 18));
+    sb.onclick = async () => {
+      const txt = (el._raw != null ? el._raw : el.textContent) || '';
+      if (navigator.share) {
+        try { await navigator.share({ text: txt }); } catch (e) { /* 用户自己取消，不当错处理 */ }
+        return;
+      }
+      try { await navigator.clipboard.writeText(txt); note('（这台设备没有系统分享，已经复制了）'); }
+      catch { note('（分享和复制都没成，长按选中吧）', 'err'); }
+    };
+    bar.appendChild(sb);
+  }
 
   /* 其余四颗：所有者要求「先全摆上，样子对就行，功能以后加」（2026-08-16）。
      它们现在只有样子，点了会说一句实话，不会假装做了事。
@@ -6063,7 +6113,7 @@ function gongThink(row, think) {
   line.className = 'toolline gthink';
   line.innerHTML = '<span class="lbl">Thought process</span>'
                  + '<span class="chev">' + ICONS.chevR + '</span>';
-  line.prepend(icEl('clock', 15));
+  line.prepend(icEl('thinkClock', 16));
   thinkStore.push({ text: think, lineEl: line, paused: true });
   const idx = thinkStore.length - 1;
   line.onclick = () => openThinkSheet(idx);
