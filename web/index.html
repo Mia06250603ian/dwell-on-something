@@ -1780,6 +1780,9 @@ html[data-theme="dark"] #newSession { background: var(--text); color: var(--bg);
 }
 @media (max-width: 420px) { .brandline .brandnote { font-size: 12px; } }
 
+/* 模型胶囊里的思考档位：照官端，跟在模型名后面、灰一档 */
+.pill .pill-eff { color: var(--dim); margin-left: 6px; }
+
 /* 花瓣:先转到自己的轴上,只缩长度,再转回去 —— 宽度不跟着缩,短了才不显胖 */
 .spark .rot, .spark .sp { transform-box: view-box; }
 .spark .rot { animation: sparkSpin 6s linear infinite; animation-play-state: paused; }
@@ -3488,8 +3491,9 @@ function handle(d) {
   if (d.type === 'system' && d.subtype === 'restart') { note(d.text); return; }
   if (d.type === 'system' && d.subtype === 'model') {
     note('（换好了，我重新醒了一遍）');
+    if (d.effort) curEffort = d.effort;   // 先落档位再画胶囊，否则画的是上一档
     if (d.model) setModelPill(d.model);
-    if (d.effort) curEffort = d.effort;
+    else paintPill();
     return;
   }
 }
@@ -6502,7 +6506,19 @@ function displayName(id) {
 }
 function setModelPill(id) {
   curModel = id || '';
+  paintPill();
+}
+/* 官端胶囊是「模型名 + 灰色的思考档位」两段（如 Opus 4.6 Medium）。
+   原先只写了模型名，所以档位从来没显示过。拆成独立函数是因为
+   换档位时模型没变，也要重画一次。 */
+function paintPill() {
   pill.textContent = displayName(curModel);
+  var e = EFFORTS.find(function (x) { return x.id === curEffort; });
+  if (!e) return;
+  var s = document.createElement('span');
+  s.className = 'pill-eff';
+  s.textContent = e.name;
+  pill.appendChild(s);
 }
 
 const modelSheetEl = sheets.model;
@@ -6620,10 +6636,14 @@ async function pickModel(m) {
   modelSheetEl.classList.remove('open');
   note('（换成 ' + m.name + '，正在重开一轮）');
   try {
-    await fetch('api/model', {
+    /* 后端可能没接这条（比如只做转发的那种）。原来不看返回就报「换好了」，
+       等于对着用户撒谎——所以 ok:false 时要把真正的原因说出来。 */
+    const r = await fetch('api/model', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: m.id })
     });
+    const d = await r.json().catch(() => ({}));
+    if (d && d.ok === false) note('（没换成：' + (d.why || '这一版没接换模型') + '）', 'err');
   } catch { note('（没换上，再试一次）', 'err'); }
 }
 async function pickEffort(e) {
@@ -6631,10 +6651,12 @@ async function pickEffort(e) {
   modelSheetEl.classList.remove('open');
   note('（用力档调到 ' + e.name + '，正在重开一轮）');
   try {
-    await fetch('api/model', {
+    const r = await fetch('api/model', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ effort: e.id })
     });
+    const d = await r.json().catch(() => ({}));
+    if (d && d.ok === false) note('（没调成：' + (d.why || '这一版没接换档位') + '）', 'err');
   } catch { note('（没调上，再试一次）', 'err'); }
 }
 
@@ -6958,9 +6980,11 @@ box.focus();
 
   /* 有对话才出现,并且始终待在最末尾 */
   function place() {
-    var real = 0, c = log.children;
-    for (var i = 0; i < c.length; i++) if (c[i] !== line) real++;
-    if (!real) { if (line.parentNode) line.parentNode.removeChild(line); return; }
+    /* 官端是「他回过话之后」才出现，而且跟在最后一条回复下面。
+       所以判据是「有没有他的回复」(.gu)，不是「#log 里有没有孩子」——
+       「↑ 看更早的」那颗按钮即使 display:none 也仍然是 #log 的孩子，
+       拿孩子数当判据会让菊花在空白对话上一开页就挂着（2026-08-16 实测）。 */
+    if (!log.querySelector('.gu')) { if (line.parentNode) line.parentNode.removeChild(line); return; }
     if (log.lastElementChild !== line) log.appendChild(line);   // 已在末尾就不动,避免自触发
   }
   if (window.MutationObserver) new MutationObserver(place).observe(log, { childList: true });
