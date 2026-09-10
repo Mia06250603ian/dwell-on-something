@@ -115,7 +115,7 @@ html[data-theme="dark"] {
     overflow-x: hidden; max-width: 100vw;   
     background: var(--bg); color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Noto Sans SC", "Segoe UI", sans-serif;
-    font-size: 16px; line-height: 1.7;
+    font-size: 15px; line-height: 1.7;   /* 2026-09-10 校准尺定：正文 16 → 15；行高不动 */
     font-variant-numeric: tabular-nums;   
     -webkit-font-smoothing: antialiased;
     overscroll-behavior: none;
@@ -309,7 +309,7 @@ html[data-theme="dark"] .glass,
   #log {
     flex: 1; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
     padding: calc(76px + env(safe-area-inset-top)) 18px 150px;
-    display: flex; flex-direction: column; gap: 18px;
+    display: flex; flex-direction: column; gap: 16px;   /* 2026-09-10 校准尺定：消息间距 18 → 16 */
   }
   /* 顶上那颗「看更早的」——老账都在，按一下捞 400 行 */
   #olderBtn {
@@ -320,7 +320,7 @@ html[data-theme="dark"] .glass,
   .row { width: 100%; max-width: 720px; margin: 0 auto; }
   .row.me { display: flex; justify-content: flex-end; }
   .bubble {
-    background: var(--user-bubble); border-radius: 18px; padding: 10px 16px;
+    background: var(--user-bubble); border-radius: 23px; padding: 10px 16px;   /* 2026-09-10 校准尺定：圆角 18 → 23 */
     max-width: 85%; white-space: pre-wrap; word-break: break-word;
     box-shadow: inset 0 0 0 .5px var(--bubble-ring, transparent);
   }
@@ -469,7 +469,7 @@ html[data-theme="dark"] .glass,
     background: var(--glass);
     -webkit-backdrop-filter: blur(20px) saturate(1.7);
     backdrop-filter: blur(20px) saturate(1.7);
-    border-radius: 24px;
+    border-radius: 27px;   /* 2026-09-10 校准尺定：24 → 27 */
     border: 1px solid rgba(255, 255, 255, .55);
     box-shadow: 0 2px 18px rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.5);
     padding: 12px 14px 10px;
@@ -544,7 +544,10 @@ html[data-theme="dark"] .composer {
   .ctlrow .gap { flex: 1; }
   #send {
     flex: none; width: 38px; height: 38px; border-radius: 50%;
-    background: var(--accent); color: #fff;
+    /* 2026-09-10 所有者在校准尺上定的：发送键从赤陶改近黑。
+       用 --text/--bg 两支 token，深色下会自动翻成近白底 + 深色箭头（校准尺里就是这个表现）。
+       ⚠️ 这半推翻了 08-16「赤陶统一成一支」那条 —— 菊花仍是赤陶，只有发送键不是了。 */
+    background: var(--text); color: var(--bg);
     display: flex; align-items: center; justify-content: center;
   }
   #send .ic { width: 17px; height: 17px; }
