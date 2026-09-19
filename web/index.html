@@ -293,7 +293,8 @@
      问候是全页第一焦点,它上下的呼吸要比别处宽。 */
   .dayrow { display: flex; align-items: center; gap: var(--sp-8); }
   .dayrow .date {
-    font-family: var(--serif); font-size: var(--fs-label); font-weight: 400;
+    /* 日期行比卡内标签大半档:参考图墨高 16.7pt,17px 只量到 15.4 */
+    font-family: var(--serif); font-size: 18px; font-weight: 400;
     line-height: 1.2; flex: 1; min-width: 0; letter-spacing: -.008em;
   }
   .syncpill {
@@ -410,7 +411,9 @@
     font-family: var(--serif); font-size: var(--fs-metric); font-weight: 700;
     line-height: 1.06; letter-spacing: -.024em;
   }
-  .metric .unit { font-size: 14px; color: var(--dim); font-family: var(--sans); font-weight: 400; }
+  /* bpm:参考图里它比想象中小得多(墨高实测 9.3pt vs 我原来 13.0)。
+     量下来约合 10px,取 12px —— 再小就不好认了,这 2px 是我留的,不是量出来的。 */
+  .metric .unit { font-size: 12px; color: var(--dim); font-family: var(--sans); font-weight: 400; }
   .metric .figure { margin-top: 10px; }
   .bars { display: flex; align-items: flex-end; gap: 5px; height: 40px; }
   /* ⚠️ 柱子用 color-mix 掺墨色,不要 opacity + --dim-2:
