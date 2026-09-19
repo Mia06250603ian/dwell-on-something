@@ -21,6 +21,33 @@
 <link rel="icon" href="icons/favicon-64.png" sizes="64x64">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="manifest" href="manifest.json">
+<!-- ⚠️ **状态栏那道分界线就是这段在修。**
+     iOS 在「添加到主屏幕」的 standalone 模式下,状态栏那一条由系统用 theme-color 填,
+     而且**只认冷启动那一刻的值** —— 页面跑起来之后再改 meta 它不认。
+     原来的同步写在主脚本里(要等整页解析完),于是:她选了墨白皮肤(页底 #fbfbfb),
+     状态栏却停在 #f4f4f4,中间就有一道看得见的横线。
+     解法:在 <head> 里、首次绘制之前,直接从 localStorage 读出皮肤并把 meta 改掉。
+     ⚠️ 这段必须留在 manifest 之后、样式之前,**别挪到 body 里**,挪了就又来不及了。 -->
+<script>
+(function () {
+  try {
+    var st = JSON.parse(localStorage.getItem("dwell-shell-v1") || "{}") || {};
+    var TOP = { ivory: "#f3f2f1", moonsand: "#efe7e5", cream: "#f5ede1",
+                fogmtn: "#23302a", fogblue: "#e8ecf2", inkwhite: "#fbfbfb" };
+    var skin = st.skin || "ivory";
+    var c = TOP[skin] || TOP.ivory;
+    /* 只有象牙纸张跟随昼夜,其余五款自带气质(和样式表里的规则一致) */
+    if (skin === "ivory") {
+      var dark = st.appearance === "dark" ||
+                 (st.appearance !== "light" && window.matchMedia &&
+                  matchMedia("(prefers-color-scheme: dark)").matches);
+      if (dark) c = "#1c1b19";
+    }
+    var ms = document.querySelectorAll('meta[name="theme-color"]');
+    for (var i = 0; i < ms.length; i++) ms[i].setAttribute("content", c);
+  } catch (e) {}
+})();
+</script>
 <!-- ============================================================
      dwell —— 三栏外壳(2026-09-19)
      Chats 点一行 → 用 iframe 把 chat.html(原来那整页聊天)推进来。
@@ -118,18 +145,21 @@
        于是预览对上了、真机反而偏大。正确做法是拿参考图的**墨高**除以 New York 的比例
        (大写高 0.69em、大写顶到降部底 0.93em、数字 = 大写高)反推出 font-size。
        2026-09-19 算出来的那一套就是下面这些数。**别再照本机预览调它们。** */
-    --fs-display: clamp(32px, 9.8vw, 39.5px); /* Day 35:参考墨高 36.6pt ÷ 0.93 */
+    /* ⚠️ 2026-09-19 用**她真机截图**回算:39.5px 渲染出 43.7pt 墨高,参考图是 39.0 —— 大了 12%。
+       (此前按「0.93em」估的比例是错的:New York 的数字带降部,Day 35 的实测比例是 1.106em。)
+       39.0 ÷ 1.106 = 35.3 → 取 35.5。**这个数是真机回算的,别再照容器预览调。** */
+    --fs-display: clamp(29px, 8.8vw, 35.5px); /* Day 35 */
     --fs-greet:   clamp(26px, 7.8vw, 31.5px); /* Good evening:29.4 ÷ 0.93 */
     --fs-metric:  clamp(27px, 8.0vw, 32px);   /* 580 / 114:22.2 ÷ 0.69(数字墨高 = 大写高) */
     --fs-title:    24px;   /* 页标题 Chats / Settings / Diary */
     --fs-metric-2: 19.5px; /* 164 / 331:13.3 ÷ 0.69 */
-    --fs-headline: 17.5px; /* Monthly Anniversary:16.1 ÷ 0.93 */
+    --fs-headline: 19.5px; /* Monthly Anniversary:真机墨宽 171.7 vs 参考 188.9,回算 19.3 */
     --fs-ring:     18.5px; /* 环里那个 27:12.9 ÷ 0.69 */
     --fs-whisper:  15.5px; /* 深色卡正文 */
     --fs-label:    16.5px; /* Us / Steps / Heart Rate:15.2 ÷ 0.93 */
     --fs-tab:      16px;   /* Tab:「Home」无降部,11.3 ÷ 0.69 */
     --fs-body:     15px;
-    --fs-sub:      13.5px; /* 天气、卡片副标题 */
+    --fs-sub:      14.5px; /* 天气、卡片副标题:参考 Aug 21 墨高 14.1 vs 真机 12.7 */
     --fs-caption:  13.5px;
     --fs-datum:    11px;   /* 图例、时间戳 */
 
@@ -295,13 +325,16 @@
   /* 中文名落回黑体(衬线没有汉字,硬挂上去会变宋体)。
      字号压到 .96em、字重 600、字距收紧 —— 和英文标题咬在同一条视觉线上,不像一个普通 label */
   .greet .cn{ font-family: var(--sans); font-weight: 500; font-size: .96em; letter-spacing: -.01em; }
-  .headline { font-family: var(--serif); font-size: var(--fs-headline); font-weight: 500; line-height: 1.14; letter-spacing: -.01em; }
+  /* 600 不是 500:真机笔画 8.9% vs 参考 13.0%,明显偏细 */
+  .headline { font-family: var(--serif); font-size: var(--fs-headline); font-weight: 600; line-height: 1.14; letter-spacing: -.01em; }
   .name     { font-family: var(--serif); font-size: 16.5px; font-weight: 600; line-height: 1.25; }
   .label    { font-family: var(--serif); font-size: var(--fs-label); font-weight: 400; color: var(--ink-2); line-height: 1.28; letter-spacing: -.004em; }
   .datum    { font-family: var(--serif); font-size: var(--fs-datum); font-weight: 400; color: var(--dim); }
   .body     { font-size: var(--fs-body); line-height: 1.6; }
   .caption  { font-size: var(--fs-caption); line-height: 1.5; color: var(--dim); }
-  .sub      { font-size: var(--fs-sub); line-height: 1.45; color: var(--dim); }
+  /* ⚠️ 二级不是三级。真机上这行是 #86868a,参考图是 #555455(副标题)/ #434343(Aug 21)——
+     **参考图全页只有两档文字色:近黑,和 #40~#57 的中灰。** --dim 那一档在参考图里根本没用到。 */
+  .sub      { font-size: var(--fs-sub); line-height: 1.45; color: var(--ink-2); }
   /* 英文日期用的副标题:同一个字号,换衬线、字距回 0(照参考图) */
   .sub.en   { font-family: var(--serif); letter-spacing: 0; }
 
@@ -318,8 +351,8 @@
      问候是全页第一焦点,它上下的呼吸要比别处宽。 */
   .dayrow { display: flex; align-items: center; gap: var(--sp-8); }
   .dayrow .date {
-    /* 日期行比卡内标签大半档:参考图墨高 16.7pt,17px 只量到 15.4 */
-    font-family: var(--serif); font-size: 17.5px; font-weight: 400;
+    /* ⚠️ 日期行是**中灰**不是近黑:参考 #575656,真机量到 #191919。字号按真机回算 18.5。 */
+    font-family: var(--serif); font-size: 18.5px; font-weight: 400; color: var(--ink-2);
     line-height: 1.2; flex: 1; min-width: 0; letter-spacing: -.008em;
   }
   .syncpill {
@@ -420,9 +453,10 @@
   /* 600,不是 700 —— 参考图里这两个数明显比 Day 35 轻一档 */
   .anni .n {
     font-family: var(--serif); font-size: var(--fs-metric-2); font-weight: 600;
-    line-height: 1.1; letter-spacing: -.015em; flex: none;
+    line-height: 1.1; letter-spacing: -.015em; flex: none; color: var(--ink-2);
   }
-  .anni .who { font-family: var(--serif); font-size: 14px; font-weight: 400; line-height: 1.24; color: var(--ink-2); overflow-wrap: anywhere; }
+  /* 参考图:名字 #0c0c0c(近黑)、数字 #3f3f40(中灰)、日期最浅 */
+  .anni .who { font-family: var(--serif); font-size: 14.5px; font-weight: 400; line-height: 1.24; color: var(--ink); overflow-wrap: anywhere; }
   /* Jan 6 / Jun 22 在参考图里是**衬线**,不是黑体 */
   .anni .caption { font-family: var(--serif); font-size: 12.5px; color: var(--dim-2); margin-top: 1px; }
 
@@ -506,7 +540,8 @@
     letter-spacing: -.008em;
     transition: color .2s var(--ease-ui), transform .2s var(--ease-ui);
   }
-  .tabbar button[aria-selected="true"] { color: var(--ink); font-weight: 700; }
+  /* 600 不是 700:真机笔画 25.7% vs 参考 17.9%,粗了四成 */
+  .tabbar button[aria-selected="true"] { color: var(--ink); font-weight: 600; }
   .tabbar button:active { transform: scale(.94); }
 
   /* ---------- 入场:Spring Reveal ----------
