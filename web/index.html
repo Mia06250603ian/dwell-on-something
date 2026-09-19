@@ -213,8 +213,11 @@
     background: var(--paper-bot);
     background-image: linear-gradient(180deg, var(--paper-top) 0%, var(--paper-bot) 100%);
     background-repeat: no-repeat;
+    /* ⚠️ 这里用 lvh 不用 dvh:dvh 会随地址栏收放实时变,
+       渐变就会在滚动到一半时被重新缩放、看得出来跳。lvh 是「最大视口高」,滚动中不变。
+       (min-height 那头仍然用 dvh —— 那里要的正是「当前真实可视高度」。) */
     background-size: 100% 100vh;
-    background-size: 100% 100dvh;
+    background-size: 100% 100lvh;
     color: var(--ink);
     font-family: var(--sans);
     font-size: var(--fs-body);
@@ -943,6 +946,13 @@
      class 由 JS 加,所以「JS 没跑」= 内容直接可见,不会卡在透明态。
      加完立刻解开 —— 这一页只在首次加载放一次,切 tab 不重播(重播会显得吵)。 */
   document.documentElement.classList.add("anim");
+  /* ⚠️ **跑完必须摘掉**,原来写了注释却没真摘,两个后果:
+     ① 切到 Chats 再切回 Home,#tab-home 重新显示会让 CSS 动画整套重放 —— 每次回首页都抖一遍;
+     ② will-change 永久挂在五棵子树上,白白占着合成层。
+     摘的时机 = 最后一段的延迟(4×45) + 时长(560) + 一点余量。 */
+  setTimeout(function () {
+    document.documentElement.classList.remove("anim");
+  }, 4 * 45 + 560 + 140);
 
   /* ---------- 心率折线 ----------
      参考图是一条**密而毛糙**的真实波形(低位盘整 → 爬升带毛刺 → 收尾回落),
@@ -1069,6 +1079,15 @@
      所以每次换皮肤都把它同步成当前的 --paper-top,接缝就没了。
      ⚠️ head 里那两条带 media 的是**没有 JS 时的兜底**,这里把它们一起改掉,
      免得系统深浅色和她手选的皮肤打架。 */
+  /* ⚠️ 跟随系统时,系统深浅色一变 --paper-top 就变了,但 meta 不会自己跟 ——
+     于是状态栏那一条会卡在旧色上,正是这个函数要防的事。所以挂个监听。 */
+  (function () {
+    try {
+      var mq = matchMedia("(prefers-color-scheme: dark)");
+      if (mq.addEventListener) mq.addEventListener("change", function () { syncThemeColor(); });
+      else if (mq.addListener) mq.addListener(function () { syncThemeColor(); });
+    } catch (e) {}
+  })();
   function syncThemeColor() {
     try {
       var c = getComputedStyle(document.documentElement).getPropertyValue("--paper-top").trim();
@@ -1085,6 +1104,10 @@
   function tok(name) {
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || "—";
   }
+  function px(sel, prop) {            /* 量真实元素某个属性的计算值 */
+    var el = document.querySelector(sel);
+    return el ? getComputedStyle(el)[prop] : "—";
+  }
   function fs(sel) {                        /* 量某个真实元素最终渲染出来的字号/字重 */
     var el = document.querySelector(sel);
     if (!el) return "—";
@@ -1093,7 +1116,10 @@
   }
   function specRows() {
     return [
-      ["页面左右留白", tok("--gutter")],
+      /* ⚠️ 不能用 tok("--gutter"):它的值是 clamp(14px,4.6vw,18px),
+         自定义属性只在计算值阶段替换 var(),clamp 不会被算出来,印出去就是那行表达式本身。
+         而这恰恰是全表唯一一个**逐设备不同**的数,印错等于备份说谎。改成量真实元素。 */
+      ["页面左右留白", px(".phone", "paddingLeft")],
       ["卡片间距(横=纵)", tok("--gap")],
       ["卡片圆角", tok("--r-card")],
       ["卡片内留白", tok("--pad") + "(深色卡 " + tok("--pad-deep") + ")"],
@@ -1108,8 +1134,10 @@
       ["大数字 580 / 114", fs(".metric .big")],
       ["卡片小标签 Us/Steps", fs(".label")],
       ["悄悄话正文", fs(".whisper .body")],
-      ["Tab 标签", fs(".tabbar button")],
-      ["正文 / 说明", fs("body") + " · " + fs(".caption")],
+      /* ⚠️ 选择器要挑对:.tabbar button 命中的是选中态那颗(700),
+         .caption 命中的是文档里第一个 —— 也就是被覆写成 12.5px 衬线的「Jan 6」。 */
+      ["Tab 标签(未选)", fs('.tabbar button[aria-selected="false"]')],
+      ["正文 / 说明", fs("body") + " · " + fs("#tab-chats .caption")],
       ["底部条", tok("--tabbar-h") + " + 安全区"],
       ["— 动画 —", ""],
       ["入场时长 / 错位", tok("--dur-reveal") + " / " + tok("--stagger") + " 一级"],
@@ -1117,8 +1145,9 @@
          印了整页就横向溢出。印它的来历更有用,也更短。 */
       ["缓动", tok("--spring").indexOf("linear(") === 0
                  ? "弹簧 response .46 / damping .86" : "弹簧(退回 cubic-bezier)"],
-      ["减弱动态效果", matchMedia("(prefers-reduced-motion: reduce)").matches ? "系统已开启(只淡入)" : "未开启"],
-      ["安全区(这台设备)", tok("--sat") + " / " + tok("--sab")]
+      ["减弱动态效果", matchMedia("(prefers-reduced-motion: reduce)").matches ? "系统已开启(只淡入)" : "未开启"]
+      /* 安全区不在这里印:--sat/--sab 的值是 env(...) 表达式,同 --gutter 那条。
+         下面 live 那组里的「顶/底安全区」是 safeArea() 量出来的真值,那条才作数。 */
     ];
   }
   function safeArea() {
