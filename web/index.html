@@ -87,11 +87,11 @@
     /* ---- 尺度 ---- */
     /* 小屏(SE/mini)收窄到 14,常规屏 18:小屏上留白按比例走,不挤 */
     --gutter: clamp(14px, 4.6vw, 18px);
-    --gap: var(--sp-16);    /* 卡片间距,横纵同一个数 */
+    --gap: 13px;            /* 卡片间距,横纵同一个数(照参考图实测) */
     --r-card: var(--r-lg);  /* 卡片圆角(15 点拟合稳定在 24~26) */
     --r-inner: var(--r-md);
     --pad: var(--sp-20);    /* 卡片内留白 */
-    --pad-deep: 22px;       /* 深色卡内留白,比白卡再宽一点 */
+    --pad-deep: var(--pad); /* 深色卡内留白:和白卡同一个数,不开小灶 */
     --row: 66.5px;          /* 会话行高(实测 66.6) */
     --av: 40px;             /* 头像直径 */
     --hair: .5px;
@@ -105,13 +105,13 @@
 
     /* ---- 字阶(clamp:小屏自动缩,不 hardcode 截图尺寸) ---- */
     --fs-display: clamp(36px, 10.9vw, 44px);  /* Day 35 */
-    --fs-greet:   clamp(27px, 8.4vw, 34px);   /* Good evening */
-    --fs-metric:  clamp(32px, 9.4vw, 38px);   /* 580 / 114 */
+    --fs-greet:   clamp(26px, 7.9vw, 32px);   /* Good evening */
+    --fs-metric:  clamp(28px, 8.2vw, 33px);   /* 580 / 114 */
     --fs-title:    26px;   /* 页标题 Chats / Settings / Diary */
     --fs-metric-2: 21px;   /* 164 / 331 */
     --fs-headline: 20px;   /* Monthly Anniversary */
     --fs-ring:     20px;   /* 环里那个 27 */
-    --fs-whisper:  17px;   /* 深色卡正文 */
+    --fs-whisper:  16.5px; /* 深色卡正文 */
     --fs-label:    17px;   /* Us / Steps / Heart Rate / 日期行 */
     --fs-tab:      16px;
     --fs-body:     15px;
@@ -236,7 +236,7 @@
     max-width: 430px;          /* Pro Max 也是 430pt,再宽就居中留白 */
     margin: 0 auto;
     padding-inline: var(--gutter);
-    padding-block: var(--sp-20) 0;
+    padding-block: var(--sp-16) 0;
   }
   /* 底部留够:底栏内容 + 安全区 + 一口气。不写死,换机型自己算 */
   .screen { padding-bottom: calc(var(--tabbar-h) + var(--sab) + var(--sp-32)); }
@@ -309,10 +309,10 @@
     transition: transform .2s var(--ease-ui);
   }
   .iconbtn:active { transform: scale(.92); }
-  .greet   { margin-top: var(--sp-8); }
-  .weather { margin-top: 6px; color: var(--ink-2); }
+  .greet   { margin-top: 2px; }
+  .weather { margin-top: 2px; color: var(--ink-2); }
   .weather .soft { color: var(--dim-2); }   /* 温度区间再弱一级 */
-  .homefeed { margin-top: var(--sp-24); }
+  .homefeed { margin-top: var(--sp-12); }
 
   /* ---------- 深色卡(Today's Whisper) ----------
      ⚠️ **高度绝不写死**:卡高 = 内容固有高度 + 内边距 + 内部间距。
@@ -329,15 +329,17 @@
   .whisper .txt {
     flex: 1 1 auto; min-width: 0;            /* min-width:0 才允许长词换行而不撑破 */
     display: flex; flex-direction: column; align-items: flex-start;
-    gap: var(--sp-16);                        /* 落款的间距由布局给,不靠 margin 堆 */
+    /* ⚠️ 4px,不是 16 —— 参考图里落款几乎是接着正文下一行,
+       那点空隙是行盒自带的,不是额外间距。给多了整张卡就高出一截。 */
+    gap: var(--sp-4);
   }
   .whisper .body {
-    font-size: var(--fs-whisper); line-height: 1.56; letter-spacing: .002em;
+    font-size: var(--fs-whisper); line-height: 1.5; letter-spacing: .002em;
     overflow-wrap: anywhere;                  /* 超长无空格串也不溢出 */
   }
   .whisper .more {
     color: var(--deep-dim); font-family: var(--serif);
-    font-size: 14px; line-height: 1.2; letter-spacing: .01em;
+    font-size: 12.5px; line-height: 1.2; letter-spacing: .01em;
   }
 
   /* ---------- 头像 ---------- */
@@ -362,12 +364,12 @@
      这张卡的「留白感」由内部节奏给:Us → Day 之间 2px,Day → 副标题 14px。 */
   .usrow { display: flex; align-items: center; gap: var(--sp-12); }
   .usrow .grow { flex: 1; min-width: 0; }
-  .usrow .display { margin-top: 2px; }
+  .usrow .display { margin-top: 0; }
   .heart {
     width: 32px; height: 32px; flex: none;
     color: var(--dim-2); opacity: .85; align-self: center;
   }
-  .relcard .sub { margin-top: 14px; }
+  .relcard .sub { margin-top: 6px; }
 
   /* ---------- 纪念日 ---------- */
   .annihead { display: flex; align-items: flex-start; gap: var(--sp-16); }
@@ -409,18 +411,18 @@
     line-height: 1.06; letter-spacing: -.024em;
   }
   .metric .unit { font-size: 14px; color: var(--dim); font-family: var(--sans); font-weight: 400; }
-  .metric .figure { margin-top: var(--sp-12); }
-  .bars { display: flex; align-items: flex-end; gap: 5px; height: 46px; }
+  .metric .figure { margin-top: 10px; }
+  .bars { display: flex; align-items: flex-end; gap: 5px; height: 40px; }
   /* ⚠️ 柱子用 color-mix 掺墨色,不要 opacity + --dim-2:
      深色皮肤下 --dim-2 本来就暗,再压 42% 透明度等于看不见(实测)。
      掺墨的写法浅深两套底都自动成立。 */
   .bars i { flex: 1; background: color-mix(in srgb, var(--ink) 20%, transparent); border-radius: 2.5px; display: block; min-height: 3px; }
   .bars i.on { background: var(--ink); }
-  .barlabels { display: flex; gap: 5px; margin-top: 6px; }
+  .barlabels { display: flex; gap: 5px; margin-top: 5px; }
   .barlabels span { flex: 1; text-align: center; font-size: 10px; line-height: 1.4; color: var(--dim-2); }
   .barlabels span.on { color: var(--ink-2); font-weight: 600; }
-  .spark { width: 100%; height: 46px; display: block; }
-  .metric .foot { margin-top: 6px; font-size: 12px; color: var(--dim-2); }
+  .spark { width: 100%; height: 40px; display: block; }
+  .metric .foot { margin-top: 4px; font-size: 12px; color: var(--dim-2); }
 
   /* ---------- 会话列表 ---------- */
   .pagehead { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
