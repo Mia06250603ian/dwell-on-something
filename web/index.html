@@ -2,10 +2,22 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
+<!-- viewport-fit=cover:让网页铺满整块屏(含刘海/灵动岛那一条和底部 Home Indicator 那一条),
+     安全区再由 env(safe-area-inset-*) 让内容避开。两者缺一不可:
+     只写 cover 内容会被刘海吃掉,只写安全区则铺不满、上下留黑边。 -->
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- 这两条是「从主屏打开 = 没有地址栏、没有底部工具栏」的开关。
+     apple- 那条是 iOS 认的,不带前缀那条是标准的(安卓/桌面 Chrome 认)。 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="dwell">
+<!-- ⚠️ 状态栏刻意用 default,**不要 black-translucent**:
+     那个值会把状态栏文字锁成白色,而这套皮肤默认是浅色纸 —— 白字打在米白上等于看不见。
+     用 default + theme-color,iOS 15 起会拿 theme-color 填状态栏那一条并自动挑可读的字色;
+     下面的 JS 还会让 theme-color 跟着当前皮肤走,所以那一条和页面底色永远是同一个色,看不出接缝。 -->
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#f3f2f1" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1c1b19" media="(prefers-color-scheme: dark)">
-<meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="icon" href="icons/favicon-64.png" sizes="64x64">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="manifest" href="manifest.json">
@@ -19,9 +31,15 @@
      那套数见 Ombre-Brain 的 dwell-bridge/MAINTENANCE.md。
      ============================================================ -->
 <style>
+  /* 顶部安全区抬在根上,所以普通流里的内容天然避开刘海/灵动岛。
+     ⚠️ **底部不在这里抬**:底栏是 fixed 定位的,它自己带一份安全区内边距,
+     正文的下边距也已经把安全区算进去了(见 .screen)—— 在根上再抬一次就是抬两次。 */
+  /* 安全区收成两个变量,全页只认这两个:改一处、全页跟着走,
+     也便于测试里把它们改成假值来模拟一台有刘海的机器。 */
   :root { color-scheme: light dark;
-          padding-top: env(safe-area-inset-top, 0px);
-          padding-bottom: env(safe-area-inset-bottom, 0px); }
+          --sat: env(safe-area-inset-top, 0px);      /* 刘海 / 灵动岛那一条 */
+          --sab: env(safe-area-inset-bottom, 0px);   /* Home Indicator 那一条 */
+          padding-top: var(--sat); }
   img { max-width: 100%; }
   [hidden] { display: none !important; }
 </style>
@@ -184,13 +202,19 @@
     --deep: #111111; --deep-ink: #fafafa; --deep-dim: #9a9a9e;
   }
 
-  html, body { height: 100%; }
+  /* dvh:iOS 上地址栏收放会改 vh,用 dvh 才是「当前真实可视高度」。
+     写两行是渐进增强 —— 不认 dvh 的浏览器吃上面那行。 */
+  html, body { min-height: 100vh; min-height: 100dvh; }
   body {
     margin: 0;
+    /* body 的背景会上抛到画布,所以整块屏(含两条安全区)都是这个底,不会露白边。
+       渐变正好铺满一屏高,再往下自然接上 --paper-bot,看不出交界。
+       ⚠️ 原来写死的 880px 是照某一台机器的屏高定的,换机型就不对了。 */
     background: var(--paper-bot);
     background-image: linear-gradient(180deg, var(--paper-top) 0%, var(--paper-bot) 100%);
     background-repeat: no-repeat;
-    background-size: 100% 880px;
+    background-size: 100% 100vh;
+    background-size: 100% 100dvh;
     color: var(--ink);
     font-family: var(--sans);
     font-size: var(--fs-body);
@@ -215,7 +239,7 @@
     padding-block: var(--sp-20) 0;
   }
   /* 底部留够:底栏内容 + 安全区 + 一口气。不写死,换机型自己算 */
-  .screen { padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + var(--sp-32)); }
+  .screen { padding-bottom: calc(var(--tabbar-h) + var(--sab) + var(--sp-32)); }
   .screen[hidden] { display: none !important; }
 
   /* ---------- 卡 ---------- */
@@ -231,21 +255,38 @@
   .duo { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
 
   /* ---------- 字级 ----------
-     层级靠**字重 + 字族 + 颜色**拉开,不是单纯把 font-size 放大。
-     ⚠️ 「安卓味」的根因是字重:参考图的大标题全是**粗衬线**,常规字重一眼就塌。 */
+     ⚠️ **字重是照参考图逐项定的,不是一律 700。** 三档,各管各的:
+       700 —— 英文大标题与大数字(Good evening / Day 35 / Monthly Anniversary / 580 / 114)
+              这一档要的是衬线的粗细对比(粗竖细横),「安卓味」的根因就是这里用了常规字重
+       600 —— 中量数字(27 / 164 / 331)与中文名。**它们不该和大标题一样重**:
+              参考图里这几个数明显比 Day 35 轻一档;中文名用 600 是因为汉字笔画密,
+              同样字号下 600 的视觉重量就已经等于拉丁 700,上 700 会糊成一团
+       400 —— 一切标签、日期、正文(Us / Steps / Heart Rate / Aug 21 / Jan 6 / 说明文字)
+     ⚠️ 字族同理分两支:**英文与数字走衬线,中文走黑体**。
+        参考图里 Aug 21 / Jan 6 / Jun 22 是**衬线**,别跟着中文副标题一起落回黑体。 */
   .display  { font-family: var(--serif); font-size: var(--fs-display); font-weight: 700; line-height: 1.02; letter-spacing: -.021em; }
   .title    { font-family: var(--serif); font-size: var(--fs-title); font-weight: 700; line-height: 1.1; letter-spacing: -.016em; }
-  .greet    { font-family: var(--serif); font-size: var(--fs-greet); font-weight: 700; line-height: 1.14; letter-spacing: -.017em; }
-  /* 中文名落回黑体加粗(衬线没有汉字,硬挂上去会变宋体)。
-     字号压到 .96em、字距收紧,让它和英文标题咬在同一条视觉线上,不像一个普通 label */
-  .greet .cn{ font-family: var(--sans); font-weight: 700; font-size: .96em; letter-spacing: -.01em; }
+  .greet    { font-family: var(--serif); font-size: var(--fs-greet); font-weight: 700; line-height: 1.16; letter-spacing: -.017em; }
+  /* 中文名落回黑体(衬线没有汉字,硬挂上去会变宋体)。
+     字号压到 .96em、字重 600、字距收紧 —— 和英文标题咬在同一条视觉线上,不像一个普通 label */
+  .greet .cn{ font-family: var(--sans); font-weight: 600; font-size: .96em; letter-spacing: -.01em; }
   .headline { font-family: var(--serif); font-size: var(--fs-headline); font-weight: 700; line-height: 1.14; letter-spacing: -.012em; }
   .name     { font-family: var(--serif); font-size: 17px; font-weight: 700; line-height: 1.25; }
-  .label    { font-family: var(--serif); font-size: var(--fs-label); font-weight: 400; color: var(--ink-2); line-height: 1.28; }
+  .label    { font-family: var(--serif); font-size: var(--fs-label); font-weight: 400; color: var(--ink-2); line-height: 1.28; letter-spacing: -.004em; }
   .datum    { font-family: var(--serif); font-size: var(--fs-datum); font-weight: 400; color: var(--dim); }
   .body     { font-size: var(--fs-body); line-height: 1.6; }
   .caption  { font-size: var(--fs-caption); line-height: 1.5; color: var(--dim); }
   .sub      { font-size: var(--fs-sub); line-height: 1.45; color: var(--dim); }
+  /* 英文日期用的副标题:同一个字号,换衬线、字距回 0(照参考图) */
+  .sub.en   { font-family: var(--serif); letter-spacing: 0; }
+
+  /* 展示型数字一律**比例数字**,不用等宽。
+     body 上那条 tabular-nums 是给聊天/列表对齐用的;衬线的等宽数字在 40px 上
+     字怀被撑开、字距发散,正是「像 dashboard 不像杂志」的那种感觉。
+     这几个数是静态展示、不需要逐位对齐,所以在这里翻回比例数字。 */
+  .display, .metric .big, .anni .n, .ring .num {
+    font-variant-numeric: proportional-nums;
+  }
 
   /* ---------- 首页头 ----------
      节奏:日期行 →8→ 问候 →6→ 天气 →24→ 卡片流。
@@ -336,7 +377,7 @@
   .ring .num {
     position: absolute; inset: 0; display: grid; place-items: center;
     font-family: var(--serif); font-size: var(--fs-ring); font-weight: 600;
-    letter-spacing: -.02em;
+    letter-spacing: -.015em; line-height: 1;
   }
   /* 细到只是一道痕,不是 border */
   .rule { height: var(--hair); background: var(--line); margin: var(--sp-20) 0; border: 0; }
@@ -348,12 +389,14 @@
   }
   .anni .grow { flex: 1; min-width: 0; }
   /* 数字要跳出来,标签弱一级,日期再弱一级 */
+  /* 600,不是 700 —— 参考图里这两个数明显比 Day 35 轻一档 */
   .anni .n {
-    font-family: var(--serif); font-size: var(--fs-metric-2); font-weight: 700;
-    line-height: 1.1; letter-spacing: -.02em; flex: none;
+    font-family: var(--serif); font-size: var(--fs-metric-2); font-weight: 600;
+    line-height: 1.1; letter-spacing: -.015em; flex: none;
   }
   .anni .who { font-family: var(--serif); font-size: 14px; font-weight: 400; line-height: 1.24; color: var(--ink-2); overflow-wrap: anywhere; }
-  .anni .caption { font-size: 12.5px; color: var(--dim-2); margin-top: 1px; }
+  /* Jan 6 / Jun 22 在参考图里是**衬线**,不是黑体 */
+  .anni .caption { font-family: var(--serif); font-size: 12.5px; color: var(--dim-2); margin-top: 1px; }
 
   /* ---------- 数据小卡(Steps / Heart Rate) ----------
      层级:大数字 primary → 标题 secondary → 单位/里程 tertiary。
@@ -414,8 +457,8 @@
   .tabbar {
     position: fixed; left: 50%; bottom: 0; transform: translateX(-50%);
     width: 100%; max-width: 430px; z-index: 50;
-    height: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px));
-    padding: 0 var(--gutter) env(safe-area-inset-bottom, 0px);
+    height: calc(var(--tabbar-h) + var(--sab));
+    padding: 0 var(--gutter) var(--sab);
     background: color-mix(in srgb, var(--paper-bot) 78%, transparent);
     -webkit-backdrop-filter: saturate(1.5) blur(24px);
     backdrop-filter: saturate(1.5) blur(24px);
@@ -469,7 +512,7 @@
     position: fixed; inset: 0; z-index: 80;
     background: var(--paper-bot);
     display: flex; flex-direction: column;
-    padding-top: env(safe-area-inset-top, 0px);
+    padding-top: var(--sat);
     animation: slidein .28s cubic-bezier(.32,.72,0,1);
   }
   @keyframes slidein { from { transform: translateX(16px); opacity: 0 } to { transform: none; opacity: 1 } }
@@ -500,7 +543,7 @@
     background: var(--paper-bot);
     background-image: linear-gradient(180deg, var(--paper-top) 0%, var(--paper-bot) 62%);
     overflow-y: auto; -webkit-overflow-scrolling: touch;
-    padding-top: env(safe-area-inset-top, 0px);
+    padding-top: var(--sat);
     animation: rise .26s cubic-bezier(.32,.72,0,1);
   }
   @keyframes rise { from { transform: translateY(18px); opacity: 0 } to { transform: none; opacity: 1 } }
@@ -630,7 +673,7 @@
         <div class="annihead">
           <div class="grow">
             <h2 class="headline" style="margin:0">Monthly Anniversary</h2>
-            <p class="sub">Aug 21</p>
+            <p class="sub en">Aug 21</p>
           </div>
           <div class="ring">
             <svg viewBox="0 0 58 58" width="58" height="58" aria-hidden="true">
@@ -798,7 +841,8 @@
 
 <!-- ================= SETTINGS ================= -->
 <div class="sheet" id="settings" hidden>
-  <div class="phone" style="padding-bottom:60px">
+  <!-- 设置页最后一段也要躲开 Home Indicator,所以底部留白把安全区算进去 -->
+  <div class="phone" style="padding-bottom:calc(60px + var(--sab))">
     <div class="sheethead">
       <h1 class="title grow" style="margin:0">Settings</h1>
       <button class="done" id="closeSettings">完成</button>
@@ -1010,7 +1054,23 @@
     op.value = String(state.opacity);
     op.style.setProperty("--fill", ((state.opacity - 40) / 60 * 100).toFixed(1) + "%");
     opVal.textContent = state.opacity + "%";
+    syncThemeColor();
     renderSpec();
+  }
+
+  /* ---------- 状态栏那一条 ----------
+     从主屏打开时,刘海两侧那条(和安卓的状态栏)由系统按 theme-color 填。
+     写死成象牙色的话,换到雾山/墨白就会露出一道颜色不对的横带 ——
+     所以每次换皮肤都把它同步成当前的 --paper-top,接缝就没了。
+     ⚠️ head 里那两条带 media 的是**没有 JS 时的兜底**,这里把它们一起改掉,
+     免得系统深浅色和她手选的皮肤打架。 */
+  function syncThemeColor() {
+    try {
+      var c = getComputedStyle(document.documentElement).getPropertyValue("--paper-top").trim();
+      if (!c) return;
+      var metas = document.querySelectorAll('meta[name="theme-color"]');
+      Array.prototype.forEach.call(metas, function (m) { m.setAttribute("content", c); });
+    } catch (e) {}
   }
 
   /* ---------- 这套数 ----------
@@ -1048,8 +1108,12 @@
       ["底部条", tok("--tabbar-h") + " + 安全区"],
       ["— 动画 —", ""],
       ["入场时长 / 错位", tok("--dur-reveal") + " / " + tok("--stagger") + " 一级"],
-      ["缓动", tok("--spring").slice(0, 46) + (tok("--spring").length > 46 ? "…" : "")],
-      ["减弱动态效果", matchMedia("(prefers-reduced-motion: reduce)").matches ? "系统已开启(只淡入)" : "未开启"]
+      /* ⚠️ 别把 linear() 原文印进来:那串三百多个字符,而这一列是 nowrap 的,
+         印了整页就横向溢出。印它的来历更有用,也更短。 */
+      ["缓动", tok("--spring").indexOf("linear(") === 0
+                 ? "弹簧 response .46 / damping .86" : "弹簧(退回 cubic-bezier)"],
+      ["减弱动态效果", matchMedia("(prefers-reduced-motion: reduce)").matches ? "系统已开启(只淡入)" : "未开启"],
+      ["安全区(这台设备)", tok("--sat") + " / " + tok("--sab")]
     ];
   }
   function safeArea() {
