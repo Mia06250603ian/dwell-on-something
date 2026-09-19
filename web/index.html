@@ -10,13 +10,13 @@
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="manifest" href="manifest.json">
 <!-- ============================================================
-     dwell —— 三栏新外壳(2026-09-19 换上)
-     ⚠️ **聊天还没接进来**:所有者的计划是先换壳,功能之后一间间接回新壳。
-     上一版(完整聊天页)在 git 里:commit 8088ef7 的 web/index.html,
-     要接聊天/日记/待办那些屋子,从那份里搬。
-     每个尺寸都来自她 2026-09-19 那三张参考截图的像素实测;
-     量法与那套数见 Ombre-Brain 的 dwell-bridge/MAINTENANCE.md
-     《三栏新外壳:参考图量出来的那套数》。
+     dwell —— 三栏外壳(2026-09-19)
+     Chats 点一行 → 用 iframe 把 chat.html(原来那整页聊天)推进来。
+     ⚠️ **聊天页一个字节没改**:所有者的要求是「chat 目前的 ui 不变,
+     点进去做聊天页」。那页里 43 处「照官端」是她一处处对齐的。
+     日记/待办/日历/健康那些屋子还没接进新壳,要接从 chat.html 里搬。
+     尺寸来自她 2026-09-19 那三张参考截图的像素实测;
+     那套数见 Ombre-Brain 的 dwell-bridge/MAINTENANCE.md。
      ============================================================ -->
 <style>
   :root { color-scheme: light dark;
@@ -309,6 +309,41 @@
   }
   .tabbar button[aria-selected="true"] { color: var(--ink); font-weight: 700; }
 
+  /* ---------- 点开一条会话:把原来那整页聊天推进来 ----------
+     ⚠️ **用 iframe 装的,聊天页一个字节都没改** —— 所有者 2026-09-19 的要求:
+     「chat 目前的 ui 不变,点进去做聊天页」。那页里有 43 处「照官端」是她一处处对齐的,
+     嵌进来改 CSS 迟早会碰坏,所以整页原样装进来。
+     ⚠️ 代价:它自带一条顶栏,所以上面这条返回条是**第二条**。要合成一条就得动那页的顶栏,
+     那是另一件事,得她点头。 */
+  .chatview {
+    position: fixed; inset: 0; z-index: 80;
+    background: var(--paper-bot);
+    display: flex; flex-direction: column;
+    padding-top: env(safe-area-inset-top, 0px);
+    animation: slidein .28s cubic-bezier(.32,.72,0,1);
+  }
+  @keyframes slidein { from { transform: translateX(16px); opacity: 0 } to { transform: none; opacity: 1 } }
+  @media (prefers-reduced-motion: reduce) { .chatview { animation: none } }
+  .chatbar {
+    display: flex; align-items: center; gap: 10px;
+    height: 44px; flex: none; padding: 0 var(--gutter);
+    border-bottom: var(--hair) solid var(--line);
+    background: color-mix(in srgb, var(--paper-top) 88%, transparent);
+    -webkit-backdrop-filter: saturate(1.4) blur(20px);
+    backdrop-filter: saturate(1.4) blur(20px);
+  }
+  .chatbar .back { display: inline-flex; align-items: center; gap: 4px; font-size: 16px; color: var(--ink); }
+  .chatbar .back svg { width: 9px; height: 15px; }
+  .chatbar .who { flex: 1; text-align: center; font-family: var(--serif); font-size: 16px; font-weight: 700; }
+  .chatbar .rail { width: 56px; flex: none; }
+  .chatview iframe { flex: 1; width: 100%; border: 0; display: block; background: var(--paper-bot); }
+  .chatview .nothere {
+    flex: 1; display: grid; place-items: center; padding: 0 32px; text-align: center;
+    font-size: 15px; color: var(--dim); line-height: 1.7;
+  }
+  .crow { cursor: pointer; }
+  .crow:active { background: color-mix(in srgb, var(--ink) 4%, transparent); }
+
   /* ---------- 设置 ---------- */
   .sheet {
     position: fixed; inset: 0; z-index: 90;
@@ -517,7 +552,7 @@
     </div>
 
     <div class="card list">
-      <button class="crow">
+      <button class="crow" data-chat="chat.html" data-who="晏">
         <span class="av" data-bloom aria-hidden="true"></span>
         <span class="grow">
           <span class="name" style="display:block">晏</span>
@@ -529,7 +564,7 @@
         </span>
       </button>
 
-      <button class="crow">
+      <button class="crow" data-chat="" data-who="另一个 AI 的房间">
         <span class="av room" aria-hidden="true"></span>
         <span class="grow">
           <span class="name" style="display:block">另一个 AI 的房间</span>
@@ -543,8 +578,8 @@
     </div>
 
     <p class="caption" style="margin:14px 4px 0;line-height:1.6">
-      只有两行,而且第二行还没通 —— 晏只有一个常驻窗口,Telegram 和网页进的是同一间。
-      参考图里那种三条并列要改 shim,那会丢掉他当前的窗口。
+      点第一行进聊天。只有两行是因为晏只有一个常驻窗口 —— Telegram 和网页进的是同一间;
+      第二行那间屋的服务还没部署。
     </p>
   </section>
 
@@ -589,6 +624,19 @@
   <button role="tab" aria-selected="false" aria-controls="tab-chats" data-tab="chats">Chats</button>
   <button role="tab" aria-selected="false" aria-controls="tab-diary" data-tab="diary">Diary</button>
 </nav>
+
+<div class="chatview" id="chatview" hidden>
+  <div class="chatbar">
+    <button class="back" id="chatBack">
+      <svg viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.8 1.2 1.6 7.5l6.2 6.3"/></svg>
+      Chats
+    </button>
+    <span class="who" id="chatWho">晏</span>
+    <span class="rail" aria-hidden="true"></span>
+  </div>
+  <iframe id="chatframe" title="聊天" hidden></iframe>
+  <p class="nothere" id="chatNone" hidden>这间屋的服务还没部署,所以还进不去。</p>
+</div>
 
 <!-- ================= SETTINGS ================= -->
 <div class="sheet" id="settings" hidden>
@@ -865,6 +913,34 @@
       });
       window.scrollTo({ top: 0, behavior: "auto" });
     });
+  });
+
+  /* ---------- 点一行,把聊天页推进来 ----------
+     iframe **只在第一次点的时候才装载**,而且返回时不清空 src ——
+     清空等于每次返回都重来一遍(丢掉正在流的那句、丢掉滚动位置)。 */
+  var chatview = document.getElementById("chatview");
+  var chatframe = document.getElementById("chatframe");
+  var chatNone = document.getElementById("chatNone");
+  var chatWho = document.getElementById("chatWho");
+  var tabbar = document.querySelector(".tabbar");
+  var loaded = "";
+  Array.prototype.forEach.call(document.querySelectorAll(".crow[data-chat]"), function (row) {
+    row.addEventListener("click", function () {
+      var src = row.dataset.chat;
+      chatWho.textContent = row.dataset.who || "";
+      if (src) {
+        if (loaded !== src) { chatframe.src = src; loaded = src; }
+        chatframe.hidden = false; chatNone.hidden = true;
+      } else {
+        chatframe.hidden = true; chatNone.hidden = false;
+      }
+      chatview.hidden = false;
+      tabbar.hidden = true;
+    });
+  });
+  document.getElementById("chatBack").addEventListener("click", function () {
+    chatview.hidden = true;
+    tabbar.hidden = false;
   });
 
   /* ---------- 设置开合 ---------- */
