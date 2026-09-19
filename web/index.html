@@ -424,9 +424,13 @@
   .usrow { display: flex; align-items: center; gap: var(--sp-12); }
   .usrow .grow { flex: 1; min-width: 0; }
   .usrow .display { margin-top: 0; }
+  /* ⚠️ 参考图实测(2026-09-19,**用最大连通域框出整个图形量的,不是靠固定裁剪**):
+     宽 29.7pt × 高 28.1pt = **宽高比 1.057**(几乎正方)、顶部凹口深 11.4%、色 #cecece。
+     ~~上一轮量成 1.511 是错的~~:那次的裁剪把心底的尖切掉了,高度少算三分之一,
+     照它改完心被压扁。**量形状一定要用连通域框住整个图形,别靠固定裁剪。** */
   .heart {
-    width: 32px; height: 32px; flex: none;
-    color: var(--dim-2); opacity: .85; align-self: center;
+    width: 29.7px; height: 28.1px; flex: none;
+    color: var(--dim-2); opacity: .62; align-self: center;
   }
   .relcard .sub { margin-top: 11px; }
 
@@ -434,7 +438,7 @@
   .annihead { display: flex; align-items: flex-start; gap: var(--sp-16); }
   .annihead .grow { flex: 1; min-width: 0; }
   .annihead .sub { margin-top: 5px; }
-  .ring { width: 58px; height: 58px; flex: none; position: relative; }
+  .ring { width: 66px; height: 66px; flex: none; position: relative; }
   .ring .num {
     position: absolute; inset: 0; display: grid; place-items: center;
     font-family: var(--serif); font-size: var(--fs-ring); font-weight: 500;
@@ -474,13 +478,15 @@
      量下来约合 10px,取 12px —— 再小就不好认了,这 2px 是我留的,不是量出来的。 */
   .metric .unit { font-size: 12px; color: var(--dim); font-family: var(--sans); font-weight: 400; }
   .metric .figure { margin-top: 10px; }
-  .bars { display: flex; align-items: flex-end; gap: 5px; height: 40px; }
+  .bars { display: flex; align-items: flex-end; gap: 3.6px; height: 40px; }
   /* ⚠️ 柱子用 color-mix 掺墨色,不要 opacity + --dim-2:
      深色皮肤下 --dim-2 本来就暗,再压 42% 透明度等于看不见(实测)。
      掺墨的写法浅深两套底都自动成立。 */
-  .bars i { flex: 1; background: color-mix(in srgb, var(--ink) 20%, transparent); border-radius: 2.5px; display: block; min-height: 3px; }
+  /* ⚠️ 参考图实测:柱宽 17.1pt、间隙 3.6pt(宽:隙 = 4.7)、柱色 #8d8b8e。
+     我原来间隙 5pt、色掺墨 20%(约 #d3d3d3)—— 隙太宽、颜色太浅。 */
+  .bars i { flex: 1; background: color-mix(in srgb, var(--ink) 45%, transparent); border-radius: 2.5px; display: block; min-height: 3px; }
   .bars i.on { background: var(--ink); }
-  .barlabels { display: flex; gap: 5px; margin-top: 5px; }
+  .barlabels { display: flex; gap: 3.6px; margin-top: 5px; }
   .barlabels span { flex: 1; text-align: center; font-size: 10px; line-height: 1.4; color: var(--dim-2); }
   .barlabels span.on { color: var(--ink-2); font-weight: 600; }
   .spark { width: 100%; height: 40px; display: block; }
@@ -729,7 +735,7 @@
             <div class="label">Us</div>
             <div class="display">Day 35</div>
           </div>
-          <svg class="heart" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-7.5-4.7-9.6-9.1C.7 8.2 2.6 4.6 6.1 4.1c2-.3 3.9.7 4.9 2.3h2c1-1.6 2.9-2.6 4.9-2.3 3.5.5 5.4 4.1 3.7 7.8C19.5 16.3 12 21 12 21z"/></svg>
+          <svg class="heart" viewBox="0 0 30 28.4" fill="currentColor" aria-hidden="true"><path d="M15 27.8C4.4 19.6 0.8 14.4 0.8 9.4 0.8 4.9 4.0 1.8 8.2 1.8 11.2 1.8 13.6 3.5 15 5.2 16.4 3.5 18.8 1.8 21.8 1.8 26.0 1.8 29.2 4.9 29.2 9.4 29.2 14.4 25.6 19.6 15 27.8Z"/></svg>
         </div>
         <p class="sub">佳佳和晏,从 2026.6.22 到每一天</p>
       </article>
@@ -741,11 +747,17 @@
             <p class="sub en">Aug 21</p>
           </div>
           <div class="ring">
-            <svg viewBox="0 0 58 58" width="58" height="58" aria-hidden="true">
-              <circle cx="29" cy="29" r="25" fill="none" stroke="currentColor" stroke-width="3.2" opacity=".09"/>
-              <circle cx="29" cy="29" r="25" fill="none" stroke="currentColor" stroke-width="3.2"
-                      stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="112"
-                      transform="rotate(-90 29 29)"/>
+            <!-- ⚠️ 这几个数是把参考图放大 4 倍读出来的(2026-09-19):
+                 半径 30pt、弧宽 4.5pt、弧**从 12 点前 5° 起顺时针扫 55°**。
+                 交叉验证:弧的水平跨度实测 25.7pt,而 r(sin50°−sin(−5°)) = 25.6 ✓
+                 ~~原来是 r=25、弧宽 3.2、扫 128°~~ —— 扫得太长、太细、圈太小。
+                 track 几乎看不见(参考 #ededed 打在 #fcfcfe 的卡上),所以透明度压到 .055。 -->
+            <svg viewBox="0 0 66 66" width="66" height="66" aria-hidden="true">
+              <!-- ⚠️ track 比弧**细一半**:参考图那圈明显更细,同宽画出来会变成一个抢眼的灰圈 -->
+              <circle cx="32.8" cy="32.8" r="30" fill="none" stroke="currentColor" stroke-width="2.2" opacity=".04"/>   <!-- .04 是量出来的:参考 track 只比卡底暗 9.0,原来的 .075 暗了 16.7 -->
+              <circle cx="32.8" cy="32.8" r="30" fill="none" stroke="currentColor" stroke-width="4.5"
+                      stroke-linecap="round" stroke-dasharray="28.8 188.5"
+                      transform="rotate(-95 32.8 32.8)"/>
             </svg>
             <span class="num">27</span>
           </div>
@@ -999,6 +1011,27 @@
     el.innerHTML = daisy;
   });
 
+  /* ---------- 悄悄话卡的头像:先把口子留出来 ----------
+     参考图那颗是**一张照片**,我们这边现在是程序画的菊花。
+     所以这里只铺路:state.avatar 里存一张图(dataURL 或 URL),有就盖上去、
+     没有就退回菊花。**换图的界面还没做**(所有者 2026-09-19:「这个可以后面做,先留出来」)。
+     以后要做,只需在设置页加一个 <input type="file">,读成 dataURL 存进 state.avatar 即可 ——
+     apply() 里已经接好了,不用再动这段。
+     ⚠️ dataURL 会占 localStorage 配额,存之前记得压到 ~200px 见方。 */
+  function paintAvatar(url) {
+    Array.prototype.forEach.call(document.querySelectorAll("[data-bloom]"), function (el) {
+      if (url) {
+        el.style.backgroundImage = "url(" + JSON.stringify(url).slice(1, -1) + ")";
+        el.style.backgroundSize = "cover";
+        el.style.backgroundPosition = "center";
+        el.innerHTML = "";
+      } else {
+        el.style.backgroundImage = "";
+        if (!el.firstChild) el.innerHTML = daisy;
+      }
+    });
+  }
+
   /* ---------- 入场动画的总开关 ----------
      class 由 JS 加,所以「JS 没跑」= 内容直接可见,不会卡在透明态。
      加完立刻解开 —— 这一页只在首次加载放一次,切 tab 不重播(重播会显得吵)。 */
@@ -1116,6 +1149,7 @@
     if (state.appearance === "system") root.removeAttribute("data-theme");
     else root.setAttribute("data-theme", state.appearance);
     root.style.setProperty("--card-a", (state.opacity / 100).toFixed(3));
+    paintAvatar(state.avatar);
 
     Array.prototype.forEach.call(skinBox.children, function (b) {
       b.setAttribute("aria-pressed", String(b.dataset.skin === state.skin));
