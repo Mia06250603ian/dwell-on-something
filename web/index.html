@@ -148,7 +148,11 @@
     /* ⚠️ 2026-09-19 用**她真机截图**回算:39.5px 渲染出 43.7pt 墨高,参考图是 39.0 —— 大了 12%。
        (此前按「0.93em」估的比例是错的:New York 的数字带降部,Day 35 的实测比例是 1.106em。)
        39.0 ÷ 1.106 = 35.3 → 取 35.5。**这个数是真机回算的,别再照容器预览调。** */
-    --fs-display: clamp(29px, 8.8vw, 35.5px); /* Day 35 */
+    /* ⚠️ 这个数被我来回改错过两次,写清楚免得再犯:
+       量法必须**统一用「卡内自适应阈值分带」**,别用跨卡的固定阈值 ——
+       后者会把相邻行并进来,量出来偏大,照它砍就会砍过头(39.5→35.5 就是这么错的)。
+       统一量法下:参考墨高 38.2pt,New York 的墨高/字号比实测 0.938 → 40.7px。 */
+    --fs-display: clamp(33px, 10.1vw, 40.7px); /* Day 35 */
     --fs-greet:   clamp(26px, 7.8vw, 31.5px); /* Good evening:29.4 ÷ 0.93 */
     --fs-metric:  clamp(27px, 8.0vw, 32px);   /* 580 / 114:22.2 ÷ 0.69(数字墨高 = 大写高) */
     --fs-title:    24px;   /* 页标题 Chats / Settings / Diary */
@@ -423,7 +427,7 @@
      这张卡的「留白感」由内部节奏给:Us → Day 之间 2px,Day → 副标题 14px。 */
   .usrow { display: flex; align-items: center; gap: var(--sp-12); }
   .usrow .grow { flex: 1; min-width: 0; }
-  .usrow .display { margin-top: 0; }
+  .usrow .display { margin-top: 4px; }   /* 参考:Us 底→Day 顶 17.2pt,我原来只有 10.4 */
   /* ⚠️ 参考图实测(2026-09-19,**用最大连通域框出整个图形量的,不是靠固定裁剪**):
      宽 29.7pt × 高 28.1pt = **宽高比 1.057**(几乎正方)、顶部凹口深 11.4%、色 #cecece。
      ~~上一轮量成 1.511 是错的~~:那次的裁剪把心底的尖切掉了,高度少算三分之一,
@@ -437,7 +441,7 @@
   /* ---------- 纪念日 ---------- */
   .annihead { display: flex; align-items: flex-start; gap: var(--sp-16); }
   .annihead .grow { flex: 1; min-width: 0; }
-  .annihead .sub { margin-top: 5px; }
+  .annihead .sub { margin-top: 2px; }    /* 参考「标题+Aug21」整块 38.6pt,我原来 44.7 */
   .ring { width: 66px; height: 66px; flex: none; position: relative; }
   .ring .num {
     position: absolute; inset: 0; display: grid; place-items: center;
@@ -445,7 +449,8 @@
     letter-spacing: -.012em; line-height: 1;
   }
   /* 细到只是一道痕,不是 border */
-  .rule { height: var(--hair); background: var(--line); margin: var(--sp-20) 0; border: 0; }
+  /* 参考:Aug 21 底 → 生日行顶 53.5pt(含这条线),我原来 61.3 —— 这一带宽了 8pt */
+  .rule { height: var(--hair); background: var(--line); margin: 15px 0; border: 0; }
   .annigrid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-12); }
   .anni { display: flex; align-items: center; gap: var(--sp-12); }
   .anni .bar {
