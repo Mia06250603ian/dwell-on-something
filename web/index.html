@@ -74,19 +74,27 @@
     --deep-dim: #9d9c98;
     --spark: #e1734f;       /* 全页唯一的彩色:菊花与心率线 */
     /* 阴影极轻:卡片只是「从纸上浮起来一点」,不是投影 */
-    --shade: 0 1px 2px rgba(27,25,29,.03), 0 8px 24px rgba(27,25,29,.045);
-    --shade-lift: 0 2px 6px rgba(27,25,29,.05), 0 14px 38px rgba(27,25,29,.07);
+    /* ⚠️ 阴影照参考图收薄了一大截。判据是量出来的:在卡片正下方 3~7pt 处取色,
+       参考图 #f1f0ee(几乎等于页底),我原来 #e2e1e0(明显压暗)—— 影子太重。 */
+    --shade: 0 .5px 1px rgba(27,25,29,.018), 0 3px 10px rgba(27,25,29,.022);
+    --shade-lift: 0 1px 2px rgba(27,25,29,.03), 0 5px 16px rgba(27,25,29,.035);
 
     /* ---- 间距阶梯(§3 那一套) ---- */
     --sp-4: 4px;  --sp-8: 8px;   --sp-12: 12px; --sp-16: 16px;
     --sp-20: 20px; --sp-24: 24px; --sp-32: 32px;
 
     /* ---- 圆角阶梯 ---- */
-    --r-sm: 12px; --r-md: 18px; --r-lg: 26px; --r-xl: 32px;
+    /* 圆角照参考图实测(2026-09-19)。⚠️ **量法很要紧**:单点「拐平处」检测器不可靠
+       (JPEG 和 PNG 的抗锯齿不一样,同一个值能差 3pt)。正确做法是在距卡顶固定的几行
+       (3/6/10/16/24/34/46px)各量一次**左缩进**,两张图比整条曲线 —— 实测参考图
+       每一点都比 23px 那版大约 12%,反推 CSS 约 25px。 */
+    --r-sm: 12px; --r-md: 18px; --r-lg: 25px; --r-xl: 31px;
 
     /* ---- 尺度 ---- */
     /* 小屏(SE/mini)收窄到 14,常规屏 18:小屏上留白按比例走,不挤 */
-    --gutter: clamp(14px, 4.6vw, 18px);
+    /* 参考图实测:卡左边缘 43px。那张图右边被裁掉约 11px,按左右对称还原屏宽 1000px,
+       得 43/2.4876 = 17.3pt。**2026-09-19 实测,数会变** */
+    --gutter: clamp(13px, 4.35vw, 17.3px);
     --gap: 13px;            /* 卡片间距,横纵同一个数(照参考图实测) */
     --r-card: var(--r-lg);  /* 卡片圆角(15 点拟合稳定在 24~26) */
     --r-inner: var(--r-md);
@@ -95,7 +103,7 @@
     --row: 66.5px;          /* 会话行高(实测 66.6) */
     --av: 40px;             /* 头像直径 */
     --hair: .5px;
-    --tabbar-h: 46px;       /* 底栏内容高度,不含安全区 */
+    --tabbar-h: 42px;       /* 底栏内容高度,不含安全区(参考图更轻,09-19 收薄) */
 
     /* ---- 字族 —— 英文衬线当骨架,中文黑体当注解 ---- */
     --serif: ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
@@ -104,18 +112,24 @@
        参考图的中文标题是黑体加粗、数字是衬线,挂了这两样会全反过来 */
 
     /* ---- 字阶(clamp:小屏自动缩,不 hardcode 截图尺寸) ---- */
-    --fs-display: clamp(36px, 10.9vw, 44px);  /* Day 35 */
-    --fs-greet:   clamp(26px, 7.9vw, 32px);   /* Good evening */
-    --fs-metric:  clamp(28px, 8.2vw, 33px);   /* 580 / 114 */
-    --fs-title:    26px;   /* 页标题 Chats / Settings / Diary */
-    --fs-metric-2: 21px;   /* 164 / 331 */
-    --fs-headline: 20px;   /* Monthly Anniversary */
-    --fs-ring:     20px;   /* 环里那个 27 */
-    --fs-whisper:  16.5px; /* 深色卡正文 */
-    --fs-label:    17px;   /* Us / Steps / Heart Rate / 日期行 */
-    --fs-tab:      16px;
+    /* ⚠️⚠️ **这一档字号是按 New York 的字面度量反推的,不是拿容器里的字对出来的。**
+       原来的做法是「调 font-size 直到本机 DejaVu 的墨高等于参考图的墨高」——
+       那是错的:她手机上是 New York,同一个 font-size 的墨高和 DejaVu 不一样,
+       于是预览对上了、真机反而偏大。正确做法是拿参考图的**墨高**除以 New York 的比例
+       (大写高 0.69em、大写顶到降部底 0.93em、数字 = 大写高)反推出 font-size。
+       2026-09-19 算出来的那一套就是下面这些数。**别再照本机预览调它们。** */
+    --fs-display: clamp(32px, 9.8vw, 39.5px); /* Day 35:参考墨高 36.6pt ÷ 0.93 */
+    --fs-greet:   clamp(26px, 7.8vw, 31.5px); /* Good evening:29.4 ÷ 0.93 */
+    --fs-metric:  clamp(27px, 8.0vw, 32px);   /* 580 / 114:22.2 ÷ 0.69(数字墨高 = 大写高) */
+    --fs-title:    24px;   /* 页标题 Chats / Settings / Diary */
+    --fs-metric-2: 19.5px; /* 164 / 331:13.3 ÷ 0.69 */
+    --fs-headline: 17.5px; /* Monthly Anniversary:16.1 ÷ 0.93 */
+    --fs-ring:     18.5px; /* 环里那个 27:12.9 ÷ 0.69 */
+    --fs-whisper:  15.5px; /* 深色卡正文 */
+    --fs-label:    16.5px; /* Us / Steps / Heart Rate:15.2 ÷ 0.93 */
+    --fs-tab:      16px;   /* Tab:「Home」无降部,11.3 ÷ 0.69 */
     --fs-body:     15px;
-    --fs-sub:      14.5px; /* 天气、卡片副标题 */
+    --fs-sub:      13.5px; /* 天气、卡片副标题 */
     --fs-caption:  13.5px;
     --fs-datum:    11px;   /* 图例、时间戳 */
 
@@ -152,8 +166,8 @@
       --deep: #050505;
       --deep-ink: #f4f2ee;
       --deep-dim: #8a8884;
-      --shade: 0 1px 2px rgba(0,0,0,.28), 0 8px 24px rgba(0,0,0,.3);
-      --shade-lift: 0 2px 6px rgba(0,0,0,.34), 0 14px 38px rgba(0,0,0,.4);
+      --shade: 0 .5px 1px rgba(0,0,0,.16), 0 3px 10px rgba(0,0,0,.18);
+      --shade-lift: 0 1px 2px rgba(0,0,0,.2), 0 5px 16px rgba(0,0,0,.24);
     }
   }
   :root[data-theme="dark"]:not([data-skin]),
@@ -169,8 +183,8 @@
     --deep: #050505;
     --deep-ink: #f4f2ee;
     --deep-dim: #8a8884;
-    --shade: 0 1px 2px rgba(0,0,0,.28), 0 8px 24px rgba(0,0,0,.3);
-    --shade-lift: 0 2px 6px rgba(0,0,0,.34), 0 14px 38px rgba(0,0,0,.4);
+    --shade: 0 .5px 1px rgba(0,0,0,.16), 0 3px 10px rgba(0,0,0,.18);
+    --shade-lift: 0 1px 2px rgba(0,0,0,.2), 0 5px 16px rgba(0,0,0,.24);
   }
 
   /* 另外五款皮肤:低饱和纸张,不是彩色环境光 */
@@ -188,8 +202,8 @@
     --paper-top: #23302a; --paper-bot: #1a2621; --card: #2b3b34;
     --ink: #eef3ef; --ink-2: #c2cec7; --dim: #93a49b; --dim-2: #71837a; --line: #35473f;
     --deep: #101815; --deep-ink: #eef3ef; --deep-dim: #8b9c93;
-    --shade: 0 1px 2px rgba(0,0,0,.25), 0 8px 24px rgba(0,0,0,.28);
-    --shade-lift: 0 2px 6px rgba(0,0,0,.3), 0 14px 38px rgba(0,0,0,.36);
+    --shade: 0 .5px 1px rgba(0,0,0,.14), 0 3px 10px rgba(0,0,0,.16);
+    --shade-lift: 0 1px 2px rgba(0,0,0,.18), 0 5px 16px rgba(0,0,0,.22);
   }
   :root[data-skin="fogblue"] {
     --paper-top: #e8ecf2; --paper-bot: #dde3ec; --card: #f7f9fc;
@@ -204,7 +218,9 @@
 
   /* dvh:iOS 上地址栏收放会改 vh,用 dvh 才是「当前真实可视高度」。
      写两行是渐进增强 —— 不认 dvh 的浏览器吃上面那行。 */
-  html, body { min-height: 100vh; min-height: 100dvh; }
+  /* ⚠️ 这里**刻意不写 min-height: 100dvh**。body 的背景本来就会上抛到画布、
+     铺满整块屏,不需要靠视口单位去「撑」。全屏是 viewport 的事,不是 UI 的事。 */
+  html, body { margin: 0; }
   body {
     margin: 0;
     /* body 的背景会上抛到画布,所以整块屏(含两条安全区)都是这个底,不会露白边。
@@ -267,14 +283,20 @@
        400 —— 一切标签、日期、正文(Us / Steps / Heart Rate / Aug 21 / Jan 6 / 说明文字)
      ⚠️ 字族同理分两支:**英文与数字走衬线,中文走黑体**。
         参考图里 Aug 21 / Jan 6 / Jun 22 是**衬线**,别跟着中文副标题一起落回黑体。 */
-  .display  { font-family: var(--serif); font-size: var(--fs-display); font-weight: 700; line-height: 1.02; letter-spacing: -.021em; }
-  .title    { font-family: var(--serif); font-size: var(--fs-title); font-weight: 700; line-height: 1.1; letter-spacing: -.016em; }
-  .greet    { font-family: var(--serif); font-size: var(--fs-greet); font-weight: 700; line-height: 1.16; letter-spacing: -.017em; }
+  /* ⚠️⚠️ **大标题不是 Bold,是 Medium。** 判据是参考图量出来的笔画比
+     (竖干厚度 ÷ 墨高,归一化后与同图的常规字相比):
+       Good evening 1.18×   Day 35 1.16×   Monthly Anniversary 1.20×   27 1.20×
+       164 1.46×   580 1.39×   Tab 选中 1.72×
+     —— 大标题只比常规字重 20%,那是 **500**;164/580 是 600;只有 Tab 选中才是 700。
+     **别再把它们拉回 700**:那会变成「粗体 UI 字体」,而参考图是精致的衬线排版。 */
+  .display  { font-family: var(--serif); font-size: var(--fs-display); font-weight: 500; line-height: 1.08; letter-spacing: -.018em; }
+  .title    { font-family: var(--serif); font-size: var(--fs-title); font-weight: 600; line-height: 1.1; letter-spacing: -.014em; }
+  .greet    { font-family: var(--serif); font-size: var(--fs-greet); font-weight: 500; line-height: 1.16; letter-spacing: -.014em; }
   /* 中文名落回黑体(衬线没有汉字,硬挂上去会变宋体)。
      字号压到 .96em、字重 600、字距收紧 —— 和英文标题咬在同一条视觉线上,不像一个普通 label */
-  .greet .cn{ font-family: var(--sans); font-weight: 600; font-size: .96em; letter-spacing: -.01em; }
-  .headline { font-family: var(--serif); font-size: var(--fs-headline); font-weight: 700; line-height: 1.14; letter-spacing: -.012em; }
-  .name     { font-family: var(--serif); font-size: 17px; font-weight: 700; line-height: 1.25; }
+  .greet .cn{ font-family: var(--sans); font-weight: 500; font-size: .96em; letter-spacing: -.01em; }
+  .headline { font-family: var(--serif); font-size: var(--fs-headline); font-weight: 500; line-height: 1.14; letter-spacing: -.01em; }
+  .name     { font-family: var(--serif); font-size: 16.5px; font-weight: 600; line-height: 1.25; }
   .label    { font-family: var(--serif); font-size: var(--fs-label); font-weight: 400; color: var(--ink-2); line-height: 1.28; letter-spacing: -.004em; }
   .datum    { font-family: var(--serif); font-size: var(--fs-datum); font-weight: 400; color: var(--dim); }
   .body     { font-size: var(--fs-body); line-height: 1.6; }
@@ -297,7 +319,7 @@
   .dayrow { display: flex; align-items: center; gap: var(--sp-8); }
   .dayrow .date {
     /* 日期行比卡内标签大半档:参考图墨高 16.7pt,17px 只量到 15.4 */
-    font-family: var(--serif); font-size: 18px; font-weight: 400;
+    font-family: var(--serif); font-size: 17.5px; font-weight: 400;
     line-height: 1.2; flex: 1; min-width: 0; letter-spacing: -.008em;
   }
   .syncpill {
@@ -335,7 +357,7 @@
     display: flex; flex-direction: column; align-items: flex-start;
     /* ⚠️ 4px,不是 16 —— 参考图里落款几乎是接着正文下一行,
        那点空隙是行盒自带的,不是额外间距。给多了整张卡就高出一截。 */
-    gap: var(--sp-4);
+    gap: 7px;
   }
   .whisper .body {
     font-size: var(--fs-whisper); line-height: 1.5; letter-spacing: .002em;
@@ -343,7 +365,7 @@
   }
   .whisper .more {
     color: var(--deep-dim); font-family: var(--serif);
-    font-size: 12.5px; line-height: 1.2; letter-spacing: .01em;
+    font-size: 12px; line-height: 1.2; letter-spacing: .01em;
   }
 
   /* ---------- 头像 ---------- */
@@ -373,7 +395,7 @@
     width: 32px; height: 32px; flex: none;
     color: var(--dim-2); opacity: .85; align-self: center;
   }
-  .relcard .sub { margin-top: 6px; }
+  .relcard .sub { margin-top: 11px; }
 
   /* ---------- 纪念日 ---------- */
   .annihead { display: flex; align-items: flex-start; gap: var(--sp-16); }
@@ -382,8 +404,8 @@
   .ring { width: 58px; height: 58px; flex: none; position: relative; }
   .ring .num {
     position: absolute; inset: 0; display: grid; place-items: center;
-    font-family: var(--serif); font-size: var(--fs-ring); font-weight: 600;
-    letter-spacing: -.015em; line-height: 1;
+    font-family: var(--serif); font-size: var(--fs-ring); font-weight: 500;
+    letter-spacing: -.012em; line-height: 1;
   }
   /* 细到只是一道痕,不是 border */
   .rule { height: var(--hair); background: var(--line); margin: var(--sp-20) 0; border: 0; }
@@ -411,8 +433,8 @@
   .metric .top .grow { flex: 1; min-width: 0; }
   .metric .top .datum { font-size: 12.5px; color: var(--dim); }
   .metric .big {
-    font-family: var(--serif); font-size: var(--fs-metric); font-weight: 700;
-    line-height: 1.06; letter-spacing: -.024em;
+    font-family: var(--serif); font-size: var(--fs-metric); font-weight: 600;
+    line-height: 1.06; letter-spacing: -.02em;
   }
   /* bpm:参考图里它比想象中小得多(墨高实测 9.3pt vs 我原来 13.0)。
      量下来约合 10px,取 12px —— 再小就不好认了,这 2px 是我留的,不是量出来的。 */
@@ -535,7 +557,7 @@
   }
   .chatbar .back { display: inline-flex; align-items: center; gap: 4px; font-size: 16px; color: var(--ink); }
   .chatbar .back svg { width: 9px; height: 15px; }
-  .chatbar .who { flex: 1; text-align: center; font-family: var(--serif); font-size: 16px; font-weight: 700; }
+  .chatbar .who { flex: 1; text-align: center; font-family: var(--serif); font-size: 16px; font-weight: 600; }
   .chatbar .rail { width: 56px; flex: none; }
   .chatview iframe { flex: 1; width: 100%; border: 0; display: block; background: var(--paper-bot); }
   .chatview .nothere {
@@ -685,8 +707,8 @@
           </div>
           <div class="ring">
             <svg viewBox="0 0 58 58" width="58" height="58" aria-hidden="true">
-              <circle cx="29" cy="29" r="25" fill="none" stroke="currentColor" stroke-width="2.6" opacity=".08"/>
-              <circle cx="29" cy="29" r="25" fill="none" stroke="currentColor" stroke-width="2.6"
+              <circle cx="29" cy="29" r="25" fill="none" stroke="currentColor" stroke-width="3.2" opacity=".09"/>
+              <circle cx="29" cy="29" r="25" fill="none" stroke="currentColor" stroke-width="3.2"
                       stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="112"
                       transform="rotate(-90 29 29)"/>
             </svg>
@@ -879,11 +901,11 @@
         <hr class="grouprule">
         <div class="srow">
           <label class="grow t" for="opacity">卡片透明度</label>
-          <span class="datum" id="opacityVal">85%</span>
+          <span class="datum" id="opacityVal">100%</span>
           <button class="datum" id="opacityReset" style="color:var(--ink)">恢复默认</button>
         </div>
         <div class="slider">
-          <input type="range" id="opacity" min="40" max="100" value="85" style="--fill:75%">
+          <input type="range" id="opacity" min="40" max="100" value="100" style="--fill:100%">
         </div>
       </section>
 
@@ -997,7 +1019,10 @@
   if (!state.skin) state.skin = "ivory";
   if (!state.appearance) state.appearance = "system";
   if (!state.bubble) state.bubble = "bubble";
-  if (typeof state.opacity !== "number") state.opacity = 85;
+  /* ⚠️ 默认从 85 改成 100(2026-09-19)。85% 半透明 + 毛玻璃会让卡片和渐变页底混在一起,
+     整页发灰发闷 —— 并排比参考图,这是最刺眼的一条,比字号的影响大得多。
+     参考图的卡是**实心近白**。滑杆还在,她想要半透明随时拉回去。 */
+  if (typeof state.opacity !== "number") state.opacity = 100;
 
   /* ---------- 皮肤 ---------- */
   var SKINS = [
@@ -1046,7 +1071,7 @@
     save(state);
   });
   document.getElementById("opacityReset").addEventListener("click", function () {
-    state.opacity = 85; apply(); save(state);
+    state.opacity = 100; apply(); save(state);
   });
 
   /* ---------- 应用 ---------- */
