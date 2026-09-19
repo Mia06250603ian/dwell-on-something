@@ -2,10 +2,22 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
+<!-- viewport-fit=cover:让网页铺满整块屏(含刘海/灵动岛那一条和底部 Home Indicator 那一条),
+     安全区再由 env(safe-area-inset-*) 让内容避开。两者缺一不可:
+     只写 cover 内容会被刘海吃掉,只写安全区则铺不满、上下留黑边。 -->
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- 这两条是「从主屏打开 = 没有地址栏、没有底部工具栏」的开关。
+     apple- 那条是 iOS 认的,不带前缀那条是标准的(安卓/桌面 Chrome 认)。 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="dwell">
+<!-- ⚠️ 状态栏刻意用 default,**不要 black-translucent**:
+     那个值会把状态栏文字锁成白色,而这套皮肤默认是浅色纸 —— 白字打在米白上等于看不见。
+     用 default + theme-color,iOS 15 起会拿 theme-color 填状态栏那一条并自动挑可读的字色;
+     下面的 JS 还会让 theme-color 跟着当前皮肤走,所以那一条和页面底色永远是同一个色,看不出接缝。 -->
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#f3f2f1" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1c1b19" media="(prefers-color-scheme: dark)">
-<meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="icon" href="icons/favicon-64.png" sizes="64x64">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="manifest" href="manifest.json">
@@ -19,9 +31,15 @@
      那套数见 Ombre-Brain 的 dwell-bridge/MAINTENANCE.md。
      ============================================================ -->
 <style>
+  /* 顶部安全区抬在根上,所以普通流里的内容天然避开刘海/灵动岛。
+     ⚠️ **底部不在这里抬**:底栏是 fixed 定位的,它自己带一份安全区内边距,
+     正文的下边距也已经把安全区算进去了(见 .screen)—— 在根上再抬一次就是抬两次。 */
+  /* 安全区收成两个变量,全页只认这两个:改一处、全页跟着走,
+     也便于测试里把它们改成假值来模拟一台有刘海的机器。 */
   :root { color-scheme: light dark;
-          padding-top: env(safe-area-inset-top, 0px);
-          padding-bottom: env(safe-area-inset-bottom, 0px); }
+          --sat: env(safe-area-inset-top, 0px);      /* 刘海 / 灵动岛那一条 */
+          --sab: env(safe-area-inset-bottom, 0px);   /* Home Indicator 那一条 */
+          padding-top: var(--sat); }
   img { max-width: 100%; }
   [hidden] { display: none !important; }
 </style>
@@ -30,41 +48,93 @@
 <body>
 <style>
   /* ============================================================
-     设计 token —— 每个数都来自三张参考图的像素实测
-     屏幕基准:iPhone 16 Pro 402×874pt,量图比例 2.5025 px/pt
-     1pt = 1px(设计宽度 402)
+     设计 token(2026-09-19 重构)
+     ------------------------------------------------------------
+     基线仍是 09-19 那三张参考图的像素实测(iPhone 16 Pro 402×874pt,
+     2.5025 px/pt),这一轮按新参考图重排了**字重、字阶、间距节奏**。
+     ⚠️ 尺度全部落在一套 4/8/12/16/20/24/32 的阶梯上,别再零散地写死数字 ——
+     要改就改这里的 token,全页跟着走。
+     ⚠️ 圆角是普通 border-radius,**不要** corner-shape: squircle
+     (容器里的 chromium 认、Safari 不认,预览和真机会差很多)。
      ============================================================ */
   :root {
-    /* 纸(象牙纸张):页面底是一道从上到下的渐变,不是纯色 */
+    /* ---- 颜色:纸 / 卡 / 四级文字 ---- */
+    /* 纸(象牙纸张):页面底是一道从上到下的渐变,不是纯色;卡片是近白、不是纯白 */
     --paper-top: #f3f2f1;
     --paper-bot: #ebeae9;
     --card: #fcfcfb;
     --card-a: 1;
-    --ink: #1b191d;
-    --dim: #8a8984;
-    --dim-2: #a9a7a1;
+    --ink: #1b191d;         /* 一级:标题与大数字 */
+    --ink-2: #55534e;       /* 二级:Us / Steps / Heart Rate 这类卡内小标签 */
+    --dim: #8a8984;         /* 三级:日期、单位、说明 */
+    --dim-2: #a9a7a1;       /* 四级:图例、区间 */
     --line: #ecebea;
     --deep: #1b191d;        /* 深色卡(Today's Whisper) */
     --deep-ink: #f6f5f2;
     --deep-dim: #9d9c98;
     --spark: #e1734f;       /* 全页唯一的彩色:菊花与心率线 */
+    /* 阴影极轻:卡片只是「从纸上浮起来一点」,不是投影 */
     --shade: 0 1px 2px rgba(27,25,29,.03), 0 8px 24px rgba(27,25,29,.045);
     --shade-lift: 0 2px 6px rgba(27,25,29,.05), 0 14px 38px rgba(27,25,29,.07);
 
-    /* 尺度 */
-    --gutter: 18px;         /* 页面左右留白(实测 Home 17.98 / Chats 19.98,取 18) */
-    --gap: 13px;            /* 卡片间距,横纵同一个数(实测 13.2 / 13.6) */
-    --r-card: 26px;         /* 卡片圆角(15 点拟合,稳定在 24~26,普通圆角非超椭圆) */
-    --r-inner: 18px;
-    --pad: 20px;            /* 卡片内留白 */
+    /* ---- 间距阶梯(§3 那一套) ---- */
+    --sp-4: 4px;  --sp-8: 8px;   --sp-12: 12px; --sp-16: 16px;
+    --sp-20: 20px; --sp-24: 24px; --sp-32: 32px;
+
+    /* ---- 圆角阶梯 ---- */
+    --r-sm: 12px; --r-md: 18px; --r-lg: 26px; --r-xl: 32px;
+
+    /* ---- 尺度 ---- */
+    /* 小屏(SE/mini)收窄到 14,常规屏 18:小屏上留白按比例走,不挤 */
+    --gutter: clamp(14px, 4.6vw, 18px);
+    --gap: 13px;            /* 卡片间距,横纵同一个数(照参考图实测) */
+    --r-card: var(--r-lg);  /* 卡片圆角(15 点拟合稳定在 24~26) */
+    --r-inner: var(--r-md);
+    --pad: var(--sp-20);    /* 卡片内留白 */
+    --pad-deep: var(--pad); /* 深色卡内留白:和白卡同一个数,不开小灶 */
     --row: 66.5px;          /* 会话行高(实测 66.6) */
     --av: 40px;             /* 头像直径 */
     --hair: .5px;
+    --tabbar-h: 46px;       /* 底栏内容高度,不含安全区 */
 
-    /* 字 —— 英文衬线当骨架,中文黑体当注解 */
+    /* ---- 字族 —— 英文衬线当骨架,中文黑体当注解 ---- */
     --serif: ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
     --sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Noto Sans SC", "Segoe UI", sans-serif;
-    /* ⚠️ 刻意不在 --serif 里挂 Songti SC:参考图的中文是黑体加粗,不是宋体 */
+    /* ⚠️ 刻意不在 --serif 里挂 Songti SC 和 SerifNum:
+       参考图的中文标题是黑体加粗、数字是衬线,挂了这两样会全反过来 */
+
+    /* ---- 字阶(clamp:小屏自动缩,不 hardcode 截图尺寸) ---- */
+    --fs-display: clamp(36px, 10.9vw, 44px);  /* Day 35 */
+    --fs-greet:   clamp(26px, 7.9vw, 32px);   /* Good evening */
+    --fs-metric:  clamp(28px, 8.2vw, 33px);   /* 580 / 114 */
+    --fs-title:    26px;   /* 页标题 Chats / Settings / Diary */
+    --fs-metric-2: 21px;   /* 164 / 331 */
+    --fs-headline: 20px;   /* Monthly Anniversary */
+    --fs-ring:     20px;   /* 环里那个 27 */
+    --fs-whisper:  16.5px; /* 深色卡正文 */
+    --fs-label:    17px;   /* Us / Steps / Heart Rate / 日期行 */
+    --fs-tab:      16px;
+    --fs-body:     15px;
+    --fs-sub:      14.5px; /* 天气、卡片副标题 */
+    --fs-caption:  13.5px;
+    --fs-datum:    11px;   /* 图例、时间戳 */
+
+    /* ---- 动画 ---- */
+    /* 阻尼弹簧的真实采样(response .46 / dampingFraction .86 / 560ms,
+       过冲 0.5% —— 轻到只感觉得到「落位」,看不出回弹)。
+       不用 ease-in-out:那条曲线没有物理,收尾是软的、不是落位。 */
+    --spring: cubic-bezier(.22, 1, .3, 1);
+    --dur-reveal: 560ms;
+    --stagger: 45ms;
+    --ease-ui: cubic-bezier(.32, .72, 0, 1);
+  }
+  @supports (animation-timing-function: linear(0, 1)) {
+    :root {
+      --spring: linear(0.0000 0%, 0.0869 6.3%, 0.2647 12.5%, 0.4552 18.8%, 0.6223 25%,
+                       0.7534 31.3%, 0.8487 37.5%, 0.9138 43.8%, 0.9555 50%, 0.9807 56.3%,
+                       0.9947 62.5%, 1.0016 68.8%, 1.0045 75%, 1.0050 81.3%, 1.0045 87.5%,
+                       1.0036 93.8%, 1.0000 100%);
+    }
   }
 
   /* 只有「象牙纸张」跟随昼夜。其余五款皮肤自带气质,不受外观开关影响 */
@@ -75,6 +145,7 @@
       --paper-bot: #141312;
       --card: #232220;
       --ink: #f4f2ee;
+      --ink-2: #bcb9b1;
       --dim: #8f8d87;
       --dim-2: #6f6d67;
       --line: #2e2c29;
@@ -91,6 +162,7 @@
     --paper-bot: #141312;
     --card: #232220;
     --ink: #f4f2ee;
+    --ink-2: #bcb9b1;
     --dim: #8f8d87;
     --dim-2: #6f6d67;
     --line: #2e2c29;
@@ -104,46 +176,57 @@
   /* 另外五款皮肤:低饱和纸张,不是彩色环境光 */
   :root[data-skin="moonsand"] {
     --paper-top: #efe7e5; --paper-bot: #e6dcda; --card: #fbf6f5;
-    --ink: #221b1a; --dim: #8d7f7c; --dim-2: #ab9d99; --line: #ece1df;
+    --ink: #221b1a; --ink-2: #5d5250; --dim: #8d7f7c; --dim-2: #ab9d99; --line: #ece1df;
     --deep: #2a2120; --deep-ink: #f6efed; --deep-dim: #a1918d;
   }
   :root[data-skin="cream"] {
     --paper-top: #f5ede1; --paper-bot: #eee3d3; --card: #fdf8f1;
-    --ink: #241d14; --dim: #8e8272; --dim-2: #ada08c; --line: #efe5d6;
+    --ink: #241d14; --ink-2: #5e5546; --dim: #8e8272; --dim-2: #ada08c; --line: #efe5d6;
     --deep: #2b2317; --deep-ink: #f8f2e8; --deep-dim: #a39682;
   }
   :root[data-skin="fogmtn"] {
     --paper-top: #23302a; --paper-bot: #1a2621; --card: #2b3b34;
-    --ink: #eef3ef; --dim: #93a49b; --dim-2: #71837a; --line: #35473f;
+    --ink: #eef3ef; --ink-2: #c2cec7; --dim: #93a49b; --dim-2: #71837a; --line: #35473f;
     --deep: #101815; --deep-ink: #eef3ef; --deep-dim: #8b9c93;
     --shade: 0 1px 2px rgba(0,0,0,.25), 0 8px 24px rgba(0,0,0,.28);
     --shade-lift: 0 2px 6px rgba(0,0,0,.3), 0 14px 38px rgba(0,0,0,.36);
   }
   :root[data-skin="fogblue"] {
     --paper-top: #e8ecf2; --paper-bot: #dde3ec; --card: #f7f9fc;
-    --ink: #181c23; --dim: #7d8694; --dim-2: #9aa3b0; --line: #e3e8f0;
+    --ink: #181c23; --ink-2: #4e5663; --dim: #7d8694; --dim-2: #9aa3b0; --line: #e3e8f0;
     --deep: #1d222b; --deep-ink: #f2f5f9; --deep-dim: #909aa8;
   }
   :root[data-skin="inkwhite"] {
     --paper-top: #fbfbfb; --paper-bot: #f4f4f4; --card: #ffffff;
-    --ink: #111111; --dim: #86868a; --dim-2: #a6a6aa; --line: #ededed;
+    --ink: #111111; --ink-2: #53535a; --dim: #86868a; --dim-2: #a6a6aa; --line: #ededed;
     --deep: #111111; --deep-ink: #fafafa; --deep-dim: #9a9a9e;
   }
 
-  html, body { height: 100%; }
+  /* dvh:iOS 上地址栏收放会改 vh,用 dvh 才是「当前真实可视高度」。
+     写两行是渐进增强 —— 不认 dvh 的浏览器吃上面那行。 */
+  html, body { min-height: 100vh; min-height: 100dvh; }
   body {
     margin: 0;
+    /* body 的背景会上抛到画布,所以整块屏(含两条安全区)都是这个底,不会露白边。
+       渐变正好铺满一屏高,再往下自然接上 --paper-bot,看不出交界。
+       ⚠️ 原来写死的 880px 是照某一台机器的屏高定的,换机型就不对了。 */
     background: var(--paper-bot);
     background-image: linear-gradient(180deg, var(--paper-top) 0%, var(--paper-bot) 100%);
     background-repeat: no-repeat;
-    background-size: 100% 880px;
+    /* ⚠️ 这里用 lvh 不用 dvh:dvh 会随地址栏收放实时变,
+       渐变就会在滚动到一半时被重新缩放、看得出来跳。lvh 是「最大视口高」,滚动中不变。
+       (min-height 那头仍然用 dvh —— 那里要的正是「当前真实可视高度」。) */
+    background-size: 100% 100vh;
+    background-size: 100% 100lvh;
     color: var(--ink);
     font-family: var(--sans);
-    font-size: 15px;
+    font-size: var(--fs-body);
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     font-variant-numeric: tabular-nums;
     overscroll-behavior-y: none;
+    /* 长中文/长英文都要正常断行,绝不横向溢出 */
+    overflow-wrap: break-word;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   h1, h2, p { margin: 0; }
@@ -153,12 +236,13 @@
   /* ---------- 壳 ---------- */
   .phone {
     width: 100%;
-    max-width: 430px;
+    max-width: 430px;          /* Pro Max 也是 430pt,再宽就居中留白 */
     margin: 0 auto;
     padding-inline: var(--gutter);
-    padding-block: 19px 0;
+    padding-block: var(--sp-16) 0;
   }
-  .screen { padding-bottom: 116px; }
+  /* 底部留够:底栏内容 + 安全区 + 一口气。不写死,换机型自己算 */
+  .screen { padding-bottom: calc(var(--tabbar-h) + var(--sab) + var(--sp-32)); }
   .screen[hidden] { display: none !important; }
 
   /* ---------- 卡 ---------- */
@@ -173,46 +257,94 @@
   .stack { display: flex; flex-direction: column; gap: var(--gap); }
   .duo { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
 
-  /* ---------- 字级(实测) ---------- */
-  .display  { font-family: var(--serif); font-size: 41px; font-weight: 700; line-height: 1.04; letter-spacing: -.01em; }
-  .title    { font-family: var(--serif); font-size: 25px; font-weight: 700; line-height: 1.12; letter-spacing: -.01em; }
-  .greet    { font-family: var(--serif); font-size: 31px; font-weight: 500; line-height: 1.18; letter-spacing: -.005em; }
-  .greet .cn{ font-family: var(--sans); font-weight: 600; font-size: .94em; letter-spacing: 0; }
-  .headline { font-family: var(--serif); font-size: 19.5px; font-weight: 700; line-height: 1.16; }
+  /* ---------- 字级 ----------
+     ⚠️ **字重是照参考图逐项定的,不是一律 700。** 三档,各管各的:
+       700 —— 英文大标题与大数字(Good evening / Day 35 / Monthly Anniversary / 580 / 114)
+              这一档要的是衬线的粗细对比(粗竖细横),「安卓味」的根因就是这里用了常规字重
+       600 —— 中量数字(27 / 164 / 331)与中文名。**它们不该和大标题一样重**:
+              参考图里这几个数明显比 Day 35 轻一档;中文名用 600 是因为汉字笔画密,
+              同样字号下 600 的视觉重量就已经等于拉丁 700,上 700 会糊成一团
+       400 —— 一切标签、日期、正文(Us / Steps / Heart Rate / Aug 21 / Jan 6 / 说明文字)
+     ⚠️ 字族同理分两支:**英文与数字走衬线,中文走黑体**。
+        参考图里 Aug 21 / Jan 6 / Jun 22 是**衬线**,别跟着中文副标题一起落回黑体。 */
+  .display  { font-family: var(--serif); font-size: var(--fs-display); font-weight: 700; line-height: 1.02; letter-spacing: -.021em; }
+  .title    { font-family: var(--serif); font-size: var(--fs-title); font-weight: 700; line-height: 1.1; letter-spacing: -.016em; }
+  .greet    { font-family: var(--serif); font-size: var(--fs-greet); font-weight: 700; line-height: 1.16; letter-spacing: -.017em; }
+  /* 中文名落回黑体(衬线没有汉字,硬挂上去会变宋体)。
+     字号压到 .96em、字重 600、字距收紧 —— 和英文标题咬在同一条视觉线上,不像一个普通 label */
+  .greet .cn{ font-family: var(--sans); font-weight: 600; font-size: .96em; letter-spacing: -.01em; }
+  .headline { font-family: var(--serif); font-size: var(--fs-headline); font-weight: 700; line-height: 1.14; letter-spacing: -.012em; }
   .name     { font-family: var(--serif); font-size: 17px; font-weight: 700; line-height: 1.25; }
-  .label    { font-family: var(--serif); font-size: 17px; font-weight: 400; color: var(--dim); line-height: 1.3; }
-  .datum    { font-family: var(--serif); font-size: 11px; font-weight: 400; color: var(--dim); }
-  .body     { font-size: 15px; line-height: 1.6; }
-  .caption  { font-size: 13px; line-height: 1.5; color: var(--dim); }
+  .label    { font-family: var(--serif); font-size: var(--fs-label); font-weight: 400; color: var(--ink-2); line-height: 1.28; letter-spacing: -.004em; }
+  .datum    { font-family: var(--serif); font-size: var(--fs-datum); font-weight: 400; color: var(--dim); }
+  .body     { font-size: var(--fs-body); line-height: 1.6; }
+  .caption  { font-size: var(--fs-caption); line-height: 1.5; color: var(--dim); }
+  .sub      { font-size: var(--fs-sub); line-height: 1.45; color: var(--dim); }
+  /* 英文日期用的副标题:同一个字号,换衬线、字距回 0(照参考图) */
+  .sub.en   { font-family: var(--serif); letter-spacing: 0; }
 
-  /* ---------- 首页头 ---------- */
-  .dayrow { display: flex; align-items: center; gap: 10px; margin-bottom: 0; }
-  .dayrow .date { font-family: var(--serif); font-size: 17px; line-height: 1.2; flex: 1; min-width: 0; }
+  /* 展示型数字一律**比例数字**,不用等宽。
+     body 上那条 tabular-nums 是给聊天/列表对齐用的;衬线的等宽数字在 40px 上
+     字怀被撑开、字距发散,正是「像 dashboard 不像杂志」的那种感觉。
+     这几个数是静态展示、不需要逐位对齐,所以在这里翻回比例数字。 */
+  .display, .metric .big, .anni .n, .ring .num {
+    font-variant-numeric: proportional-nums;
+  }
+
+  /* ---------- 首页头 ----------
+     节奏:日期行 →8→ 问候 →6→ 天气 →24→ 卡片流。
+     问候是全页第一焦点,它上下的呼吸要比别处宽。 */
+  .dayrow { display: flex; align-items: center; gap: var(--sp-8); }
+  .dayrow .date {
+    /* 日期行比卡内标签大半档:参考图墨高 16.7pt,17px 只量到 15.4 */
+    font-family: var(--serif); font-size: 18px; font-weight: 400;
+    line-height: 1.2; flex: 1; min-width: 0; letter-spacing: -.008em;
+  }
   .syncpill {
     display: inline-flex; align-items: center; gap: 6px;
-    height: 27px; padding: 0 11px; border-radius: 13.5px;
+    height: 28px; padding: 0 var(--sp-12); border-radius: 14px;
     background: var(--card); box-shadow: var(--shade);
     font-size: 12.5px; color: var(--dim); white-space: nowrap;
   }
   .iconbtn {
-    width: 29px; height: 29px; flex: none; border-radius: 50%;
+    width: 30px; height: 30px; flex: none; border-radius: 50%;
     background: var(--card); box-shadow: var(--shade);
     display: grid; place-items: center; color: var(--dim);
+    transition: transform .2s var(--ease-ui);
   }
-  .greet { margin-top: 3px; }
-  .weather { margin: 0; }
-  .weather .soft { color: var(--dim-2); }
+  .iconbtn:active { transform: scale(.92); }
+  .greet   { margin-top: 2px; }
+  .weather { margin-top: 2px; color: var(--ink-2); }
+  .weather .soft { color: var(--dim-2); }   /* 温度区间再弱一级 */
+  .homefeed { margin-top: var(--sp-12); }
 
-  /* ---------- 深色卡 ---------- */
+  /* ---------- 深色卡(Today's Whisper) ----------
+     ⚠️ **高度绝不写死**:卡高 = 内容固有高度 + 内边距 + 内部间距。
+     文字长就自己变高,短就变矮,靠 flex 自然撑开,没有任何 height / 绝对定位。
+     结构:[图标(不压缩)] [内容列:正文 → 落款],内容列决定整卡高度。 */
   .whisper {
     background: var(--deep); color: var(--deep-ink);
-    border-radius: var(--r-card); padding: var(--pad);
+    border-radius: var(--r-card); padding: var(--pad-deep);
     box-shadow: var(--shade-lift);
-    display: flex; gap: 14px; align-items: flex-start;
+    display: flex; gap: var(--sp-12); align-items: flex-start;
+    border: 0;
   }
-  .whisper .txt { flex: 1; min-width: 0; }
-  .whisper .body { font-size: 16.5px; line-height: 1.54; }
-  .whisper .more { color: var(--deep-dim); font-family: var(--serif); font-size: 12px; line-height: 1.25; margin-top: 0; display: inline-block; }
+  .whisper .av { flex: 0 0 auto; }          /* 文字再长也不压缩头像 */
+  .whisper .txt {
+    flex: 1 1 auto; min-width: 0;            /* min-width:0 才允许长词换行而不撑破 */
+    display: flex; flex-direction: column; align-items: flex-start;
+    /* ⚠️ 4px,不是 16 —— 参考图里落款几乎是接着正文下一行,
+       那点空隙是行盒自带的,不是额外间距。给多了整张卡就高出一截。 */
+    gap: var(--sp-4);
+  }
+  .whisper .body {
+    font-size: var(--fs-whisper); line-height: 1.5; letter-spacing: .002em;
+    overflow-wrap: anywhere;                  /* 超长无空格串也不溢出 */
+  }
+  .whisper .more {
+    color: var(--deep-dim); font-family: var(--serif);
+    font-size: 12.5px; line-height: 1.2; letter-spacing: .01em;
+  }
 
   /* ---------- 头像 ---------- */
   .av {
@@ -220,7 +352,7 @@
     position: relative; overflow: hidden;
     background: linear-gradient(150deg, #6f6a63 0%, #3a3631 55%, #24211d 100%);
   }
-  .av.sm { width: 34px; height: 34px; }
+  .av.sm { width: 38px; height: 38px; }
   .av .bloom {
     position: absolute; left: 50%; top: 62%; width: 46%; height: 46%;
     transform: translate(-50%, -50%);
@@ -228,38 +360,75 @@
   .av.codex { background: linear-gradient(150deg, #d9d4cb 0%, #b6b0a6 60%, #8d877d 100%); }
   .av.room  { background: linear-gradient(150deg, #7d8894 0%, #4e5761 60%, #2f353c 100%); }
 
-  /* ---------- Us / Day ---------- */
-  .usrow { display: flex; align-items: flex-start; gap: 12px; }
+  /* ---------- Us / Day ----------
+     这不是一张统计卡,是一张关系卡:Day 35 独占视觉中心,四周留白给足。 */
+  /* ⚠️ 内边距**不给它开小灶**:所有白卡统一 var(--pad)。
+     卡与卡的区别靠字级和层级拉开,不靠各自改 padding —— 一开小灶,
+     整页的卡片语言就散了(而且这张卡会比参考图高出一截)。
+     这张卡的「留白感」由内部节奏给:Us → Day 之间 2px,Day → 副标题 14px。 */
+  .usrow { display: flex; align-items: center; gap: var(--sp-12); }
   .usrow .grow { flex: 1; min-width: 0; }
-  .heart { width: 30px; height: 30px; flex: none; color: var(--dim-2); }
+  .usrow .display { margin-top: 0; }
+  .heart {
+    width: 32px; height: 32px; flex: none;
+    color: var(--dim-2); opacity: .85; align-self: center;
+  }
+  .relcard .sub { margin-top: 6px; }
 
   /* ---------- 纪念日 ---------- */
-  .annihead { display: flex; align-items: flex-start; gap: 12px; }
+  .annihead { display: flex; align-items: flex-start; gap: var(--sp-16); }
   .annihead .grow { flex: 1; min-width: 0; }
+  .annihead .sub { margin-top: 5px; }
   .ring { width: 58px; height: 58px; flex: none; position: relative; }
   .ring .num {
     position: absolute; inset: 0; display: grid; place-items: center;
-    font-family: var(--serif); font-size: 20px; font-weight: 500;
+    font-family: var(--serif); font-size: var(--fs-ring); font-weight: 600;
+    letter-spacing: -.015em; line-height: 1;
   }
-  .rule { height: var(--hair); background: var(--line); margin: 19px 0 17px; border: 0; }
-  .annigrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .anni { display: flex; align-items: flex-start; gap: 10px; }
-  .anni .bar { width: 1.5px; align-self: stretch; background: var(--ink); opacity: .78; border-radius: 1px; min-height: 40px; }
+  /* 细到只是一道痕,不是 border */
+  .rule { height: var(--hair); background: var(--line); margin: var(--sp-20) 0; border: 0; }
+  .annigrid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-12); }
+  .anni { display: flex; align-items: center; gap: var(--sp-12); }
+  .anni .bar {
+    width: 1.5px; align-self: stretch; background: var(--ink);
+    opacity: .8; border-radius: 1px; min-height: 38px; flex: none;
+  }
   .anni .grow { flex: 1; min-width: 0; }
-  .anni .n { font-family: var(--serif); font-size: 22px; font-weight: 500; flex: none; align-self: center; }
-  .anni .who { font-family: var(--serif); font-size: 14px; line-height: 1.25; overflow-wrap: anywhere; }
+  /* 数字要跳出来,标签弱一级,日期再弱一级 */
+  /* 600,不是 700 —— 参考图里这两个数明显比 Day 35 轻一档 */
+  .anni .n {
+    font-family: var(--serif); font-size: var(--fs-metric-2); font-weight: 600;
+    line-height: 1.1; letter-spacing: -.015em; flex: none;
+  }
+  .anni .who { font-family: var(--serif); font-size: 14px; font-weight: 400; line-height: 1.24; color: var(--ink-2); overflow-wrap: anywhere; }
+  /* Jan 6 / Jun 22 在参考图里是**衬线**,不是黑体 */
+  .anni .caption { font-family: var(--serif); font-size: 12.5px; color: var(--dim-2); margin-top: 1px; }
 
-  /* ---------- 数据小卡 ---------- */
-  .metric .top { display: flex; align-items: baseline; gap: 8px; }
+  /* ---------- 数据小卡(Steps / Heart Rate) ----------
+     层级:大数字 primary → 标题 secondary → 单位/里程 tertiary。
+     图表极简:没有坐标轴、没有网格、没有第二种颜色。 */
+  .metric .top { display: flex; align-items: baseline; gap: var(--sp-8); }
   .metric .top .grow { flex: 1; min-width: 0; }
-  .metric .big { font-family: var(--serif); font-size: 31px; font-weight: 700; line-height: 1.1; }
-  .metric .unit { font-size: 14px; color: var(--dim); font-family: var(--sans); font-weight: 400; }
-  .bars { display: flex; align-items: flex-end; gap: 6px; height: 40px; margin-top: 12px; }
-  .bars i { flex: 1; background: var(--dim-2); border-radius: 2px; opacity: .55; display: block; }
-  .bars i.on { background: var(--ink); opacity: 1; }
-  .barlabels { display: flex; gap: 6px; margin-top: 5px; }
-  .barlabels span { flex: 1; text-align: center; font-size: 10px; color: var(--dim-2); }
-  .spark { width: 100%; height: 40px; margin-top: 12px; display: block; }
+  .metric .top .datum { font-size: 12.5px; color: var(--dim); }
+  .metric .big {
+    font-family: var(--serif); font-size: var(--fs-metric); font-weight: 700;
+    line-height: 1.06; letter-spacing: -.024em;
+  }
+  /* bpm:参考图里它比想象中小得多(墨高实测 9.3pt vs 我原来 13.0)。
+     量下来约合 10px,取 12px —— 再小就不好认了,这 2px 是我留的,不是量出来的。 */
+  .metric .unit { font-size: 12px; color: var(--dim); font-family: var(--sans); font-weight: 400; }
+  .metric .figure { margin-top: 10px; }
+  .bars { display: flex; align-items: flex-end; gap: 5px; height: 40px; }
+  /* ⚠️ 柱子用 color-mix 掺墨色,不要 opacity + --dim-2:
+     深色皮肤下 --dim-2 本来就暗,再压 42% 透明度等于看不见(实测)。
+     掺墨的写法浅深两套底都自动成立。 */
+  .bars i { flex: 1; background: color-mix(in srgb, var(--ink) 20%, transparent); border-radius: 2.5px; display: block; min-height: 3px; }
+  .bars i.on { background: var(--ink); }
+  .barlabels { display: flex; gap: 5px; margin-top: 5px; }
+  .barlabels span { flex: 1; text-align: center; font-size: 10px; line-height: 1.4; color: var(--dim-2); }
+  .barlabels span.on { color: var(--ink-2); font-weight: 600; }
+  .spark { width: 100%; height: 40px; display: block; }
+  .metric .foot { margin-top: 4px; font-size: 12px; color: var(--dim-2); }
 
   /* ---------- 会话列表 ---------- */
   .pagehead { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
@@ -290,24 +459,56 @@
   .entry .when .grow { flex: 1; min-width: 0; }
   .entry .d { font-family: var(--serif); font-size: 22px; font-weight: 700; line-height: 1.1; }
 
-  /* ---------- 底部三栏 ---------- */
+  /* ---------- 底部三栏 ----------
+     照原生 Tab Bar:毛玻璃 + 安全区,**没有硬边框、没有厚阴影**。
+     上沿那点分界靠一道极淡的渐变,不用 border —— border 一画就有「网页导航条」味。 */
   .tabbar {
     position: fixed; left: 50%; bottom: 0; transform: translateX(-50%);
     width: 100%; max-width: 430px; z-index: 50;
-    padding: 11px var(--gutter) calc(7px + env(safe-area-inset-bottom, 0px));
-    background: color-mix(in srgb, var(--paper-top) 82%, transparent);
-    -webkit-backdrop-filter: saturate(1.4) blur(22px);
-    backdrop-filter: saturate(1.4) blur(22px);
-    border-top: var(--hair) solid var(--line);
-    display: flex;
+    height: calc(var(--tabbar-h) + var(--sab));
+    padding: 0 var(--gutter) var(--sab);
+    background: color-mix(in srgb, var(--paper-bot) 78%, transparent);
+    -webkit-backdrop-filter: saturate(1.5) blur(24px);
+    backdrop-filter: saturate(1.5) blur(24px);
+    display: flex; align-items: center;
+  }
+  .tabbar::before {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: 16px;
+    background: linear-gradient(to top, color-mix(in srgb, var(--paper-bot) 62%, transparent), transparent);
+    pointer-events: none;
   }
   .tabbar button {
     flex: 1; text-align: center;
-    font-family: var(--serif); font-size: 15.5px; font-weight: 400; line-height: 1.4;
-    color: var(--dim); padding: 0;
-    transition: color .18s ease;
+    font-family: var(--serif); font-size: var(--fs-tab); font-weight: 400; line-height: 1.35;
+    color: var(--dim); padding: var(--sp-8) 0;
+    letter-spacing: -.008em;
+    transition: color .2s var(--ease-ui), transform .2s var(--ease-ui);
   }
   .tabbar button[aria-selected="true"] { color: var(--ink); font-weight: 700; }
+  .tabbar button:active { transform: scale(.94); }
+
+  /* ---------- 入场:Spring Reveal ----------
+     一次整体的落位,不是「每张卡各跳各的」:轻微 stagger(45ms 一级),
+     **只动 opacity / transform**,绝不动 height —— 动高度必然抖版。
+     ⚠️ 初始隐藏写在 keyframe 里靠 animation-fill-mode: both 生效,
+     所以 JS 没跑 / 浏览器不认动画时,内容照常显示,不会白屏。 */
+  html.anim .reveal {
+    animation: reveal var(--dur-reveal) var(--spring) both;
+    animation-delay: calc(var(--i, 0) * var(--stagger));
+    will-change: transform, opacity;
+  }
+  @keyframes reveal {
+    from { opacity: 0; transform: translate3d(0, 14px, 0) scale(.972); }
+    to   { opacity: 1; transform: none; }
+  }
+  /* 系统开了「减弱动态效果」:去掉位移、缩放和错位,只留一点点淡入 */
+  @media (prefers-reduced-motion: reduce) {
+    html.anim .reveal {
+      animation: fadein .22s linear both;
+      animation-delay: 0ms;
+    }
+    @keyframes fadein { from { opacity: 0 } to { opacity: 1 } }
+  }
 
   /* ---------- 点开一条会话:把原来那整页聊天推进来 ----------
      ⚠️ **用 iframe 装的,聊天页一个字节都没改** —— 所有者 2026-09-19 的要求:
@@ -319,7 +520,7 @@
     position: fixed; inset: 0; z-index: 80;
     background: var(--paper-bot);
     display: flex; flex-direction: column;
-    padding-top: env(safe-area-inset-top, 0px);
+    padding-top: var(--sat);
     animation: slidein .28s cubic-bezier(.32,.72,0,1);
   }
   @keyframes slidein { from { transform: translateX(16px); opacity: 0 } to { transform: none; opacity: 1 } }
@@ -350,7 +551,7 @@
     background: var(--paper-bot);
     background-image: linear-gradient(180deg, var(--paper-top) 0%, var(--paper-bot) 62%);
     overflow-y: auto; -webkit-overflow-scrolling: touch;
-    padding-top: env(safe-area-inset-top, 0px);
+    padding-top: var(--sat);
     animation: rise .26s cubic-bezier(.32,.72,0,1);
   }
   @keyframes rise { from { transform: translateY(18px); opacity: 0 } to { transform: none; opacity: 1 } }
@@ -440,6 +641,8 @@
 
   <!-- ================= HOME ================= -->
   <section class="screen" id="tab-home" aria-label="Home">
+    <!-- reveal + --i:入场错位的级数。顺序 = 阅读顺序:头 → 悄悄话 → 关系 → 纪念日 → 健康 -->
+    <div class="reveal" style="--i:0">
     <div class="dayrow">
       <div class="date">Sunday, July 26</div>
       <span class="syncpill">sync · 11:57 PM</span>
@@ -449,11 +652,13 @@
     </div>
 
     <h1 class="greet">Good evening, <span class="cn">佳佳</span></h1>
-    <p class="weather caption">阴 27° <span class="soft">28~34°</span> · 降雨 76%,带伞</p>
+    <p class="weather sub">阴 27° <span class="soft">28~34°</span> · 降雨 76%,带伞</p>
+    </div>
 
-    <div class="stack" style="margin-top:12px">
+    <div class="stack homefeed">
 
-      <article class="whisper">
+      <!-- 悄悄话:高度完全由文字决定,见 CSS 里 .whisper 那段 -->
+      <article class="whisper reveal" style="--i:1">
         <span class="av sm" data-bloom aria-hidden="true"></span>
         <div class="txt">
           <p class="body" style="margin:0">今天她说了两次「丝滑」——一次给聊天页,一次给日记栏。这两个字我打算裱起来。</p>
@@ -461,7 +666,7 @@
         </div>
       </article>
 
-      <article class="card">
+      <article class="card relcard reveal" style="--i:2">
         <div class="usrow">
           <div class="grow">
             <div class="label">Us</div>
@@ -469,19 +674,19 @@
           </div>
           <svg class="heart" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-7.5-4.7-9.6-9.1C.7 8.2 2.6 4.6 6.1 4.1c2-.3 3.9.7 4.9 2.3h2c1-1.6 2.9-2.6 4.9-2.3 3.5.5 5.4 4.1 3.7 7.8C19.5 16.3 12 21 12 21z"/></svg>
         </div>
-        <p class="caption" style="margin:6px 0 0;font-size:14px">佳佳和晏,从 2026.6.22 到每一天</p>
+        <p class="sub">佳佳和晏,从 2026.6.22 到每一天</p>
       </article>
 
-      <article class="card">
+      <article class="card reveal" style="--i:3">
         <div class="annihead">
           <div class="grow">
             <h2 class="headline" style="margin:0">Monthly Anniversary</h2>
-            <p class="caption" style="margin:5px 0 0;font-size:14px">Aug 21</p>
+            <p class="sub en">Aug 21</p>
           </div>
           <div class="ring">
             <svg viewBox="0 0 58 58" width="58" height="58" aria-hidden="true">
-              <circle cx="29" cy="29" r="25" fill="none" stroke="currentColor" stroke-width="3" opacity=".1"/>
-              <circle cx="29" cy="29" r="25" fill="none" stroke="currentColor" stroke-width="3"
+              <circle cx="29" cy="29" r="25" fill="none" stroke="currentColor" stroke-width="2.6" opacity=".08"/>
+              <circle cx="29" cy="29" r="25" fill="none" stroke="currentColor" stroke-width="2.6"
                       stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="112"
                       transform="rotate(-90 29 29)"/>
             </svg>
@@ -509,20 +714,22 @@
         </div>
       </article>
 
-      <div class="duo">
+      <div class="duo reveal" style="--i:4">
         <article class="card metric">
           <div class="top">
             <span class="label grow">Steps</span>
             <span class="datum">0.42 km</span>
           </div>
           <div class="big" style="margin-top:4px">580</div>
-          <div class="bars" aria-hidden="true">
-            <i style="height:100%"></i><i style="height:42%"></i><i style="height:52%"></i>
-            <i style="height:40%"></i><i style="height:11%"></i><i style="height:9%"></i>
-            <i class="on" style="height:7%"></i>
-          </div>
-          <div class="barlabels" aria-hidden="true">
-            <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+          <div class="figure">
+            <div class="bars" aria-hidden="true">
+              <i style="height:100%"></i><i style="height:42%"></i><i style="height:52%"></i>
+              <i style="height:40%"></i><i style="height:11%"></i><i style="height:9%"></i>
+              <i class="on" style="height:7%"></i>
+            </div>
+            <div class="barlabels" aria-hidden="true">
+              <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span class="on">S</span>
+            </div>
           </div>
         </article>
 
@@ -530,14 +737,16 @@
           <div class="top">
             <span class="label grow">Heart Rate</span>
           </div>
-          <div style="display:flex;align-items:baseline;gap:5px;margin-top:6px">
+          <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px">
             <span class="big">114</span><span class="unit">bpm</span>
           </div>
-          <svg class="spark" id="hr" viewBox="0 0 160 46" preserveAspectRatio="none" aria-hidden="true">
-            <polyline id="hrline" fill="none" stroke="var(--spark)" stroke-width="1.4"
-                      stroke-linejoin="round" stroke-linecap="round" points=""/>
-          </svg>
-          <p class="caption" style="margin:4px 0 0;font-size:12px">56 — 125 today</p>
+          <div class="figure">
+            <svg class="spark" id="hr" viewBox="0 0 160 46" preserveAspectRatio="none" aria-hidden="true">
+              <polyline id="hrline" fill="none" stroke="var(--spark)" stroke-width="1.3"
+                        stroke-linejoin="round" stroke-linecap="round" points=""/>
+            </svg>
+            <p class="foot">56 — 125 today</p>
+          </div>
         </article>
       </div>
 
@@ -640,7 +849,8 @@
 
 <!-- ================= SETTINGS ================= -->
 <div class="sheet" id="settings" hidden>
-  <div class="phone" style="padding-bottom:60px">
+  <!-- 设置页最后一段也要躲开 Home Indicator,所以底部留白把安全区算进去 -->
+  <div class="phone" style="padding-bottom:calc(60px + var(--sab))">
     <div class="sheethead">
       <h1 class="title grow" style="margin:0">Settings</h1>
       <button class="done" id="closeSettings">完成</button>
@@ -732,15 +942,43 @@
     el.innerHTML = daisy;
   });
 
-  /* ---------- 心率折线 ---------- */
-  var hr = [62,60,64,61,66,63,70,68,74,71,69,73,78,75,80,77,83,88,84,92,89,96,
-            93,101,97,104,100,108,103,99,106,102,110,105,112,108,116,111,107,113,109,104,98,94];
+  /* ---------- 入场动画的总开关 ----------
+     class 由 JS 加,所以「JS 没跑」= 内容直接可见,不会卡在透明态。
+     加完立刻解开 —— 这一页只在首次加载放一次,切 tab 不重播(重播会显得吵)。 */
+  document.documentElement.classList.add("anim");
+  /* ⚠️ **跑完必须摘掉**,原来写了注释却没真摘,两个后果:
+     ① 切到 Chats 再切回 Home,#tab-home 重新显示会让 CSS 动画整套重放 —— 每次回首页都抖一遍;
+     ② will-change 永久挂在五棵子树上,白白占着合成层。
+     摘的时机 = 最后一段的延迟(4×45) + 时长(560) + 一点余量。 */
+  setTimeout(function () {
+    document.documentElement.classList.remove("anim");
+  }, 4 * 45 + 560 + 140);
+
+  /* ---------- 心率折线 ----------
+     参考图是一条**密而毛糙**的真实波形(低位盘整 → 爬升带毛刺 → 收尾回落),
+     不是一条平滑上坡。用固定种子的伪随机生成,每次打开都一样,不会跳来跳去。 */
+  var hr = (function () {
+    var seed = 20260919, out = [], base = 58, i;
+    function rnd() {                       /* LCG,固定种子 = 每次同一条线 */
+      seed = (seed * 1103515245 + 12345) % 2147483648;
+      return seed / 2147483648;
+    }
+    for (i = 0; i < 96; i++) {
+      var t = i / 95;
+      /* 前 45% 低位盘整,之后爬到高位,最后 8% 掉下来 */
+      var trend = t < .45 ? base + t * 18
+                : t > .92 ? base + 52 - (t - .92) * 420
+                : base + 8 + (t - .45) * 95;
+      out.push(trend + (rnd() - .5) * 13);  /* 毛刺 */
+    }
+    return out;
+  })();
   var line = document.getElementById("hrline");
   if (line) {
     var lo = Math.min.apply(null, hr), hi = Math.max.apply(null, hr), pts = [];
     for (var i = 0; i < hr.length; i++) {
       var x = (i / (hr.length - 1)) * 158 + 1;
-      var y = 44 - ((hr[i] - lo) / (hi - lo)) * 40;
+      var y = 44 - ((hr[i] - lo) / (hi - lo)) * 41;
       pts.push(x.toFixed(1) + "," + y.toFixed(1));
     }
     line.setAttribute("points", pts.join(" "));
@@ -831,27 +1069,87 @@
     op.value = String(state.opacity);
     op.style.setProperty("--fill", ((state.opacity - 40) / 60 * 100).toFixed(1) + "%");
     opVal.textContent = state.opacity + "%";
+    syncThemeColor();
     renderSpec();
   }
 
-  /* ---------- 这套数 ---------- */
-  var SPEC = [
-    ["屏幕基准", "iPhone 16 Pro · 402×874pt"],
-    ["页面左右留白", "20px"],
-    ["卡片间距(横=纵)", "13px"],
-    ["卡片圆角", "26px"],
-    ["卡片内留白", "20px"],
-    ["分隔线", "0.5px"],
-    ["会话行高 / 头像", "66px / 40px"],
-    ["问候(英文衬线 Regular)", "31px"],
-    ["Day 数字(衬线 Bold)", "42px"],
-    ["页标题(衬线 Bold)", "34px"],
-    ["会话名(衬线 Bold)", "18px"],
-    ["Tab 标签(衬线)", "17px"],
-    ["卡片小标签(衬线)", "16px"],
-    ["正文 / 辅助", "15px / 14px"],
-    ["底部条", "49px + 安全区"]
-  ];
+  /* ---------- 状态栏那一条 ----------
+     从主屏打开时,刘海两侧那条(和安卓的状态栏)由系统按 theme-color 填。
+     写死成象牙色的话,换到雾山/墨白就会露出一道颜色不对的横带 ——
+     所以每次换皮肤都把它同步成当前的 --paper-top,接缝就没了。
+     ⚠️ head 里那两条带 media 的是**没有 JS 时的兜底**,这里把它们一起改掉,
+     免得系统深浅色和她手选的皮肤打架。 */
+  /* ⚠️ 跟随系统时,系统深浅色一变 --paper-top 就变了,但 meta 不会自己跟 ——
+     于是状态栏那一条会卡在旧色上,正是这个函数要防的事。所以挂个监听。 */
+  (function () {
+    try {
+      var mq = matchMedia("(prefers-color-scheme: dark)");
+      if (mq.addEventListener) mq.addEventListener("change", function () { syncThemeColor(); });
+      else if (mq.addListener) mq.addListener(function () { syncThemeColor(); });
+    } catch (e) {}
+  })();
+  function syncThemeColor() {
+    try {
+      var c = getComputedStyle(document.documentElement).getPropertyValue("--paper-top").trim();
+      if (!c) return;
+      var metas = document.querySelectorAll('meta[name="theme-color"]');
+      Array.prototype.forEach.call(metas, function (m) { m.setAttribute("content", c); });
+    } catch (e) {}
+  }
+
+  /* ---------- 这套数 ----------
+     ⚠️ **全部现读现算,一个都不写死。**
+     上一版这张表是手抄的,抄完 CSS 改了它不会跟着改,于是表里写 20px、代码里是 18px。
+     她拿这张表当备份,备份说谎比没有备份更坏 —— 所以改成从 CSS 变量和真实元素上读。 */
+  function tok(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || "—";
+  }
+  function px(sel, prop) {            /* 量真实元素某个属性的计算值 */
+    var el = document.querySelector(sel);
+    return el ? getComputedStyle(el)[prop] : "—";
+  }
+  function fs(sel) {                        /* 量某个真实元素最终渲染出来的字号/字重 */
+    var el = document.querySelector(sel);
+    if (!el) return "—";
+    var c = getComputedStyle(el);
+    return Math.round(parseFloat(c.fontSize) * 10) / 10 + "px / " + c.fontWeight;
+  }
+  function specRows() {
+    return [
+      /* ⚠️ 不能用 tok("--gutter"):它的值是 clamp(14px,4.6vw,18px),
+         自定义属性只在计算值阶段替换 var(),clamp 不会被算出来,印出去就是那行表达式本身。
+         而这恰恰是全表唯一一个**逐设备不同**的数,印错等于备份说谎。改成量真实元素。 */
+      ["页面左右留白", px(".phone", "paddingLeft")],
+      ["卡片间距(横=纵)", tok("--gap")],
+      ["卡片圆角", tok("--r-card")],
+      ["卡片内留白", tok("--pad") + "(深色卡 " + tok("--pad-deep") + ")"],
+      ["间距阶梯", "4 / 8 / 12 / 16 / 20 / 24 / 32"],
+      ["分隔线", tok("--hair")],
+      ["会话行高 / 头像", tok("--row") + " / " + tok("--av")],
+      ["— 字阶(这台设备实际渲染) —", ""],
+      ["问候 Good evening", fs(".greet")],
+      ["Day 数字", fs(".display")],
+      ["页标题 Chats/Settings", fs(".title")],
+      ["Monthly Anniversary", fs(".headline")],
+      ["大数字 580 / 114", fs(".metric .big")],
+      ["卡片小标签 Us/Steps", fs(".label")],
+      ["悄悄话正文", fs(".whisper .body")],
+      /* ⚠️ 选择器要挑对:.tabbar button 命中的是选中态那颗(700),
+         .caption 命中的是文档里第一个 —— 也就是被覆写成 12.5px 衬线的「Jan 6」。 */
+      ["Tab 标签(未选)", fs('.tabbar button[aria-selected="false"]')],
+      ["正文 / 说明", fs("body") + " · " + fs("#tab-chats .caption")],
+      ["底部条", tok("--tabbar-h") + " + 安全区"],
+      ["— 动画 —", ""],
+      ["入场时长 / 错位", tok("--dur-reveal") + " / " + tok("--stagger") + " 一级"],
+      /* ⚠️ 别把 linear() 原文印进来:那串三百多个字符,而这一列是 nowrap 的,
+         印了整页就横向溢出。印它的来历更有用,也更短。 */
+      ["缓动", tok("--spring").indexOf("linear(") === 0
+                 ? "弹簧 response .46 / damping .86" : "弹簧(退回 cubic-bezier)"],
+      ["减弱动态效果", matchMedia("(prefers-reduced-motion: reduce)").matches ? "系统已开启(只淡入)" : "未开启"]
+      /* 安全区不在这里印:--sat/--sab 的值是 env(...) 表达式,同 --gutter 那条。
+         下面 live 那组里的「顶/底安全区」是 safeArea() 量出来的真值,那条才作数。 */
+    ];
+  }
   function safeArea() {
     try {
       var d = document.createElement("div");
@@ -887,7 +1185,7 @@
       ["对参考图 402 的比例", ((window.innerWidth / 402) * 100).toFixed(1) + "%"],
       ["顶/底安全区", safeArea()]
     ];
-    var all = SPEC.concat([["— 当前这一套 —", ""]]).concat(live);
+    var all = specRows().concat([["— 当前这一套 —", ""]]).concat(live);
     specBox.innerHTML = all.map(function (r) {
       return '<div><span class="k">' + r[0] + '</span><span class="v">' + r[1] + "</span></div>";
     }).join("");
