@@ -453,9 +453,10 @@
   .rule { height: var(--hair); background: var(--line); margin: 15px 0; border: 0; }
   .annigrid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-12); }
   .anni { display: flex; align-items: center; gap: var(--sp-12); }
+  /* ⚠️ 参考图实测这根竖条 **3.2pt** 宽,我原来 1.5px(量出来 1.3pt)—— 细了一半多 */
   .anni .bar {
-    width: 1.5px; align-self: stretch; background: var(--ink);
-    opacity: .8; border-radius: 1px; min-height: 38px; flex: none;
+    width: 3px; align-self: stretch; background: var(--ink);
+    opacity: .8; border-radius: 1.5px; min-height: 38px; flex: none;
   }
   .anni .grow { flex: 1; min-width: 0; }
   /* 数字要跳出来,标签弱一级,日期再弱一级 */
@@ -465,9 +466,14 @@
     line-height: 1.1; letter-spacing: -.015em; flex: none; color: var(--ink-2);
   }
   /* 参考图:名字 #0c0c0c(近黑)、数字 #3f3f40(中灰)、日期最浅 */
-  .anni .who { font-family: var(--serif); font-size: 14.5px; font-weight: 400; line-height: 1.24; color: var(--ink); overflow-wrap: anywhere; }
+  /* ⚠️ 参考图把名字那一栏做得很窄(实测只有 **55.5pt**),于是排成
+     「敏敏's / birthday / Jan 6」**三行**;我原来那栏 99.3pt,排成两行 ——
+     整块的高度和节奏就跟着错了。限宽让它照样换行。
+     ⚠️ 这**不是**内容长度的问题:「敏敏's birthday」和「佳佳's birthday」一样长。 */
+  .anni .who { font-family: var(--serif); font-size: 14.5px; font-weight: 400; line-height: 1.24; color: var(--ink); overflow-wrap: anywhere; max-width: 66px; }
   /* Jan 6 / Jun 22 在参考图里是**衬线**,不是黑体 */
-  .anni .caption { font-family: var(--serif); font-size: 12.5px; color: var(--dim-2); margin-top: 1px; }
+  /* 参考图的「Jan 6」是深灰、不是浅灰(颜色跨字体可比,所以这条可信) */
+  .anni .caption { font-family: var(--serif); font-size: 12.5px; color: var(--ink-2); margin-top: 1px; }
 
   /* ---------- 数据小卡(Steps / Heart Rate) ----------
      层级:大数字 primary → 标题 secondary → 单位/里程 tertiary。
