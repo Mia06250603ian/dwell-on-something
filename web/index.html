@@ -636,8 +636,14 @@
      ⚠️ **用 iframe 装的,聊天页一个字节都没改** —— 所有者 2026-09-19 的要求:
      「chat 目前的 ui 不变,点进去做聊天页」。那页里有 43 处「照官端」是她一处处对齐的,
      嵌进来改 CSS 迟早会碰坏,所以整页原样装进来。
-     ⚠️ 代价:它自带一条顶栏,所以上面这条返回条是**第二条**。要合成一条就得动那页的顶栏,
-     那是另一件事,得她点头。 */
+     ~~代价:它自带一条顶栏,所以上面这条返回条是**第二条**。~~
+     ✅ 2026-10-09 所有者报「点进去分三层」并点头合成一条:
+       ① 返回键不再是外壳自己的一条栏,而是**放进聊天页顶栏左边那颗玻璃圆**(#menuBtn)——
+          官端本来就是「左一颗圆、右一颗胶囊」,左边那颗 09-19 拆侧边栏时空了出来,
+          它的玻璃样式(含深色)还原样留在 chat.html 里,所以这里只放回按钮本身,
+          **chat.html 文件一个字节不改**(见下面脚本里的 mountBack);
+       ② 安全区那一截的底色跟着聊天页的底色走(原来是首页的纸色,和聊天页差一档)。
+     外壳那条 .chatbar 只在「这间屋还没部署」时出现(那时没有聊天页可放按钮)。 */
   .chatview {
     position: fixed; inset: 0; z-index: 80;
     background: var(--paper-bot);
@@ -952,7 +958,7 @@
 </nav>
 
 <div class="chatview" id="chatview" hidden>
-  <div class="chatbar">
+  <div class="chatbar" id="chatbar">
     <button class="back" id="chatBack">
       <svg viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.8 1.2 1.6 7.5l6.2 6.3"/></svg>
       Chats
@@ -1424,18 +1430,61 @@
       chatWho.textContent = row.dataset.who || "";
       if (src) {
         if (loaded !== src) { chatframe.src = src; loaded = src; }
-        chatframe.hidden = false; chatNone.hidden = true;
+        chatframe.hidden = false; chatNone.hidden = true; chatbar.hidden = true;
+        syncBg();
       } else {
-        chatframe.hidden = true; chatNone.hidden = false;
+        chatframe.hidden = true; chatNone.hidden = false; chatbar.hidden = false;
+        chatview.style.background = "";
       }
       chatview.hidden = false;
       tabbar.hidden = true;
     });
   });
-  document.getElementById("chatBack").addEventListener("click", function () {
+  function goBack() {
     chatview.hidden = true;
     tabbar.hidden = false;
+  }
+  document.getElementById("chatBack").addEventListener("click", goBack);
+
+  /* ---------- 只留一条顶栏(2026-10-09) ----------
+     聊天页同源,所以等它加载完,往它顶栏最左边放回一颗 #menuBtn 当返回键。
+     样式全用 chat.html 自己的(玻璃圆、深色版、按下变淡),这里只给一个箭头。
+     ⚠️ 只在 iframe 里才放:chat.html 单独打开时没有「返回」可言。
+     ⚠️ 已经有 #menuBtn 就不放第二颗(哪天 chat.html 自己加回来了,以它为准)。 */
+  var chatbar = document.getElementById("chatbar");
+  function mountBack() {
+    try {
+      var d = chatframe.contentDocument, head = d && d.querySelector("header");
+      if (!head || d.getElementById("menuBtn")) return;
+      var btn = d.createElement("button");
+      btn.id = "menuBtn"; btn.className = "iconbtn"; btn.title = "返回"; btn.setAttribute("aria-label", "返回 Chats");
+      btn.innerHTML = '<svg viewBox="0 0 9 15" width="9" height="15" fill="none" stroke="currentColor" stroke-width="1.9" ' +
+        'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-left:-2px"><path d="M7.8 1.2 1.6 7.5l6.2 6.3"/></svg>';
+      btn.addEventListener("click", goBack);
+      head.insertBefore(btn, head.firstChild);
+    } catch (e) {}
+  }
+  /* 安全区那一截(iframe 上面)涂成聊天页的底色。皮肤/深浅色在聊天页里切,所以每次打开都重读一遍,
+     再盯住它根节点的属性变化与系统深浅色变化。读不到就退回外壳自己的纸色。 */
+  function syncBg() {
+    try {
+      var d = chatframe.contentDocument;
+      var c = d && d.body && getComputedStyle(d.body).backgroundColor;
+      if (!c || c === "rgba(0, 0, 0, 0)" || c === "transparent") c = d && getComputedStyle(d.documentElement).backgroundColor;
+      chatview.style.background = (c && c !== "rgba(0, 0, 0, 0)" && c !== "transparent") ? c : "";
+    } catch (e) { chatview.style.background = ""; }
+  }
+  chatframe.addEventListener("load", function () {
+    mountBack(); syncBg();
+    try {
+      new MutationObserver(syncBg).observe(chatframe.contentDocument.documentElement, { attributes: true });
+    } catch (e) {}
   });
+  try {
+    var dmq = window.matchMedia("(prefers-color-scheme: dark)");
+    var onScheme = function () { setTimeout(syncBg, 50); };
+    if (dmq.addEventListener) dmq.addEventListener("change", onScheme); else if (dmq.addListener) dmq.addListener(onScheme);
+  } catch (e) {}
 
   /* ---------- 设置开合 ---------- */
   var sheet = document.getElementById("settings");
