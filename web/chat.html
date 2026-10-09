@@ -4555,7 +4555,7 @@ box.focus();
   html[data-theme="dark"] .tgprof, html[data-theme="black"] .tgprof {
             --gl: rgba(255,255,255,.07); --gl-hi: rgba(255,255,255,.10); --gl-sh: 0 10px 30px rgba(0,0,0,.28); --fog: rgba(18,18,17,.40); }
   .tgprof .poster { position: absolute; left: -80px; right: -80px; top: -80px; height: 520px;
-                    background: var(--tg-av-him, var(--tg-av-him-def)); background-size: cover !important;
+                    background: var(--tg-av-him, var(--tg-av-him-def));
                     filter: blur(60px) saturate(1.15); opacity: .85; }
   .tgprof .poster::after { content: ""; position: absolute; inset: 0;
                     background: linear-gradient(to bottom, var(--fog) 0%, color-mix(in srgb, var(--bg) 70%, transparent) 55%, var(--bg) 100%); }
@@ -4568,7 +4568,7 @@ box.focus();
 
   .tgprof .hero { text-align: center; margin: 2px 0 26px; }
   .tgprof .hero .big { width: 76px; height: 76px; border-radius: 50%; margin: 0 auto 11px;
-                       background: var(--tg-av-him, var(--tg-av-him-def)); background-size: cover !important;
+                       background: var(--tg-av-him, var(--tg-av-him-def));   /* 换过的照片自带 cover;默认菊花自带 46%,别强行铺满(会撑爆) */
                        box-shadow: 0 0 0 .5px var(--hair), 0 12px 30px rgba(0,0,0,.12); }
   .tgprof .hero b { display: block; font-size: 21px; font-weight: 500; letter-spacing: -.01em; color: var(--p1); line-height: 1.2; }
   .tgprof .hero .who { margin-top: 3px; font-size: 12.5px; color: var(--p2); }
