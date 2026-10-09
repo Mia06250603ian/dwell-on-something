@@ -121,8 +121,10 @@
     /* 小屏(SE/mini)收窄到 14,常规屏 18:小屏上留白按比例走,不挤 */
     /* 参考图实测:卡左边缘 43px。那张图右边被裁掉约 11px,按左右对称还原屏宽 1000px,
        得 43/2.4876 = 17.3pt。**2026-09-19 实测,数会变** */
-    --gutter: clamp(13px, 4.35vw, 17.3px);
-    --gap: 13px;            /* 卡片间距,横纵同一个数(照参考图实测) */
+    /* ⚠️ 2026-10-09 真机对标:参考图是 Pro Max(440pt),按 2.173px/pt 换算,字号用同一串字的墨宽/墨高比反推:卡左 14.7 / 右 17.7(截图有约 1.5pt 横移),取平均 16.2。
+       ~~17.3~~ 是把那张 Pro Max 的图当 402pt 宽算出来的,偏大。 */
+    --gutter: clamp(13px, 4.03vw, 16.2px);
+    --gap: 15px;            /* 卡片间距,横纵同一个数(10-09 真机对标:纵 14.8~15.9、横 14.8;~~13~~) */
     --r-card: var(--r-lg);  /* 卡片圆角(15 点拟合稳定在 24~26) */
     --r-inner: var(--r-md);
     --pad: var(--sp-20);    /* 卡片内留白 */
@@ -130,11 +132,15 @@
     --row: 66.5px;          /* 会话行高(实测 66.6) */
     --av: 40px;             /* 头像直径 */
     --hair: .5px;
-    --tabbar-h: 42px;       /* 底栏内容高度,不含安全区(参考图更轻,09-19 收薄) */
+    --tabbar-h: 40px;       /* 底栏内容高度,不含安全区。10-09:参考图底栏顶距屏底 74.3pt = 40 + 安全区 34(~~42~~) */
 
     /* ---- 字族 —— 英文衬线当骨架,中文黑体当注解 ---- */
     --serif: ui-serif, "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
     --sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Noto Sans SC", "Segoe UI", sans-serif;
+    /* 中英混排的一行(天气 / Us 副标题):英文与数字走衬线,汉字落回苹方黑体。
+       参考图就是这样(「多云 27° 26~32°」「敏敏和 Claude,从 2026.6.22」)。
+       ⚠️ 汉字靠逐字回退落到 PingFang:衬线那几支都没有汉字。**别在这里挂 Songti**。 */
+    --serif-cn: ui-serif, "New York", "Iowan Old Style", Georgia, "PingFang SC", "Noto Sans SC", sans-serif;
     /* ⚠️ 刻意不在 --serif 里挂 Songti SC 和 SerifNum:
        参考图的中文标题是黑体加粗、数字是衬线,挂了这两样会全反过来 */
 
@@ -152,16 +158,19 @@
        量法必须**统一用「卡内自适应阈值分带」**,别用跨卡的固定阈值 ——
        后者会把相邻行并进来,量出来偏大,照它砍就会砍过头(39.5→35.5 就是这么错的)。
        统一量法下:参考墨高 38.2pt,New York 的墨高/字号比实测 0.938 → 40.7px。 */
-    --fs-display: clamp(33px, 10.1vw, 40.7px); /* Day 35 */
-    --fs-greet:   clamp(26px, 7.8vw, 31.5px); /* Good evening:29.4 ÷ 0.93 */
-    --fs-metric:  clamp(27px, 8.0vw, 32px);   /* 580 / 114:22.2 ÷ 0.69(数字墨高 = 大写高) */
+    /* ⚠️⚠️ 下面这一档 2026-10-09 整体重定:两张都是 iPhone 真机截图(同为 New York),
+       所以直接拿**同一串字**的墨宽/墨高比乘当前字号,不再经过任何字体度量换算。
+       此前那几轮偏小,根因是把参考图(Pro Max 440pt)当成 402pt 宽来换算,每个数小了 9%。 */
+    --fs-display: clamp(37px, 11.52vw, 46.3px); /* Day N:墨高比 1.153、墨宽比 1.135(~~40.7~~) */
+    --fs-greet:   clamp(28px, 8.38vw, 33.7px); /* Good evening,:墨高比 1.074(~~31.5~~),字距另见 .greet */
+    --fs-metric:  clamp(28px, 8.56vw, 34.4px); /* 113 vs 114 墨高比 1.076(~~32~~) */
     --fs-title:    24px;   /* 页标题 Chats / Settings / Diary */
-    --fs-metric-2: 19.5px; /* 164 / 331:13.3 ÷ 0.69 */
-    --fs-headline: 19.5px; /* Monthly Anniversary:真机墨宽 171.7 vs 参考 188.9,回算 19.3 */
-    --fs-ring:     18.5px; /* 环里那个 27:12.9 ÷ 0.69 */
-    --fs-whisper:  15.5px; /* 深色卡正文 */
-    --fs-label:    16.5px; /* Us / Steps / Heart Rate:15.2 ÷ 0.93 */
-    --fs-tab:      16px;   /* Tab:「Home」无降部,11.3 ÷ 0.69 */
+    --fs-metric-2: 20px;   /* 140 vs 164 墨高比 1.028(~~19.5~~) */
+    --fs-headline: 20.75px; /* Monthly Anniversary 同一串字:墨宽比 1.063、墨高比 1.085(~~19.5~~) */
+    --fs-ring:     20.5px; /* 环里的数:墨高比 1.105(~~18.5~~) */
+    --fs-whisper:  16.3px; /* 深色卡正文:汉字墨高比 1.05(~~15.5~~) */
+    --fs-label:    17.75px; /* Us / Steps / Heart Rate 同串墨宽比 1.059 / 1.078 / 1.080(~~16.5~~) */
+    --fs-tab:      16.5px; /* Home 墨高比 1.056(~~16~~) */
     --fs-body:     15px;
     --fs-sub:      14.5px; /* 天气、卡片副标题:参考 Aug 21 墨高 14.1 vs 真机 12.7 */
     --fs-caption:  13.5px;
@@ -325,7 +334,7 @@
      **别再把它们拉回 700**:那会变成「粗体 UI 字体」,而参考图是精致的衬线排版。 */
   .display  { font-family: var(--serif); font-size: var(--fs-display); font-weight: 500; line-height: 1.08; letter-spacing: -.018em; }
   .title    { font-family: var(--serif); font-size: var(--fs-title); font-weight: 600; line-height: 1.1; letter-spacing: -.014em; }
-  .greet    { font-family: var(--serif); font-size: var(--fs-greet); font-weight: 500; line-height: 1.16; letter-spacing: -.014em; }
+  .greet    { font-family: var(--serif); font-size: var(--fs-greet); font-weight: 500; line-height: 1.16; letter-spacing: 0; } /* 字距 10-09 归零:同串墨宽比 1.119 > 墨高比 1.074,多出来的是字距(~~-.014em~~) */
   /* 中文名落回黑体(衬线没有汉字,硬挂上去会变宋体)。
      字号压到 .96em、字重 600、字距收紧 —— 和英文标题咬在同一条视觉线上,不像一个普通 label */
   .greet .cn{ font-family: var(--sans); font-weight: 500; font-size: .96em; letter-spacing: -.01em; }
@@ -353,27 +362,27 @@
   /* ---------- 首页头 ----------
      节奏:日期行 →8→ 问候 →6→ 天气 →24→ 卡片流。
      问候是全页第一焦点,它上下的呼吸要比别处宽。 */
-  .dayrow { display: flex; align-items: center; gap: var(--sp-8); }
+  .dayrow { display: flex; align-items: center; gap: var(--sp-8); margin-top: 3px; } /* 10-09:日期墨顶参考 89.3、我们 86.7 */
   .dayrow .date {
     /* ⚠️ 日期行是**中灰**不是近黑:参考 #575656,真机量到 #191919。字号按真机回算 18.5。 */
-    font-family: var(--serif); font-size: 18.5px; font-weight: 400; color: var(--ink-2);
+    font-family: var(--serif); font-size: 19.5px; font-weight: 400; color: var(--ink-2); /* 10-09 墨高比 1.056(~~18.5~~) */
     line-height: 1.2; flex: 1; min-width: 0; letter-spacing: -.008em;
   }
   .syncpill {
     display: inline-flex; align-items: center; gap: 6px;
-    height: 28px; padding: 0 var(--sp-12); border-radius: 14px;
-    background: var(--card); box-shadow: var(--shade);
-    font-size: 12.5px; color: var(--dim); white-space: nowrap;
+    height: 28px; padding: 0 2px; border-radius: 14px;
+    /* 10-09 真机对标:参考图这里**没有胶囊底**,就是一行中灰字(墨色与日期同档)。~~卡片底 + 阴影 + 浅灰字~~ */
+    font-size: 12.5px; color: var(--ink-2); white-space: nowrap;
   }
   .iconbtn {
     width: 30px; height: 30px; flex: none; border-radius: 50%;
-    background: var(--card); box-shadow: var(--shade);
-    display: grid; place-items: center; color: var(--dim);
+    /* 10-09:参考图齿轮没有圆底,图标 16.6pt、中灰(~~15px 浅灰 + 卡片圆底~~)。30px 留着当点按区 */
+    display: grid; place-items: center; color: var(--ink-2);
     transition: transform .2s var(--ease-ui);
   }
   .iconbtn:active { transform: scale(.92); }
-  .greet   { margin-top: 2px; }
-  .weather { margin-top: 2px; color: var(--ink-2); }
+  .greet   { margin-top: 4.3px; }   /* 10-09 按真机墨顶回算(~~2px~~) */
+  .weather { margin-top: 2.7px; color: var(--ink-2); font-family: var(--serif-cn); }  /* 数字衬线、汉字黑体,同参考图 */
   .weather .soft { color: var(--dim-2); }   /* 温度区间再弱一级 */
   .homefeed { margin-top: var(--sp-12); }
 
@@ -385,7 +394,7 @@
     background: var(--deep); color: var(--deep-ink);
     border-radius: var(--r-card); padding: var(--pad-deep);
     box-shadow: var(--shade-lift);
-    display: flex; gap: var(--sp-12); align-items: flex-start;
+    display: flex; gap: var(--sp-16); align-items: flex-start;   /* 10-09:头像右缘→正文 16.7pt(~~12~~) */
     border: 0;
   }
   .whisper .av { flex: 0 0 auto; }          /* 文字再长也不压缩头像 */
@@ -394,7 +403,7 @@
     display: flex; flex-direction: column; align-items: flex-start;
     /* ⚠️ 4px,不是 16 —— 参考图里落款几乎是接着正文下一行,
        那点空隙是行盒自带的,不是额外间距。给多了整张卡就高出一截。 */
-    gap: 7px;
+    gap: 10px;   /* 10-09 真机回算(~~7px~~) */
   }
   .whisper .body {
     font-size: var(--fs-whisper); line-height: 1.5; letter-spacing: .002em;
@@ -402,7 +411,7 @@
   }
   .whisper .more {
     color: var(--deep-dim); font-family: var(--serif);
-    font-size: 12px; line-height: 1.2; letter-spacing: .01em;
+    font-size: 13.6px; line-height: 1.2; letter-spacing: .01em;   /* Today's Whisper 同串墨宽比 1.132(~~12px~~) */
   }
 
   /* ---------- 头像 ---------- */
@@ -411,7 +420,7 @@
     position: relative; overflow: hidden;
     background: linear-gradient(150deg, #6f6a63 0%, #3a3631 55%, #24211d 100%);
   }
-  .av.sm { width: 38px; height: 38px; }
+  .av.sm { width: 42px; height: 42px; }   /* 10-09 参考约 42pt(~~38~~) */
   .av .bloom {
     position: absolute; left: 50%; top: 62%; width: 46%; height: 46%;
     transform: translate(-50%, -50%);
@@ -427,7 +436,9 @@
      这张卡的「留白感」由内部节奏给:Us → Day 之间 2px,Day → 副标题 14px。 */
   .usrow { display: flex; align-items: center; gap: var(--sp-12); }
   .usrow .grow { flex: 1; min-width: 0; }
-  .usrow .display { margin-top: 4px; }   /* 参考:Us 底→Day 顶 17.2pt,我原来只有 10.4 */
+  .usrow .display { margin-top: 5.8px; }   /* 10-09 真机回算(~~4px~~) */
+  /* 10-09:这张卡的内边距参考图比别的卡大 —— 字距卡左 23.5pt、上 21.4、下 19.5 */
+  .relcard { padding: 21.4px 23.5px 19.5px; }   /* 参考:Us 底→Day 顶 17.2pt,我原来只有 10.4 */
   /* ⚠️ 参考图实测(2026-09-19,**用最大连通域框出整个图形量的,不是靠固定裁剪**):
      宽 29.7pt × 高 28.1pt = **宽高比 1.057**(几乎正方)、顶部凹口深 11.4%、色 #cecece。
      ~~上一轮量成 1.511 是错的~~:那次的裁剪把心底的尖切掉了,高度少算三分之一,
@@ -436,13 +447,16 @@
     width: 29.7px; height: 28.1px; flex: none;
     color: var(--dim-2); opacity: .62; align-self: center;
   }
-  .relcard .sub { margin-top: 11px; }
+  .relcard .sub { margin-top: 4.7px; font-family: var(--serif-cn); }   /* 参考 Day 墨底→副标题墨顶只有 8.3pt(~~11px~~,我们是 15) */
 
   /* ---------- 纪念日 ---------- */
-  .annihead { display: flex; align-items: flex-start; gap: var(--sp-16); }
+  /* 10-09:参考图标题块与环**上下居中**,环外圈顶距卡顶 18.5pt、右距卡边 17.3pt */
+  .annicard { padding: 18px 16.5px 18px 20px; }
+  .annihead { display: flex; align-items: center; gap: var(--sp-16); }
   .annihead .grow { flex: 1; min-width: 0; }
-  .annihead .sub { margin-top: 2px; }    /* 参考「标题+Aug21」整块 38.6pt,我原来 44.7 */
-  .ring { width: 66px; height: 66px; flex: none; position: relative; }
+  .annihead .sub { margin-top: 6.2px; font-size: 15px; }   /* 10-09 真机回算(~~2px~~);Aug 同串墨宽比 1.03(~~14.5~~) */    /* 参考「标题+Aug21」整块 38.6pt,我原来 44.7 */
+  /* 10-09:参考环外径 69.5pt、弧宽 5.06(~~外径 64.5、弧宽 4.5~~)→ r 32.2、盒 71 */
+  .ring { width: 71px; height: 71px; flex: none; position: relative; }
   .ring .num {
     position: absolute; inset: 0; display: grid; place-items: center;
     font-family: var(--serif); font-size: var(--fs-ring); font-weight: 500;
@@ -450,19 +464,20 @@
   }
   /* 细到只是一道痕,不是 border */
   /* 参考:Aug 21 底 → 生日行顶 53.5pt(含这条线),我原来 61.3 —— 这一带宽了 8pt */
-  .rule { height: var(--hair); background: var(--line); margin: 15px 0; border: 0; }
+  .rule { height: var(--hair); background: var(--line); margin: 12.3px 0 15px; border: 0; }   /* 10-09 参考线距卡顶 101.3pt */
+  .annigrid { padding-right: 13px; }   /* 参考右列数字右缘距卡边 29.7pt,比环那一侧往里收 */
   .annigrid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-12); }
   .anni { display: flex; align-items: center; gap: var(--sp-12); }
   /* ⚠️ 参考图实测这根竖条 **3.2pt** 宽,我原来 1.5px(量出来 1.3pt)—— 细了一半多 */
   .anni .bar {
-    width: 3px; align-self: stretch; background: var(--ink);
-    opacity: .8; border-radius: 1.5px; min-height: 38px; flex: none;
+    width: 3px; align-self: center; height: 39px; background: var(--ink);
+    opacity: .8; border-radius: 1.5px; flex: none;   /* 10-09:参考竖条高 ~39pt、与整行居中,不是撑满(~~stretch, min 38~~) */
   }
   .anni .grow { flex: 1; min-width: 0; }
   /* 数字要跳出来,标签弱一级,日期再弱一级 */
   /* 600,不是 700 —— 参考图里这两个数明显比 Day 35 轻一档 */
   .anni .n {
-    font-family: var(--serif); font-size: var(--fs-metric-2); font-weight: 600;
+    font-family: var(--serif); font-size: var(--fs-metric-2); font-weight: 500;   /* 10-09:笔画/墨高 参考 15.6% vs 我们 600 的 18.6%(~~600~~) */
     line-height: 1.1; letter-spacing: -.015em; flex: none; color: var(--ink-2);
   }
   /* 参考图:名字 #0c0c0c(近黑)、数字 #3f3f40(中灰)、日期最浅 */
@@ -470,7 +485,9 @@
      「敏敏's / birthday / Jan 6」**三行**;我原来那栏 99.3pt,排成两行 ——
      整块的高度和节奏就跟着错了。限宽让它照样换行。
      ⚠️ 这**不是**内容长度的问题:「敏敏's birthday」和「佳佳's birthday」一样长。 */
-  .anni .who { font-family: var(--serif); font-size: 14.5px; font-weight: 400; line-height: 1.24; color: var(--ink); overflow-wrap: anywhere; max-width: 66px; }
+  /* ⚠️ 10-09 更正:参考图那栏**能放下一整个 anniversary**(84pt),放不下「敏敏's birthday」(~105)。
+     ~~66px~~ 是在缩小了 9% 的图上量的,把 anniversary 也拆成了两行。 */
+  .anni .who { font-family: var(--serif); font-size: 15.25px; font-weight: 400; line-height: 1.24; color: var(--ink); overflow-wrap: anywhere; max-width: 90px; }   /* 字号:birthday 同串墨宽比 1.058(~~14.5~~) */
   /* Jan 6 / Jun 22 在参考图里是**衬线**,不是黑体 */
   /* 参考图的「Jan 6」是深灰、不是浅灰(颜色跨字体可比,所以这条可信) */
   .anni .caption { font-family: var(--serif); font-size: 12.5px; color: var(--ink-2); margin-top: 1px; }
@@ -481,15 +498,18 @@
   .metric .top { display: flex; align-items: baseline; gap: var(--sp-8); }
   .metric .top .grow { flex: 1; min-width: 0; }
   .metric .top .datum { font-size: 12.5px; color: var(--dim); }
+  .metric { padding: 18px 20px 12.5px; }   /* 10-09 真机回算:参考标签更靠上、底边更紧 */
   .metric .big {
-    font-family: var(--serif); font-size: var(--fs-metric); font-weight: 600;
+    font-family: var(--serif); font-size: var(--fs-metric); font-weight: 500;   /* 10-09:笔画/墨高 参考 17.0% vs 600 的 20.6%(~~600~~) */
     line-height: 1.06; letter-spacing: -.02em;
   }
   /* bpm:参考图里它比想象中小得多(墨高实测 9.3pt vs 我原来 13.0)。
      量下来约合 10px,取 12px —— 再小就不好认了,这 2px 是我留的,不是量出来的。 */
-  .metric .unit { font-size: 12px; color: var(--dim); font-family: var(--sans); font-weight: 400; }
-  .metric .figure { margin-top: 10px; }
-  .bars { display: flex; align-items: flex-end; gap: 3.6px; height: 40px; }
+  /* ⚠️ 10-09 更正:参考图的 bpm 是**衬线、中灰**,墨高 13.8pt(含 b 升部与 p 降部)。
+     ~~sans 12px 浅灰~~ —— 上一轮是在缩小 9% 的图上量的。 */
+  .metric .unit { font-size: 14.5px; color: var(--ink-2); font-family: var(--serif); font-weight: 400; }
+  .metric .figure { margin-top: 14px; }   /* 10-09(~~10px~~) */
+  .bars { display: flex; align-items: flex-end; gap: 3.6px; height: 31.5px; }   /* 10-09 参考柱区高 31.3pt(~~40~~) */
   /* ⚠️ 柱子用 color-mix 掺墨色,不要 opacity + --dim-2:
      深色皮肤下 --dim-2 本来就暗,再压 42% 透明度等于看不见(实测)。
      掺墨的写法浅深两套底都自动成立。 */
@@ -501,7 +521,7 @@
   .barlabels span { flex: 1; text-align: center; font-size: 10px; line-height: 1.4; color: var(--dim-2); }
   .barlabels span.on { color: var(--ink-2); font-weight: 600; }
   .spark { width: 100%; height: 40px; display: block; }
-  .metric .foot { margin-top: 4px; font-size: 12px; color: var(--dim-2); }
+  .metric .foot { margin-top: 4px; font-size: 13.5px; color: var(--ink-2); font-family: var(--serif); }   /* 10-09:参考是衬线中灰(~~12px 黑体浅灰~~) */
 
   /* ---------- 会话列表 ---------- */
   .pagehead { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
@@ -544,6 +564,7 @@
     -webkit-backdrop-filter: saturate(1.5) blur(24px);
     backdrop-filter: saturate(1.5) blur(24px);
     display: flex; align-items: center;
+    padding-top: 7px;   /* 10-09:参考标签墨底距屏底 44.7pt,我们 49 —— 往下压 */
   }
   .tabbar::before {
     content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: 16px;
@@ -558,7 +579,7 @@
     transition: color .2s var(--ease-ui), transform .2s var(--ease-ui);
   }
   /* 600 不是 700:真机笔画 25.7% vs 参考 17.9%,粗了四成 */
-  .tabbar button[aria-selected="true"] { color: var(--ink); font-weight: 600; }
+  .tabbar button[aria-selected="true"] { color: var(--ink); font-weight: 500; }   /* 10-09:参考笔画 15.4% vs 我们 600 的 23.6%(~~600~~) */
   .tabbar button:active { transform: scale(.94); }
 
   /* ---------- 入场:Spring Reveal ----------
@@ -721,7 +742,7 @@
       <div class="date" id="homeDate">Sunday, July 26</div>
       <span class="syncpill" id="syncAt">sync · —</span>
       <button class="iconbtn" id="openSettings" aria-label="设置">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
     </div>
 
@@ -751,7 +772,7 @@
         <p class="sub">佳佳和晏,从 2026.6.3 到每一天</p>
       </article>
 
-      <article class="card reveal" style="--i:3">
+      <article class="card annicard reveal" style="--i:3">
         <div class="annihead">
           <div class="grow">
             <h2 class="headline" style="margin:0">Monthly Anniversary</h2>
@@ -763,12 +784,12 @@
                  交叉验证:弧的水平跨度实测 25.7pt,而 r(sin50°−sin(−5°)) = 25.6 ✓
                  ~~原来是 r=25、弧宽 3.2、扫 128°~~ —— 扫得太长、太细、圈太小。
                  track 几乎看不见(参考 #ededed 打在 #fcfcfe 的卡上),所以透明度压到 .055。 -->
-            <svg viewBox="0 0 66 66" width="66" height="66" aria-hidden="true">
+            <svg viewBox="0 0 71 71" width="71" height="71" aria-hidden="true">
               <!-- ⚠️ track 比弧**细一半**:参考图那圈明显更细,同宽画出来会变成一个抢眼的灰圈 -->
-              <circle cx="32.8" cy="32.8" r="30" fill="none" stroke="currentColor" stroke-width="2.2" opacity=".04"/>   <!-- .04 是量出来的:参考 track 只比卡底暗 9.0,原来的 .075 暗了 16.7 -->
-              <circle id="moArc" cx="32.8" cy="32.8" r="30" fill="none" stroke="currentColor" stroke-width="4.5"
-                      stroke-linecap="round" stroke-dasharray="28.8 188.5"
-                      transform="rotate(-95 32.8 32.8)"/>
+              <circle cx="35.5" cy="35.5" r="32.2" fill="none" stroke="currentColor" stroke-width="2.5" opacity=".04"/>   <!-- .04 是量出来的:参考 track 只比卡底暗 9.0,原来的 .075 暗了 16.7 -->
+              <circle id="moArc" cx="35.5" cy="35.5" r="32.2" fill="none" stroke="currentColor" stroke-width="5.06"
+                      stroke-linecap="round" stroke-dasharray="30.9 202.3"
+                      transform="rotate(-95 35.5 35.5)"/>
             </svg>
             <span class="num" id="moLeft">27</span>
           </div>
@@ -800,7 +821,7 @@
             <span class="label grow">Steps</span>
             <span class="datum">0.42 km</span>
           </div>
-          <div class="big" style="margin-top:4px">580</div>
+          <div class="big" style="margin-top:12.3px">580</div>
           <div class="figure">
             <div class="bars" aria-hidden="true">
               <i style="height:100%"></i><i style="height:42%"></i><i style="height:52%"></i>
@@ -817,7 +838,7 @@
           <div class="top">
             <span class="label grow">Heart Rate</span>
           </div>
-          <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px">
+          <div style="display:flex;align-items:baseline;gap:5px;margin-top:12.3px">
             <span class="big">114</span><span class="unit">bpm</span>
           </div>
           <div class="figure">
@@ -1117,13 +1138,13 @@
     var left = daysBetween(today, next);
     setText("moDate", MON[next.getMonth()] + " " + next.getDate());
     setText("moLeft", String(left));
-    /* 环 = 这个月已经走了多少。周长 2π·30 = 188.5;起点仍是 12 点前 5°(rotate(-95))。
+    /* 环 = 这个月已经走了多少。周长 2π·32.2 = 202.3(10-09 环放大;~~2π·30 = 188.5~~);起点仍是 12 点前 5°(rotate(-95))。
        几何(半径/弧宽/起点)照参考图不变,只是长度跟着日子走。 */
     var arc = document.getElementById("moArc");
     if (arc) {
       var span = daysBetween(prev, next), done = left === 0 ? span : span - left;
-      var len = Math.max(3, 188.5 * done / span);
-      arc.setAttribute("stroke-dasharray", len.toFixed(1) + " 188.5");
+      var len = Math.max(3, 202.3 * done / span);
+      arc.setAttribute("stroke-dasharray", len.toFixed(1) + " 202.3");
     }
 
     /* 生日 / 周年:到下一个这一天还有几天(今天就是 = 0) */
