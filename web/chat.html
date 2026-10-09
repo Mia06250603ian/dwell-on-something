@@ -5214,9 +5214,10 @@ box.focus();
 
   /* ── 时间:历史那条路从库里的 at 取,实时的就用第一眼看到它的时刻 ── */
   /* renderSaid 的包装同样挪到主脚本紧后面了(历史记录可能在本段脚本跑之前就画完) */
+  /* 12 小时制带 AM / PM(所有者 10-09:「时间要 pm、am 能区分」,同参考图 4:44 AM;~~24 小时制 19:49~~) */
   function hhmm(sec) {
     var d = new Date(sec * 1000), h = d.getHours(), m = d.getMinutes();
-    return (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m;
+    return ((h + 11) % 12 + 1) + ":" + (m < 10 ? "0" : "") + m + (h < 12 ? " AM" : " PM");
   }
   function stamp(el) {
     if (!el.dataset.at) el.dataset.at = String(Math.floor(Date.now() / 1000));
