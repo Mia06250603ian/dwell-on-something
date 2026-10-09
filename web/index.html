@@ -718,14 +718,14 @@
     <!-- reveal + --i:入场错位的级数。顺序 = 阅读顺序:头 → 悄悄话 → 关系 → 纪念日 → 健康 -->
     <div class="reveal" style="--i:0">
     <div class="dayrow">
-      <div class="date">Sunday, July 26</div>
-      <span class="syncpill">sync · 11:57 PM</span>
+      <div class="date" id="homeDate">Sunday, July 26</div>
+      <span class="syncpill" id="syncAt">sync · —</span>
       <button class="iconbtn" id="openSettings" aria-label="设置">
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
     </div>
 
-    <h1 class="greet">Good evening, <span class="cn">佳佳</span></h1>
+    <h1 class="greet"><span id="greetWord">Good evening,</span> <span class="cn">佳佳</span></h1>
     <p class="weather sub">阴 27° <span class="soft">28~34°</span> · 降雨 76%,带伞</p>
     </div>
 
@@ -744,7 +744,7 @@
         <div class="usrow">
           <div class="grow">
             <div class="label">Us</div>
-            <div class="display">Day 35</div>
+            <div class="display" id="dayN">Day 35</div>
           </div>
           <svg class="heart" viewBox="0 0 30 28.4" fill="currentColor" aria-hidden="true"><path d="M15 27.8C4.4 19.6 0.8 14.4 0.8 9.4 0.8 4.9 4.0 1.8 8.2 1.8 11.2 1.8 13.6 3.5 15 5.2 16.4 3.5 18.8 1.8 21.8 1.8 26.0 1.8 29.2 4.9 29.2 9.4 29.2 14.4 25.6 19.6 15 27.8Z"/></svg>
         </div>
@@ -755,7 +755,7 @@
         <div class="annihead">
           <div class="grow">
             <h2 class="headline" style="margin:0">Monthly Anniversary</h2>
-            <p class="sub en">Aug 21</p>
+            <p class="sub en" id="moDate">Aug 21</p>
           </div>
           <div class="ring">
             <!-- ⚠️ 这几个数是把参考图放大 4 倍读出来的(2026-09-19):
@@ -766,11 +766,11 @@
             <svg viewBox="0 0 66 66" width="66" height="66" aria-hidden="true">
               <!-- ⚠️ track 比弧**细一半**:参考图那圈明显更细,同宽画出来会变成一个抢眼的灰圈 -->
               <circle cx="32.8" cy="32.8" r="30" fill="none" stroke="currentColor" stroke-width="2.2" opacity=".04"/>   <!-- .04 是量出来的:参考 track 只比卡底暗 9.0,原来的 .075 暗了 16.7 -->
-              <circle cx="32.8" cy="32.8" r="30" fill="none" stroke="currentColor" stroke-width="4.5"
+              <circle id="moArc" cx="32.8" cy="32.8" r="30" fill="none" stroke="currentColor" stroke-width="4.5"
                       stroke-linecap="round" stroke-dasharray="28.8 188.5"
                       transform="rotate(-95 32.8 32.8)"/>
             </svg>
-            <span class="num">27</span>
+            <span class="num" id="moLeft">27</span>
           </div>
         </div>
         <hr class="rule">
@@ -781,7 +781,7 @@
               <div class="who">佳佳's birthday</div>
               <div class="caption">Jan 6</div>
             </div>
-            <div class="n">164</div>
+            <div class="n" data-until="1-6">164</div>
           </div>
           <div class="anni">
             <span class="bar" aria-hidden="true"></span>
@@ -789,7 +789,7 @@
               <div class="who">anniversary</div>
               <div class="caption">Jun 22</div>
             </div>
-            <div class="n">331</div>
+            <div class="n" data-until="6-22">331</div>
           </div>
         </div>
       </article>
@@ -1085,6 +1085,59 @@
     line.setAttribute("points", pts.join(" "));
   }
 
+  /* ---------- 首页的日子:全部在浏览器里按本机日期现算(2026-10-09) ----------
+     原来日期/问候/Day N/倒数全是参考图上抄来的死数(停在 7 月 26 日)。
+     这几样不需要后端,所以不碰 dwell-bridge、不碰晏。
+     天气/步数/心率仍是死数 —— 那些得有数据源,另一件事。
+     起点 2026.6.22 = Day 1(参考图 7 月 26 日 = Day 35,对得上)。
+     每月纪念日 = 每月 22 号(参考图写的 Aug 21 是别人的数据;27 天是到 22 号的距离)。 */
+  var MON  = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var MONL = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  var WEEK = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  var START = { y: 2026, m: 6, d: 22 };
+  /* 一律取当地正午,避开夏令时那一小时把天数算差一天 */
+  function noon(y, m, d) { return new Date(y, m - 1, d, 12); }
+  function daysBetween(a, b) { return Math.round((b - a) / 864e5); }
+  function setText(id, t) { var el = document.getElementById(id); if (el) el.textContent = t; }
+
+  function renderDays() {
+    var now = new Date(), h = now.getHours();
+    var today = noon(now.getFullYear(), now.getMonth() + 1, now.getDate());
+
+    setText("homeDate", WEEK[today.getDay()] + ", " + MONL[today.getMonth()] + " " + today.getDate());
+    setText("greetWord", h >= 5 && h < 12 ? "Good morning," : h >= 12 && h < 18 ? "Good afternoon," : "Good evening,");
+    setText("dayN", "Day " + (daysBetween(noon(START.y, START.m, START.d), today) + 1));
+
+    /* 每月纪念日:下一个 22 号(今天就是 22 号 = 0 天、环走满) */
+    var y = today.getFullYear(), m = today.getMonth() + 1;
+    if (today.getDate() > START.d) { m++; if (m > 12) { m = 1; y++; } }
+    var next = noon(y, m, START.d);
+    var prev = noon(m === 1 ? y - 1 : y, m === 1 ? 12 : m - 1, START.d);
+    var left = daysBetween(today, next);
+    setText("moDate", MON[next.getMonth()] + " " + next.getDate());
+    setText("moLeft", String(left));
+    /* 环 = 这个月已经走了多少。周长 2π·30 = 188.5;起点仍是 12 点前 5°(rotate(-95))。
+       参考图那 55° 正好是「走了约 15%」时的样子,所以几何不变,只是长度跟着日子走。 */
+    var arc = document.getElementById("moArc");
+    if (arc) {
+      var span = daysBetween(prev, next), done = left === 0 ? span : span - left;
+      var len = Math.max(3, 188.5 * done / span);
+      arc.setAttribute("stroke-dasharray", len.toFixed(1) + " 188.5");
+    }
+
+    /* 生日 / 周年:到下一个这一天还有几天(今天就是 = 0) */
+    Array.prototype.forEach.call(document.querySelectorAll("[data-until]"), function (el) {
+      var md = el.getAttribute("data-until").split("-");
+      var t = noon(today.getFullYear(), +md[0], +md[1]);
+      if (t < today) t = noon(today.getFullYear() + 1, +md[0], +md[1]);
+      el.textContent = String(daysBetween(today, t));
+    });
+  }
+  renderDays();
+  /* 过了零点 / 从后台切回来时跟着换(一分钟一查,只改几段文字) */
+  setInterval(renderDays, 60000);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) renderDays(); });
+
   /* ---------- 存/取(localStorage 可能抛,全部包住) ---------- */
   var KEY = "dwell-shell-v1";
   function load() {
@@ -1364,6 +1417,12 @@
       fetch("api/health", { cache: "no-store" })
         .then(function (r) { return r.json(); })
         .then(function (d) {
+          /* 右上角那颗 sync = 最后一次连上本层的时刻(原来是参考图上的死数 11:57 PM)。
+             连不上就停在上一次的时刻,不假装刚同步过。 */
+          if (d) {
+            var t = new Date(), hh = t.getHours(), mm = t.getMinutes();
+            setText("syncAt", "sync · " + ((hh + 11) % 12 + 1) + ":" + (mm < 10 ? "0" : "") + mm + (hh < 12 ? " AM" : " PM"));
+          }
           if (!d || !d.ver) return;
           if (seen === null) { seen = d.ver; return; }
           if (d.ver !== seen) location.reload();
