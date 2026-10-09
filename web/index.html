@@ -748,7 +748,7 @@
           </div>
           <svg class="heart" viewBox="0 0 30 28.4" fill="currentColor" aria-hidden="true"><path d="M15 27.8C4.4 19.6 0.8 14.4 0.8 9.4 0.8 4.9 4.0 1.8 8.2 1.8 11.2 1.8 13.6 3.5 15 5.2 16.4 3.5 18.8 1.8 21.8 1.8 26.0 1.8 29.2 4.9 29.2 9.4 29.2 14.4 25.6 19.6 15 27.8Z"/></svg>
         </div>
-        <p class="sub">佳佳和晏,从 2026.6.22 到每一天</p>
+        <p class="sub">佳佳和晏,从 2026.6.3 到每一天</p>
       </article>
 
       <article class="card reveal" style="--i:3">
@@ -779,17 +779,17 @@
             <span class="bar" aria-hidden="true"></span>
             <div class="grow">
               <div class="who">佳佳's birthday</div>
-              <div class="caption">Jan 6</div>
+              <div class="caption">Jun 25</div>
             </div>
-            <div class="n" data-until="1-6">164</div>
+            <div class="n" data-until="6-25">259</div>
           </div>
           <div class="anni">
             <span class="bar" aria-hidden="true"></span>
             <div class="grow">
               <div class="who">anniversary</div>
-              <div class="caption">Jun 22</div>
+              <div class="caption">Jun 3</div>
             </div>
-            <div class="n" data-until="6-22">331</div>
+            <div class="n" data-until="6-3">237</div>
           </div>
         </div>
       </article>
@@ -1089,12 +1089,13 @@
      原来日期/问候/Day N/倒数全是参考图上抄来的死数(停在 7 月 26 日)。
      这几样不需要后端,所以不碰 dwell-bridge、不碰晏。
      天气/步数/心率仍是死数 —— 那些得有数据源,另一件事。
-     起点 2026.6.22 = Day 1(参考图 7 月 26 日 = Day 35,对得上)。
-     每月纪念日 = 每月 22 号(参考图写的 Aug 21 是别人的数据;27 天是到 22 号的距离)。 */
+     ⚠️ 这几个日子是所有者 2026-10-09 亲口给的,别再照参考图倒推:
+     在一起 **2026.6.3**(= Day 1,每月纪念日 = 每月 3 号)、她的生日 **6.25**。
+     ~~初版照参考图倒推成 6.22 / Jan 6~~ —— 那是参考图那边别人的数据,上线前被她指出。 */
   var MON  = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   var MONL = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   var WEEK = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-  var START = { y: 2026, m: 6, d: 22 };
+  var START = { y: 2026, m: 6, d: 3 };
   /* 一律取当地正午,避开夏令时那一小时把天数算差一天 */
   function noon(y, m, d) { return new Date(y, m - 1, d, 12); }
   function daysBetween(a, b) { return Math.round((b - a) / 864e5); }
@@ -1108,7 +1109,7 @@
     setText("greetWord", h >= 5 && h < 12 ? "Good morning," : h >= 12 && h < 18 ? "Good afternoon," : "Good evening,");
     setText("dayN", "Day " + (daysBetween(noon(START.y, START.m, START.d), today) + 1));
 
-    /* 每月纪念日:下一个 22 号(今天就是 22 号 = 0 天、环走满) */
+    /* 每月纪念日:下一个 3 号(今天就是 3 号 = 0 天、环走满) */
     var y = today.getFullYear(), m = today.getMonth() + 1;
     if (today.getDate() > START.d) { m++; if (m > 12) { m = 1; y++; } }
     var next = noon(y, m, START.d);
@@ -1117,7 +1118,7 @@
     setText("moDate", MON[next.getMonth()] + " " + next.getDate());
     setText("moLeft", String(left));
     /* 环 = 这个月已经走了多少。周长 2π·30 = 188.5;起点仍是 12 点前 5°(rotate(-95))。
-       参考图那 55° 正好是「走了约 15%」时的样子,所以几何不变,只是长度跟着日子走。 */
+       几何(半径/弧宽/起点)照参考图不变,只是长度跟着日子走。 */
     var arc = document.getElementById("moArc");
     if (arc) {
       var span = daysBetween(prev, next), done = left === 0 ? span : span - left;
