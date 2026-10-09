@@ -4540,7 +4540,7 @@ box.focus();
        ②线一律半像素,阴影只留一层很淡的;卡片圆角统一 22;
        ③列表照「设置」:左名字,右边细对勾或一行灰字 —— **不放方块图标、不放胶囊**;长解释挪进确认框;
        ④全页零彩色(她定的中性灰);背景是他的头像虚化(iOS 联系人海报),往下化进底色。
-     用量有 A(条)/ B(环)两版,`.tgprof[data-v]` 切;她挑定之后删掉另一版。 */
+     用量有 A(条)/ B(环)两版,`.tgprof[data-v]` 切 —— 她两个都喜欢,**两版都留**,点卡片换、下面小圆点指示、记在本机 localStorage。 */
   .tgprof { position: fixed; inset: 0; z-index: 60; overflow: hidden; background: var(--bg);
             transform: translateX(100%); transition: transform .4s cubic-bezier(.32,.72,0,1); visibility: hidden;
             --p1: var(--text); --p2: color-mix(in srgb, var(--text) 55%, transparent); --p3: color-mix(in srgb, var(--text) 32%, transparent);
@@ -4579,23 +4579,23 @@ box.focus();
   .tgprof .foot:empty { display: none; }
 
   /* 用量 A:屏幕使用时间式 —— 一个主数字 + 两条细条 */
-  .tgprof .uA { padding: 14px 15px 2px; }
+  .tgprof .uA { padding: 12px 14px 1px; }
   .tgprof .uA .lead { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
-  .tgprof .uA .lead .k { font-size: 12px; color: var(--p2); }
-  .tgprof .uA .lead .n { font-family: var(--rnd); font-size: 30px; font-weight: 500; letter-spacing: -.02em; line-height: 1; color: var(--p1);
-                         font-variant-numeric: tabular-nums; margin-top: 6px; }
-  .tgprof .uA .lead .n small { font-size: 15px; font-weight: 400; color: var(--p2); margin-left: 1px; }
-  .tgprof .uA .lead .r { text-align: right; font-size: 11px; color: var(--p3); line-height: 1.4; padding-bottom: 2px; }
-  .tgprof .bar { height: 4px; border-radius: 2px; background: var(--hair); overflow: hidden; }
+  .tgprof .uA .lead .k { font-size: 11px; color: var(--p2); }
+  .tgprof .uA .lead .n { font-family: var(--rnd); font-size: 24px; font-weight: 500; letter-spacing: -.02em; line-height: 1; color: var(--p1);
+                         font-variant-numeric: tabular-nums; margin-top: 4px; }
+  .tgprof .uA .lead .n small { font-size: 12px; font-weight: 400; color: var(--p2); margin-left: 1px; }
+  .tgprof .uA .lead .r { text-align: right; font-size: 10.5px; color: var(--p3); line-height: 1.4; padding-bottom: 2px; }
+  .tgprof .uA .bar { height: 3px; border-radius: 1.5px; } .tgprof .bar { height: 4px; border-radius: 2px; background: var(--hair); overflow: hidden; }
   .tgprof .bar i { display: block; height: 100%; width: 0; border-radius: 2px; background: var(--p1);
                    transition: width 1s cubic-bezier(.22,1,.36,1); }
-  .tgprof .uA .lead + .bar { margin: 10px 0 12px; }
-  .tgprof .uA .row { padding: 10px 0 11px; border-top: .5px solid var(--hair); }
-  .tgprof .uA .row .t { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 7px; }
-  .tgprof .uA .row .t span:first-child { font-size: 13.5px; color: var(--p1); }
-  .tgprof .uA .row .t .v { font-family: var(--rnd); font-size: 13.5px; font-weight: 500; color: var(--p1); font-variant-numeric: tabular-nums; }
+  .tgprof .uA .lead + .bar { margin: 8px 0 10px; }
+  .tgprof .uA .row { padding: 8px 0 9px; border-top: .5px solid var(--hair); }
+  .tgprof .uA .row .t { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6px; }
+  .tgprof .uA .row .t span:first-child { font-size: 12.5px; color: var(--p1); }
+  .tgprof .uA .row .t .v { font-family: var(--rnd); font-size: 12.5px; font-weight: 500; color: var(--p1); font-variant-numeric: tabular-nums; }
   .tgprof .uA .row .t .v.na { font-weight: 400; color: var(--p3); }
-  .tgprof .uA .row .s { font-size: 11px; color: var(--p3); margin-top: 6px; }
+  .tgprof .uA .row .s { font-size: 10px; color: var(--p3); margin-top: 5px; }
   .tgprof .uA .row .s:empty { display: none; }
 
   /* 用量 B:健身圆环式 —— 三枚细环 + 圆体数字 */
@@ -4612,6 +4612,12 @@ box.focus();
   .tgprof .uB .nm { margin-top: 8px; font-size: 12px; color: var(--p1); }
   .tgprof .uB .sb { margin-top: 2px; font-size: 10px; color: var(--p3); min-height: 1.4em; padding: 0 2px; }
   .tgprof[data-v="A"] .uB, .tgprof[data-v="B"] .uA { display: none; }
+  /* 两版都留(她「两个都喜欢,选不出来」):点卡片在条 / 环之间换,下面两颗小圆点像 iOS 小组件叠放;记在本机 */
+  .tgprof .uA, .tgprof .uB { cursor: pointer; animation: tgfade .28s ease; }
+  @keyframes tgfade { from { opacity: 0; transform: scale(.985); } to { opacity: 1; transform: none; } }
+  .tgprof .udots { display: flex; justify-content: center; gap: 6px; margin: -14px 0 16px; }
+  .tgprof .udots i { width: 5px; height: 5px; border-radius: 50%; background: var(--p3); opacity: .5; transition: opacity .2s, background .2s; }
+  .tgprof[data-v="A"] .udots i:first-child, .tgprof[data-v="B"] .udots i:last-child { background: var(--p1); opacity: .8; }
 
   /* 模型:照「设置」 */
   .tgprof .it { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 7px 15px; width: 100%;
@@ -4737,7 +4743,9 @@ box.focus();
   function rowHTML(cls, name) {
     return '<div class="row ' + cls + '"><div class="t"><span>' + name + '</span><span class="v na">—</span></div><div class="bar"><i></i></div><div class="s"></div></div>';
   }
-  prof.setAttribute("data-v", "A");
+  var UV_KEY = "dwell-usage-view";
+  var uv = "A"; try { uv = localStorage.getItem(UV_KEY) === "B" ? "B" : "A"; } catch (e) {}
+  prof.setAttribute("data-v", uv);
   prof.innerHTML =
     '<div class="poster"></div><div class="scroll">' +
     '<button class="pback glass" type="button" aria-label="返回"><svg viewBox="0 0 9 15" width="8" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7.8 1.2 1.6 7.5l6.2 6.3"/></svg></button>' +
@@ -4746,11 +4754,19 @@ box.focus();
     '<div class="card glass uA"><div class="lead"><div><div class="k">Context window</div><div class="n ctxN">—</div></div><div class="r ctxR"></div></div>' +
       '<div class="bar ctxBar"><i></i></div>' + rowHTML("q5", "5-hour limit") + rowHTML("q7", "Weekly limit") + '</div>' +
     '<div class="card glass uB">' + ringHTML("pctx", "Context") + ringHTML("p5h", "5-hour") + ringHTML("p7d", "Weekly") + '</div>' +
-    '<p class="foot ugnote"></p>' +
+    '<div class="udots" aria-hidden="true"><i></i><i></i></div><p class="foot ugnote"></p>' +
     '<div class="sect">Model</div><div class="card glass pmodels"></div><p class="foot pmnote"></p>' +
     '<div class="card glass"><button class="it pmore" type="button"><span class="grow"><span class="t">More settings</span></span><span class="chev">' + CHEV + '</span></button></div>' +
     '</div>';
   document.body.appendChild(prof);
+  Array.prototype.forEach.call(prof.querySelectorAll(".uA, .uB"), function (c) {
+    c.addEventListener("click", function () {
+      var v = prof.getAttribute("data-v") === "A" ? "B" : "A";
+      prof.setAttribute("data-v", v);
+      try { localStorage.setItem(UV_KEY, v); } catch (e) {}
+      loadProf();                          // 换过去那版的条 / 环也从 0 长一次
+    });
+  });
   prof.querySelector(".pback").addEventListener("click", closeProf);
   prof.querySelector(".pmore").addEventListener("click", function () {
     closeProf(); var d = document.getElementById("dotsBtn"); if (d) setTimeout(function () { d.click(); }, 280);
