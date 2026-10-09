@@ -4371,7 +4371,10 @@ box.focus();
      数是从所有者同一台手机的 Telegram 截图量的(402pt,3px/pt):
        字 15 / 行高 20、气泡单行高 33、圆角 17、左留 10 右留 11、最宽 322(八成屏宽)、
        他连着的气泡之间 2.5、两人之间 7、时间塞在气泡右下角 10px。
-     拆泡规则**照抄 telegram-bridge 的 bubblesFor**:一行一个气泡;整条超过 200 字就是长文,整段一个泡。
+     拆泡规则**照抄 telegram-bridge 的 bubblesFor + 线上变量**:一行一个气泡,长回复也拆
+     (那边代码默认「超 200 字整段一泡」,但线上 `BUBBLE_MAX=99999` —— 所有者 2026-08-28 定的「长回复也拆」;
+      ⚠️ 照那边的**线上值**,不是代码默认值。那边改了 BUBBLE_MAX,这里的 TG_SPLIT_MAX 跟着改)。
+     有代码块的不拆(拆了代码就碎了)。
      ⚠️ 只在**定稿后**才拆(吐字时就是一个在长大的泡);原来那块 .gu 藏起来但还在,
         复制 / 补全 / 自检这些逻辑照旧作用在它身上 —— 拆出来的只是**显示用的副本**。
      设置(样式 / 头像位置 / 头像)存在 dwell-bridge 的 /api/prefs,外壳改了会 postMessage 过来。 -->
@@ -4641,10 +4644,11 @@ box.focus();
     return hhmm(+el.dataset.at);
   }
 
-  /* ── 拆泡(照 telegram-bridge 的 bubblesFor:一行一泡;超过 200 字整段一泡;有代码块不拆) ── */
+  /* ── 拆泡(照 telegram-bridge 的 bubblesFor + 线上 BUBBLE_MAX=99999:一行一泡;有代码块不拆) ── */
+  var TG_SPLIT_MAX = 99999;
   function linesOf(raw) {
     var t = (raw || "").trim();
-    if (!t || t.length > 200 || t.indexOf("```") >= 0 || t.indexOf("\n") < 0) return null;
+    if (!t || t.length > TG_SPLIT_MAX || t.indexOf("```") >= 0 || t.indexOf("\n") < 0) return null;
     var out = t.split("\n").map(function (x) { return x.trim(); }).filter(Boolean);
     return out.length > 1 ? out : null;
   }
