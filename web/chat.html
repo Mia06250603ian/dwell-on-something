@@ -4498,27 +4498,27 @@ box.focus();
     -webkit-mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M2.6 10.6 20.1 3.3c.9-.4 1.8.5 1.4 1.4l-7.3 17.5c-.4.9-1.7.9-2-.1l-2-6.4a1 1 0 0 0-.6-.6l-6.4-2c-1-.3-1-1.6-.1-2Z' fill='black'/%3E%3C/svg%3E");
             mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M2.6 10.6 20.1 3.3c.9-.4 1.8.5 1.4 1.4l-7.3 17.5c-.4.9-1.7.9-2-.1l-2-6.4a1 1 0 0 0-.6-.6l-6.4-2c-1-.3-1-1.6-.1-2Z' fill='black'/%3E%3C/svg%3E");
   }
-  /* 胶囊右端的图标:没字是贴纸、有字是笑脸,原地交叉淡入淡出;位置跟着胶囊右端一起走 */
-  html[data-chatstyle="tg"] .composer::before, html[data-chatstyle="tg"] .composer::after {
-    content: ""; position: absolute; bottom: 11px; right: 56.5px; width: 19px; height: 19px;
-    background: var(--dim); pointer-events: none; z-index: 1;
-    transition: right var(--tg-dur) var(--tg-ease), opacity .22s ease, transform var(--tg-dur) var(--tg-ease);
+  /* 胶囊右端那颗图标:没字是贴纸、有字是笑脸,原地交叉淡入淡出;位置跟着胶囊右端一起走。
+     2026-10-09 起它是**真按钮**:点了打开贴纸面板(点哪个图标都是同一个面板)。 */
+  .tgstk { display: none; }
+  html[data-chatstyle="tg"] .tgstk {
+    display: block; position: absolute; bottom: 5px; right: 50.5px; width: 31px; height: 31px; z-index: 3;
+    border: 0; padding: 0; background: none; color: var(--dim); cursor: pointer;
+    transition: right var(--tg-dur) var(--tg-ease);
   }
-  html[data-chatstyle="tg"][data-tghas] .composer::before, html[data-chatstyle="tg"][data-tghas] .composer::after { right: 50.4px; }
-  html[data-chatstyle="tg"] .composer::before {   /* 贴纸 */
-    -webkit-mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linejoin='round'%3E%3Cpath d='M21 12a9 9 0 1 1-9-9h1.5A7.5 7.5 0 0 1 21 10.5Z'/%3E%3Cpath d='M21 12c-4.5-.3-8.7 3.9-9 9'/%3E%3C/svg%3E");
-            mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linejoin='round'%3E%3Cpath d='M21 12a9 9 0 1 1-9-9h1.5A7.5 7.5 0 0 1 21 10.5Z'/%3E%3Cpath d='M21 12c-4.5-.3-8.7 3.9-9 9'/%3E%3C/svg%3E");
+  html[data-chatstyle="tg"][data-tghas] .tgstk { right: 44.4px; }
+  .tgstk i {
+    position: absolute; left: 6px; top: 6px; width: 19px; height: 19px; background: currentColor;
+    transition: opacity .22s ease, transform var(--tg-dur) var(--tg-ease);
   }
-  html[data-chatstyle="tg"] .composer::after {    /* 笑脸 */
-    opacity: 0; transform: scale(.7) rotate(-30deg);
-    -webkit-mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M8.2 14.2a4.6 4.6 0 0 0 7.6 0'/%3E%3Ccircle cx='9' cy='9.8' r='.6' fill='black'/%3E%3Ccircle cx='15' cy='9.8' r='.6' fill='black'/%3E%3C/svg%3E");
-            mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M8.2 14.2a4.6 4.6 0 0 0 7.6 0'/%3E%3Ccircle cx='9' cy='9.8' r='.6' fill='black'/%3E%3Ccircle cx='15' cy='9.8' r='.6' fill='black'/%3E%3C/svg%3E");
-  }
-  html[data-chatstyle="tg"][data-tghas] .composer::before { opacity: 0; transform: scale(.7) rotate(30deg); }
-  html[data-chatstyle="tg"][data-tghas] .composer::after { opacity: 1; transform: none; }
+  .tgstk .a { -webkit-mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linejoin='round'%3E%3Cpath d='M21 12a9 9 0 1 1-9-9h1.5A7.5 7.5 0 0 1 21 10.5Z'/%3E%3Cpath d='M21 12c-4.5-.3-8.7 3.9-9 9'/%3E%3C/svg%3E"); mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linejoin='round'%3E%3Cpath d='M21 12a9 9 0 1 1-9-9h1.5A7.5 7.5 0 0 1 21 10.5Z'/%3E%3Cpath d='M21 12c-4.5-.3-8.7 3.9-9 9'/%3E%3C/svg%3E"); }
+  .tgstk .b { -webkit-mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M8.2 14.2a4.6 4.6 0 0 0 7.6 0'/%3E%3Ccircle cx='9' cy='9.8' r='.6' fill='black'/%3E%3Ccircle cx='15' cy='9.8' r='.6' fill='black'/%3E%3C/svg%3E"); mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M8.2 14.2a4.6 4.6 0 0 0 7.6 0'/%3E%3Ccircle cx='9' cy='9.8' r='.6' fill='black'/%3E%3Ccircle cx='15' cy='9.8' r='.6' fill='black'/%3E%3C/svg%3E");
+              opacity: 0; transform: scale(.7) rotate(-30deg); }
+  html[data-tghas] .tgstk .a { opacity: 0; transform: scale(.7) rotate(30deg); }
+  html[data-tghas] .tgstk .b { opacity: 1; transform: none; }
   @media (prefers-reduced-motion: reduce) {
     html[data-chatstyle="tg"] #box, html[data-chatstyle="tg"] #micBtn, html[data-chatstyle="tg"] #send,
-    html[data-chatstyle="tg"] .composer::before, html[data-chatstyle="tg"] .composer::after { transition-duration: .01s !important; }
+    html[data-chatstyle="tg"] .tgstk, .tgstk i { transition-duration: .01s !important; }
   }
   /* 回形针:TG 那颗。按钮本身照旧是「添加照片和文件」,只换图标 */
   html[data-chatstyle="tg"] #plusBtn .ic { display: none; }
@@ -4529,6 +4529,60 @@ box.focus();
   }
   /* 菊花和「Claude is AI and can make mistakes」那句:TG 版不要(所有者 2026-10-09) */
   html[data-chatstyle="tg"] .brandline { display: none !important; }
+
+  /* ── 名字胶囊只写「晏」(2026-10-09 所有者:型号不用显示在名字下面);点它或头像 = 打开「他」那一页 ── */
+  .tgname { cursor: pointer; }
+  .tgname:active, .tgav:active { opacity: .6; }
+
+  /* ── 「他」那一页:换模型 + 当前窗口 + 5 小时 / 周额度(照 TG 的资料页:大头像、名字、分组列表) ── */
+  .tgprof { position: fixed; inset: 0; z-index: 60; background: color-mix(in srgb, var(--text) 3.5%, var(--bg));
+            overflow-y: auto; padding: calc(8px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom));
+            transform: translateX(100%); transition: transform .34s cubic-bezier(.32,.72,0,1); visibility: hidden; }
+  .tgprof.open { transform: none; visibility: visible; }
+  .tgprof .pback { width: 40px; height: 40px; border-radius: 50%; border: 0; display: grid; place-items: center;
+                   background: var(--card); color: var(--text); box-shadow: 0 1px 8px rgba(0,0,0,.06), inset 0 0 0 1px var(--line); }
+  .tgprof .hero { text-align: center; margin: 4px 0 22px; }
+  .tgprof .hero .big { width: 96px; height: 96px; border-radius: 50%; margin: 0 auto 12px; background: var(--tg-av-him, var(--tg-av-him-def)); }
+  .tgprof .hero b { display: block; font-size: 22px; font-weight: 600; color: var(--text); }
+  .tgprof .hero small { font-size: 14px; color: var(--dim); }
+  .tgprof h3 { font-size: 13px; font-weight: 400; color: var(--dim); margin: 18px 14px 7px; text-transform: none; }
+  .tgprof .grp { background: var(--card); border-radius: 12px; overflow: hidden; }
+  .tgprof .it { display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 0 14px; width: 100%;
+                border: 0; background: none; color: var(--text); font: inherit; font-size: 16px; text-align: left; position: relative; }
+  .tgprof .it + .it::before { content: ""; position: absolute; top: 0; left: 14px; right: 0; height: .5px; background: var(--line); }
+  .tgprof .it .grow { flex: 1; min-width: 0; }
+  .tgprof .it .tag { font-size: 13px; color: var(--dim); white-space: nowrap; }
+  .tgprof .it .tag.warn { color: #c2552f; }
+  .tgprof .it .ok { color: var(--text); font-weight: 600; }
+  .tgprof .pnote { font-size: 13px; color: var(--dim); margin: 7px 14px 0; line-height: 1.5; }
+  .tgprof .meter { padding: 12px 14px 13px; }
+  .tgprof .meter .row1 { display: flex; justify-content: space-between; font-size: 16px; color: var(--text); }
+  .tgprof .meter .row1 span:last-child { color: var(--dim); font-size: 14px; }
+  .tgprof .meter .bar { height: 6px; border-radius: 3px; margin-top: 9px; background: color-mix(in srgb, var(--text) 9%, transparent); overflow: hidden; }
+  .tgprof .meter .bar i { display: block; height: 100%; border-radius: 3px; background: var(--text); width: 0; transition: width .5s cubic-bezier(.32,.72,0,1); }
+  .tgprof .meter .sub { font-size: 12.5px; color: var(--dim); margin-top: 7px; }
+  .tgprof .meter + .meter { border-top: .5px solid var(--line); }
+
+  /* ── 贴纸(两套样式都显示成图;2026-10-09) ── */
+  img.stk { display: block; width: 132px; height: 132px; object-fit: contain; margin: 2px 0; }
+  .bubble.stkonly, .gu.stkonly, .tgb.stkonly { background: none !important; box-shadow: none !important; padding: 0 !important; }
+  html[data-chatstyle="tg"] .tgb.stkonly[data-tgt]::after, html[data-chatstyle="tg"] .gu.stkonly[data-tgt]::after,
+  html[data-chatstyle="tg"] .bubble.stkonly[data-tgt]::after {
+    float: none; display: inline-block; margin: 0; padding: 1px 7px; border-radius: 9px;
+    background: color-mix(in srgb, var(--text) 10%, var(--bg)); color: var(--dim);
+  }
+  .tgpick { position: fixed; left: 0; right: 0; bottom: 0; z-index: 55; max-height: 46vh; overflow-y: auto;
+            background: var(--card); border-radius: 18px 18px 0 0; box-shadow: 0 -6px 30px rgba(0,0,0,.12);
+            padding: 10px 12px calc(14px + env(safe-area-inset-bottom));
+            transform: translateY(105%); transition: transform .32s cubic-bezier(.32,.72,0,1); visibility: hidden; }
+  .tgpick.open { transform: none; visibility: visible; }
+  html:not([data-chatstyle="tg"]) .tgpick, html:not([data-chatstyle="tg"]) .tgprof { display: none; }
+  .tgpick .grab { width: 36px; height: 5px; border-radius: 3px; background: var(--line); margin: 0 auto 10px; }
+  .tgpick .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }   /* minmax(0,…):别让图片原始尺寸把列撑宽 */
+  .tgpick button { border: 0; background: none; padding: 4px; border-radius: 12px; aspect-ratio: 1; min-width: 0; }
+  .tgpick button:active { background: color-mix(in srgb, var(--text) 8%, transparent); }
+  .tgpick img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+  .tgpick .empty { text-align: center; color: var(--dim); font-size: 14px; padding: 30px 0; }
 
   /* .acts 藏了,但它还在行里 —— 别让它把头像顶上去 */
   html[data-chatstyle="tg"][data-avmode="each"] .row:has(> .gu) > .acts { display: none; }
@@ -4594,26 +4648,197 @@ box.focus();
   setInterval(syncComposer, 1000);   // 发送后输入框被代码清空不触发 input,兜一下
   syncComposer();
 
-  /* ── 顶栏:名字胶囊 + 他的头像(点头像 = 点原来那颗「更多」) ── */
-  var nameEl = document.createElement("div");
-  nameEl.className = "tgname headpill";
-  nameEl.innerHTML = "<b>晏</b><small></small>";
+  /* ── 顶栏:名字胶囊 + 他的头像;点哪个都打开「他」那一页 ──
+     ~~名字下面那行型号~~ 2026-10-09 所有者说不用显示,撤了;型号在「他」那一页里看、在那里换。 */
+  var nameEl = document.createElement("button");
+  nameEl.type = "button"; nameEl.className = "tgname headpill"; nameEl.innerHTML = "<b>晏</b>";
   var avEl = document.createElement("button");
-  avEl.className = "tgav"; avEl.type = "button"; avEl.title = "更多"; avEl.setAttribute("aria-label", "更多");
-  avEl.addEventListener("click", function () { var d = document.getElementById("dotsBtn"); if (d) d.click(); });
+  avEl.className = "tgav"; avEl.type = "button"; avEl.title = "他"; avEl.setAttribute("aria-label", "打开他的页面");
+  nameEl.addEventListener("click", function () { openProf(); });
+  avEl.addEventListener("click", function () { openProf(); });
   header.appendChild(nameEl);
   header.appendChild(avEl);
-  function syncSub() {
-    /* 胶囊里是「型号」「档位」两截,各在各的元素里 —— 直接取 textContent 会粘成「Opus 4.6Medium」 */
-    var pill = document.getElementById("modelPill"), t = "";
-    if (pill) {
-      var parts = [];
-      (function walk(n) { n.childNodes.forEach(function (c) {
-        if (c.nodeType === 3) { var x = c.textContent.trim(); if (x) parts.push(x); } else walk(c); }); })(pill);
-      t = parts.join(" ");
+
+  /* ── 「他」那一页(2026-10-09 所有者要的):换模型 / 当前窗口用量 / 5 小时额度 / 周额度 ──
+     换模型走 dwell-bridge 的 /api/model/switch:**只记下来,随她下一句话带过去一次**(不改 shim、不重启)。
+     丢不丢窗口由 shim 定(新版↔新版原地换,其余开新窗口),这里照 /api/model 的 keepsWindow 提醒并要她确认。
+     额度只有新版 CLI 会给百分比,而且要 shim 记下来(/api/quota);没有就如实写读不到。 */
+  var prof = document.createElement("div");
+  prof.className = "tgprof"; prof.setAttribute("role", "dialog"); prof.setAttribute("aria-label", "他");
+  prof.innerHTML =
+    '<button class="pback" type="button" aria-label="返回"><svg viewBox="0 0 9 15" width="9" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7.8 1.2 1.6 7.5l6.2 6.3"/></svg></button>' +
+    '<div class="hero"><div class="big"></div><b>晏</b><small class="pnow">…</small></div>' +
+    '<h3>模型</h3><div class="grp pmodels"></div><p class="pnote pmnote"></p>' +
+    '<h3>用量</h3><div class="grp pusage">' +
+      '<div class="meter pctx"><div class="row1"><span>当前窗口</span><span class="v">…</span></div><div class="bar"><i></i></div><div class="sub"></div></div>' +
+      '<div class="meter p5h"><div class="row1"><span>5 小时额度</span><span class="v">…</span></div><div class="bar"><i></i></div><div class="sub"></div></div>' +
+      '<div class="meter p7d"><div class="row1"><span>周额度</span><span class="v">…</span></div><div class="bar"><i></i></div><div class="sub"></div></div>' +
+    '</div>' +
+    '<div class="grp" style="margin-top:22px"><button class="it pmore" type="button"><span class="grow">更多设置</span><span class="tag">›</span></button></div>';
+  document.body.appendChild(prof);
+  prof.querySelector(".pback").addEventListener("click", closeProf);
+  prof.querySelector(".pmore").addEventListener("click", function () {
+    closeProf(); var d = document.getElementById("dotsBtn"); if (d) setTimeout(function () { d.click(); }, 280);
+  });
+  function closeProf() { prof.classList.remove("open"); }
+  function openProf() { prof.classList.add("open"); loadProf(); }
+  function prettyModel(m) {
+    var t = String(m || "").replace(/^claude-/, "");
+    var next = /-next$/.test(t); t = t.replace(/-next$/, "").replace(/-\d{8}$/, "");
+    t = t.replace(/^opus-/, "Opus ").replace(/^sonnet-/, "Sonnet ").replace(/^haiku-/, "Haiku ").replace(/-(\d+)$/, ".$1").replace(/-/g, " ");
+    return t + (next ? "(新版)" : "");
+  }
+  function setMeter(cls, frac, v, sub) {
+    var el = prof.querySelector(cls);
+    el.querySelector(".v").textContent = v;
+    el.querySelector(".bar i").style.width = (frac == null ? 0 : Math.max(0, Math.min(1, frac)) * 100).toFixed(1) + "%";
+    el.querySelector(".sub").textContent = sub || "";
+  }
+  function whenReset(sec) {
+    if (!sec) return "";
+    var d = new Date(sec * 1000), now = new Date();
+    var hm = (d.getHours() < 10 ? "0" : "") + d.getHours() + ":" + (d.getMinutes() < 10 ? "0" : "") + d.getMinutes();
+    var day = d.toDateString() === now.toDateString() ? "今天" : (d.getMonth() + 1) + " 月 " + d.getDate() + " 日";
+    return day + " " + hm + " 重置";
+  }
+  function loadProf() {
+    fetch("api/model", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
+      prof.querySelector(".pnow").textContent = prettyModel(d.model);
+      var box = prof.querySelector(".pmodels"); box.innerHTML = "";
+      (d.menu || []).forEach(function (m) {
+        var b = document.createElement("button");
+        b.type = "button"; b.className = "it";
+        var tag = m.current ? '<span class="ok">✓</span>'
+          : d.pending === m.model ? '<span class="tag">下一句起换成它</span>'
+          : m.keepsWindow ? '<span class="tag">原地换 · 不丢窗口</span>' : '<span class="tag warn">会开新窗口</span>';
+        b.innerHTML = '<span class="grow"></span>' + tag;
+        b.querySelector(".grow").textContent = prettyModel(m.model);
+        b.addEventListener("click", function () { pickModel(m, d); });
+        box.appendChild(b);
+      });
+      prof.querySelector(".pmnote").textContent = d.pending
+        ? "已经记下:你下一句话发出去时换成 " + prettyModel(d.pending) + "。点当前那个(✓)就是不换了。"
+        : "点一个,你下一句话发出去时才换。标「会开新窗口」的:他当前窗口里的话会接不上(记忆库里存过的不丢),换之前最好先让他归档。";
+    }).catch(function () { prof.querySelector(".pmnote").textContent = "现在问不到模型清单(连不上服务器)"; });
+    fetch("api/context", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
+      var f = d.max ? d.used / d.max : null;
+      setMeter(".pctx", f, f == null ? "—" : Math.round(f * 100) + "%",
+        d.used ? "约 " + (d.used / 10000).toFixed(1) + " 万 / " + (d.max / 10000).toFixed(1) + " 万 token(到这儿会压缩)" : "");
+    }).catch(function () { setMeter(".pctx", null, "—", "读不到"); });
+    fetch("api/quota", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
+      var w = d && d.ok && d.unifiedWindows;
+      if (!w) {
+        setMeter(".p5h", null, "—", "暂时读不到:要 shim 接上额度读数(这件事还没做,需要你点头)");
+        setMeter(".p7d", null, "—", "");
+        return;
+      }
+      var a = w.five_hour || {}, b = w.seven_day || {};
+      var stale = d.at ? "(" + whenSeen(d.at) + "读到的)" : "";
+      setMeter(".p5h", a.utilization, a.utilization == null ? "—" : Math.round(a.utilization * 100) + "%", whenReset(a.resetsAt) + stale);
+      setMeter(".p7d", b.utilization, b.utilization == null ? "—" : Math.round(b.utilization * 100) + "%", whenReset(b.resetsAt));
+    }).catch(function () { setMeter(".p5h", null, "—", "读不到"); setMeter(".p7d", null, "—", ""); });
+  }
+  function whenSeen(sec) {
+    var m = Math.round((Date.now() / 1000 - sec) / 60);
+    return m < 2 ? "刚刚" : m < 60 ? m + " 分钟前" : Math.round(m / 60) + " 小时前";
+  }
+  function pickModel(m, d) {
+    if (m.current) {                                   // 点当前那个 = 撤销还没发出去的切换
+      if (!d.pending) return;
+    } else if (!m.keepsWindow && !confirm("换成 " + prettyModel(m.model) + " 会开一个新窗口:他现在这个窗口里聊的接不上了(记忆库里存过的不丢)。\n\n建议先对他说「归档」。确定要换吗?(你下一句话发出去时才真的换)")) return;
+    fetch("api/model/switch", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: m.current ? "" : m.model }) })
+      .then(function (r) { return r.json(); }).then(function (x) {
+        if (!x.ok && typeof note === "function") note("（没记上:" + (x.why || "服务器没收") + "）", "err");
+        loadProf();
+      }).catch(function () { if (typeof note === "function") note("（连不上服务器）", "err"); });
+  }
+
+  /* ── 贴纸(两套样式都显示成图) ──
+     转接层把他写的 [贴纸:xx] 换成了「〔贴纸：xx〕」;认识的标签就换成图,不认识的照旧是字。
+     图由 dwell-bridge 在口令后面发(/stickers/<文件>)—— 那批图只许自用,不进公开仓库。 */
+  var STK = null;
+  fetch("api/stickers", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+    if (!d || !d.ok) return;
+    STK = {}; d.items.forEach(function (it) { STK[it.tag] = it.file; });
+    buildPicker(d.items); schedule();
+  }).catch(function () {});
+  var STK_RE = /〔贴纸：([^〕]+)〕/g;
+  function stickerize(el) {
+    if (!STK || el.dataset.stk === "1") return;
+    var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null), nodes = [], n;
+    while ((n = walker.nextNode())) { STK_RE.lastIndex = 0; if (STK_RE.test(n.nodeValue)) nodes.push(n); }
+    nodes.forEach(function (tn) {
+      var frag = document.createDocumentFragment(), s = tn.nodeValue, last = 0, m;
+      STK_RE.lastIndex = 0;
+      while ((m = STK_RE.exec(s))) {
+        var file = STK[m[1].trim()];
+        if (!file) continue;
+        if (m.index > last) frag.appendChild(document.createTextNode(s.slice(last, m.index)));
+        var img = document.createElement("img");
+        img.className = "stk"; img.alt = "〔贴纸：" + m[1] + "〕"; img.loading = "lazy";
+        img.src = "stickers/" + encodeURIComponent(file);
+        frag.appendChild(img);
+        last = m.index + m[0].length;
+      }
+      if (last === 0) return;
+      if (last < s.length) frag.appendChild(document.createTextNode(s.slice(last)));
+      tn.replaceWith(frag);
+    });
+    if (el.querySelector("img.stk") && !el.textContent.trim()) el.classList.add("stkonly");
+    el.dataset.stk = "1";
+  }
+  /* 原 .gu 定稿后会被重画(textContent 重设、data-rich 摘掉)—— 那时 data-stk 也得跟着作废 */
+  function stickerPass() {
+    if (!STK) return;
+    Array.prototype.forEach.call(log.querySelectorAll(".row.me > .bubble, .gu, .tgb"), function (el) {
+      if (el.classList.contains("gu") && !el._final) return;
+      if (el.dataset.stk === "1" && el._stkSig !== el.textContent) el.dataset.stk = "";
+      stickerize(el);
+      el._stkSig = el.textContent;
+    });
+  }
+
+  /* 贴纸面板:TG 版输入栏里那颗贴纸 / 笑脸图标点开;点一张直接发出去(他看得到图,同 Telegram) */
+  var stkBtn = document.createElement("button");
+  stkBtn.type = "button"; stkBtn.className = "tgstk"; stkBtn.setAttribute("aria-label", "贴纸");
+  stkBtn.innerHTML = '<i class="a"></i><i class="b"></i>';
+  var comp = document.querySelector(".composer");
+  if (comp) comp.appendChild(stkBtn);
+  var pick = document.createElement("div");
+  pick.className = "tgpick"; pick.innerHTML = '<div class="grab"></div><div class="grid"><div class="empty">贴纸还没装上</div></div>';
+  document.body.appendChild(pick);
+  /* 照 TG:面板在下、输入栏被顶到面板上方(不然面板盖住输入栏,图标再也点不到、关不上 —— 10-09 测出来的) */
+  var footEl = document.querySelector("footer");
+  function setPick(open) {
+    pick.classList.toggle("open", open);
+    if (footEl) {
+      footEl.style.transition = "transform .32s cubic-bezier(.32,.72,0,1)";
+      footEl.style.transform = open ? "translateY(-" + (pick.offsetHeight - 6) + "px)" : "";
     }
-    var sm = nameEl.querySelector("small");
-    if (sm.textContent !== t) sm.textContent = t && t !== "…" ? t : "";
+  }
+  stkBtn.addEventListener("click", function (e) { e.stopPropagation(); setPick(!pick.classList.contains("open")); });
+  document.addEventListener("click", function (e) {
+    if (pick.classList.contains("open") && !pick.contains(e.target) && !stkBtn.contains(e.target)) setPick(false);
+  });
+  if (typeof box !== "undefined" && box) box.addEventListener("focus", function () { setPick(false); });   // 点输入框打字 = 收起面板
+  function buildPicker(items) {
+    var g = pick.querySelector(".grid"); g.innerHTML = "";
+    items.forEach(function (it) {
+      var b = document.createElement("button"); b.type = "button"; b.title = it.tag;
+      var img = document.createElement("img"); img.loading = "lazy"; img.alt = it.tag; img.src = "stickers/" + encodeURIComponent(it.file);
+      b.appendChild(img);
+      b.addEventListener("click", function () { sendSticker(it.tag); });
+      g.appendChild(b);
+    });
+  }
+  function sendSticker(tag) {
+    setPick(false);
+    try { if (guBusy) { note("（他还在说上一句，等他说完再发）"); return; } } catch (e) {}
+    try { stickBottom = true; setBusy(true); } catch (e) {}
+    fetch("api/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sticker: tag }) })
+      .then(function (r) { if (!r.ok) throw 0; })
+      .catch(function () { try { setBusy(false); note("（没送出去，再试一次）", "err"); } catch (e) {} });
   }
 
   /* ── 时间:历史那条路从库里的 at 取,实时的就用第一眼看到它的时刻 ── */
@@ -4654,8 +4879,8 @@ box.focus();
   }
   function pass() {
     queued = false;
+    stickerPass();                       // 贴纸两套样式都要
     if (root.getAttribute("data-chatstyle") !== "tg") return;
-    syncSub();
     Array.prototype.forEach.call(log.querySelectorAll(".row.me > .bubble"), function (b) {
       var t = stamp(b); if (b.getAttribute("data-tgt") !== t) b.setAttribute("data-tgt", t);
     });
@@ -4686,12 +4911,11 @@ box.focus();
       el.classList.add("tg-split");
       el._tgRaw = raw;
     });
+    stickerPass();                       // 刚拆出来的泡里也可能有贴纸
   }
   var queued = false;
   function schedule() { if (!queued) { queued = true; requestAnimationFrame(pass); } }
   new MutationObserver(schedule).observe(log, { childList: true, subtree: true, characterData: true });
-  var mp = document.getElementById("modelPill");
-  if (mp) new MutationObserver(schedule).observe(mp, { childList: true, subtree: true, characterData: true });
 })();
 </script>
 </body>
