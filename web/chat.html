@@ -4581,9 +4581,7 @@ box.focus();
             --rnd: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
             font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; }
   .tgprof.open { transform: none; visibility: visible; }
-  @media (prefers-color-scheme: dark) { html:not([data-theme="light"]) .tgprof {
-            --gl: rgba(255,255,255,.07); --gl-hi: rgba(255,255,255,.10); --gl-sh: 0 10px 30px rgba(0,0,0,.28); --fog: rgba(18,18,17,.40); } }
-  html[data-theme="dark"] .tgprof, html[data-theme="black"] .tgprof {
+  html[data-tgdark] .tgprof {
             --gl: rgba(255,255,255,.07); --gl-hi: rgba(255,255,255,.10); --gl-sh: 0 10px 30px rgba(0,0,0,.28); --fog: rgba(18,18,17,.40); }
   .tgprof .poster { position: absolute; left: -80px; right: -80px; top: -80px; height: 520px;
                     background: var(--tg-av-him, var(--tg-av-him-def));
@@ -4700,20 +4698,21 @@ box.focus();
     --lg-sheen: linear-gradient(180deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 55%);
     --bub-sh: 0 .5px 0 rgba(0,0,0,.05), 0 1px 2px rgba(0,0,0,.04);
   }
-  @media (prefers-color-scheme: dark) { html[data-chatstyle="tg"]:not([data-theme="light"]) {
-    --tg-page: #000000; --tg-him: #1f1f21; --tg-me: #f2f2f2; --tg-me-ink: #111113;
-    --lg-bg: rgba(44,44,46,.55); --lg-hi: rgba(255,255,255,.20); --lg-lo: rgba(255,255,255,.06);
-    --lg-edge: rgba(255,255,255,.09); --lg-sh: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.45);
-    --lg-sheen: linear-gradient(180deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,0) 55%);
-    --bub-sh: none; } }
-  html[data-chatstyle="tg"][data-theme="dark"], html[data-chatstyle="tg"][data-theme="black"] {
+  /* 深浅跟**皮肤**走(外壳递来的 palette.dark → data-tgdark),不再单看系统 —— 2026-10-09 所有者要各页统一 */
+  html[data-chatstyle="tg"][data-tgdark] {
     --tg-page: #000000; --tg-him: #1f1f21; --tg-me: #f2f2f2; --tg-me-ink: #111113;
     --lg-bg: rgba(44,44,46,.55); --lg-hi: rgba(255,255,255,.20); --lg-lo: rgba(255,255,255,.06);
     --lg-edge: rgba(255,255,255,.09); --lg-sh: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.45);
     --lg-sheen: linear-gradient(180deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,0) 55%);
     --bub-sh: none; }
-
-  html[data-chatstyle="tg"], html[data-chatstyle="tg"] body { background: var(--tg-page); }
+  /* 底色 = 皮肤的纸色(上→下一道渐变,同首页);有壁纸就铺壁纸。html 上留纯色,外壳的安全区那截读得到 */
+  html[data-chatstyle="tg"] { background: var(--tg-page); }
+  html[data-chatstyle="tg"] body { background: linear-gradient(to bottom, var(--tg-page), var(--tg-page2, var(--tg-page))); }
+  html[data-chatstyle="tg"][data-tgwall] body { background: var(--tg-page) var(--tg-wall) center / cover no-repeat; }
+  html[data-chatstyle="tg"][data-tgwall] header::before { background: linear-gradient(to bottom, color-mix(in srgb, var(--tg-page) 45%, transparent), transparent); }
+  html[data-chatstyle="tg"][data-tgwall] footer { background: none !important; }
+  /* 她自己挑的气泡色:底色由脚本设,字的黑白也由脚本按亮度配(--tg-me-ink / --tg-him-ink) */
+  html[data-chatstyle="tg"] .gu, html[data-chatstyle="tg"] .tgb { color: var(--tg-him-ink, var(--text)); }
   /* 顶上那道渐隐也换成新底色,消息滑到顶栏底下时是「化进去」而不是一刀切 */
   html[data-chatstyle="tg"] header::before {
     background: linear-gradient(to bottom, color-mix(in srgb, var(--tg-page) 92%, transparent) 0%,
@@ -4781,14 +4780,22 @@ box.focus();
   html[data-chatstyle="tg"] .row > .toolline .lbl { flex: 0 1 auto; }
   html[data-chatstyle="tg"] .row > .toolline .lbl b { color: inherit; font-weight: 500; }
   html[data-chatstyle="tg"] .row > .toolline > .ic, html[data-chatstyle="tg"] .row > .toolline > .spin { display: none; }
+  /* 两颗小图标:照她给的参考图那种 iOS 细线符号自己画的(星芒 / 扳手加螺丝刀),**不是**拷别人的文件 */
   html[data-chatstyle="tg"] .row > .toolline::before {
-    content: "✳"; font-family: -apple-system, sans-serif; font-size: 13px; width: 14px; text-align: center; opacity: .85; flex: none;
+    content: ""; width: 14px; height: 14px; flex: none; background: currentColor; opacity: .9;
+    -webkit-mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round'%3E%3Cpath d='M12 3.2v5.3M12 15.5v5.3M3.2 12h5.3M15.5 12h5.3M5.8 5.8l3.7 3.7M14.5 14.5l3.7 3.7M18.2 5.8l-3.7 3.7M9.5 14.5l-3.7 3.7'/%3E%3C/svg%3E"); mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round'%3E%3Cpath d='M12 3.2v5.3M12 15.5v5.3M3.2 12h5.3M15.5 12h5.3M5.8 5.8l3.7 3.7M14.5 14.5l3.7 3.7M18.2 5.8l-3.7 3.7M9.5 14.5l-3.7 3.7'/%3E%3C/svg%3E");
   }
-  html[data-chatstyle="tg"] .row > .toolline.tgtool::before { content: "⚒"; font-size: 12.5px; }
+  html[data-chatstyle="tg"] .row > .toolline.tgtool::before {
+    width: 15px; height: 15px; -webkit-mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.6 6.4a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.1-3.1a5.2 5.2 0 0 1-6.9 6.9l-6.2 6.2a1.9 1.9 0 0 1-2.7-2.7l6.2-6.2a5.2 5.2 0 0 1 6.9-6.9z'/%3E%3Cpath d='M4 4l6.3 6.3M13.7 13.7l1.3 1.3'/%3E%3Cpath d='M14.2 16.6l2.4-2.4 4.6 4.6a1.7 1.7 0 0 1-2.4 2.4z'/%3E%3C/svg%3E"); mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.6 6.4a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.1-3.1a5.2 5.2 0 0 1-6.9 6.9l-6.2 6.2a1.9 1.9 0 0 1-2.7-2.7l6.2-6.2a5.2 5.2 0 0 1 6.9-6.9z'/%3E%3Cpath d='M4 4l6.3 6.3M13.7 13.7l1.3 1.3'/%3E%3Cpath d='M14.2 16.6l2.4-2.4 4.6 4.6a1.7 1.7 0 0 1-2.4 2.4z'/%3E%3C/svg%3E");
+  }
   html[data-chatstyle="tg"] .row > .toolline.tglive::before { animation: tgpulse 1.2s ease-in-out infinite; }
   @keyframes tgpulse { 50% { opacity: .25; transform: scale(.85); } }
-  html[data-chatstyle="tg"] .row > .toolline .chev { width: 12px; height: 12px; opacity: .7; transition: transform .25s cubic-bezier(.32,.72,0,1); transform: rotate(90deg); }
-  html[data-chatstyle="tg"] .row > .toolline.open .chev { transform: rotate(-90deg); }
+  /* 箭头:思考那行原是图标、工具那行原是「›」字符,大小对不上 —— TG 版统一画成同一个细线 ⌄ */
+  html[data-chatstyle="tg"] .row > .toolline .chev { width: 11px; height: 11px; font-size: 0; opacity: .75; flex: none;
+    background: currentColor; -webkit-mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 4.5 6 7.5l3-3'/%3E%3C/svg%3E"); mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 4.5 6 7.5l3-3'/%3E%3C/svg%3E");
+    transition: transform .25s cubic-bezier(.32,.72,0,1); }
+  html[data-chatstyle="tg"] .row > .toolline .chev svg { display: none; }
+  html[data-chatstyle="tg"] .row > .toolline.open .chev { transform: rotate(180deg); }
   html[data-chatstyle="tg"] .row:has(> .toolline) { display: block; }
   html[data-chatstyle="tg"][data-avmode="each"] .row:has(> .toolline) { padding-left: 36px; }
   html[data-chatstyle="tg"] .row:has(> .toolline) + .row:has(> .toolline) { margin-top: -6px; }
@@ -4815,14 +4822,42 @@ box.focus();
   if (!log || !header) return;
 
   /* ── 设置:先用外壳在本机留的副本(打开时不闪),再问服务器,外壳改了会 postMessage ── */
-  var prefs = { chatStyle: "official", avatarMode: "top", avatars: { me: null, him: null } };
+  var prefs = { chatStyle: "official", avatarMode: "top", avatars: { me: null, him: null }, palette: null, meBubble: "", himBubble: "" };
   try {
     var cached = JSON.parse(localStorage.getItem("dwell-shell-v1") || "{}") || {};
     if (cached.chatStyle) prefs.chatStyle = cached.chatStyle;
     if (cached.avatarMode) prefs.avatarMode = cached.avatarMode;
     if (cached.avatars) prefs.avatars = cached.avatars;
+    if (cached.palette) prefs.palette = cached.palette;        // 外壳算好的皮肤配色(同源,读得到)
+    prefs.meBubble = cached.meBubble || ""; prefs.himBubble = cached.himBubble || "";
   } catch (e) {}
+  function lum(hex) {
+    var m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(hex || "").trim());
+    if (!m) return 1;
+    var c = [m[1], m[2], m[3]].map(function (x) { x = parseInt(x, 16) / 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); });
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  }
+  var LOOK_VARS = ["--tg-page", "--tg-page2", "--tg-him", "--tg-him-ink", "--tg-me", "--tg-me-ink", "--text", "--bg", "--dim", "--card", "--line", "--tg-wall"];
+  /* TG 版的颜色:底 / 卡片 / 字跟皮肤;气泡色她自己挑的优先;字的黑白按气泡亮度配。官端时全部撤掉。 */
+  function applyLook() {
+    var tg = prefs.chatStyle === "tg", P = prefs.palette;
+    LOOK_VARS.forEach(function (v) { root.style.removeProperty(v); });
+    root.removeAttribute("data-tgdark"); root.removeAttribute("data-tgwall");
+    if (!tg) return;
+    var set = function (k, v) { if (v) root.style.setProperty(k, v); };
+    if (P) {
+      if (P.dark) root.setAttribute("data-tgdark", "");
+      set("--tg-page", P.top); set("--tg-page2", P.bot); set("--text", P.ink); set("--bg", P.top);
+      set("--dim", P.dim); set("--card", P.card); set("--line", P.line);
+    }
+    var him = prefs.himBubble || (P && P.card) || "", me = prefs.meBubble || (P && P.ink) || "";
+    if (him) { set("--tg-him", him); set("--tg-him-ink", lum(him) > 0.45 ? "#17161a" : "#f4f3f1"); }
+    if (me) { set("--tg-me", me); set("--tg-me-ink", lum(me) > 0.45 ? "#17161a" : "#ffffff"); }
+    var w = prefs.avatars && prefs.avatars.wall;
+    if (w) { root.setAttribute("data-tgwall", ""); set("--tg-wall", 'url("api/avatar/wall?v=' + w + '")'); }
+  }
   function applyPrefs() {
+    applyLook();
     if (prefs.chatStyle === "tg") root.setAttribute("data-chatstyle", "tg");
     else root.removeAttribute("data-chatstyle");
     root.setAttribute("data-avmode", prefs.avatarMode === "each" ? "each" : "top");
@@ -4840,11 +4875,14 @@ box.focus();
     prefs.chatStyle = d.prefs.chatStyle || "official";
     prefs.avatarMode = d.prefs.avatarMode || "top";
     prefs.avatars = d.avatars || prefs.avatars;
+    prefs.meBubble = d.prefs.meBubble || ""; prefs.himBubble = d.prefs.himBubble || "";
     applyPrefs();
   }).catch(function () {});
   window.addEventListener("message", function (e) {
     if (e.origin !== location.origin || !e.data || e.data.type !== "dwell-prefs") return;
     prefs.chatStyle = e.data.chatStyle; prefs.avatarMode = e.data.avatarMode; prefs.avatars = e.data.avatars || prefs.avatars;
+    if (e.data.palette) prefs.palette = e.data.palette;
+    prefs.meBubble = e.data.meBubble || ""; prefs.himBubble = e.data.himBubble || "";
     applyPrefs();
   });
 

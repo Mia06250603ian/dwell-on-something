@@ -739,6 +739,17 @@
     background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.14), 0 4px 10px rgba(0,0,0,.14);
   }
 
+  /* 聊天外观(2026-10-09):气泡色块一排 + 自定义 + 壁纸缩略图 */
+  .dots { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+  .dot { width: 30px; height: 30px; border-radius: 50%; position: relative; flex: none;
+         box-shadow: inset 0 0 0 .5px rgba(0,0,0,.14); transition: transform .15s ease; }
+  .dot:active { transform: scale(.9); }
+  .dot[aria-pressed="true"]::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; box-shadow: 0 0 0 2px var(--ink); }
+  .dot.def { background: conic-gradient(from 210deg, var(--card), var(--ink) 50%, var(--card)); }
+  .dot.custom { background: conic-gradient(#e8b4a8, #e6d7a3, #b5d1b3, #a8c6d9, #c3b0d6, #e8b4a8); overflow: hidden; }
+  .dot.custom input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; border: 0; padding: 0; }
+  .wallthumb { width: 46px; height: 64px; border-radius: 10px; flex: none; background: var(--paper-bot) center / cover no-repeat;
+               box-shadow: inset 0 0 0 .5px rgba(0,0,0,.14); }
   .seg { display: flex; gap: 8px; margin-top: 4px; }
   .seg button {
     flex: 1; height: 46px; border-radius: 20px;
@@ -1027,6 +1038,29 @@
         </div>
       </section>
 
+      <!-- 2026-10-09 所有者:「最好有一个可以换气泡颜色和壁纸的功能」。只作用在 Telegram 版;
+           底色本来就跟上面的皮肤走,这里是在皮肤之上再自己定。存在 dwell-bridge 的 /data(换设备也在)。 -->
+      <section class="card group">
+        <div class="seclabel">聊天外观(Telegram 版)</div>
+        <div class="t" style="font-size:15px">我的气泡</div>
+        <div class="dots" id="meDots"></div>
+        <hr class="grouprule">
+        <div class="t" style="font-size:15px">他的气泡</div>
+        <div class="dots" id="himDots"></div>
+        <hr class="grouprule">
+        <div class="srow">
+          <span class="wallthumb" id="wallThumb" aria-hidden="true"></span>
+          <div class="grow">
+            <div class="t">壁纸</div>
+            <div class="s" id="wallHint">没设就跟皮肤的底色走</div>
+          </div>
+          <button class="datum" id="wallReset" style="color:var(--dim)">去掉</button>
+          <button class="datum" id="wallPick" style="color:var(--ink)">换一张</button>
+        </div>
+        <input type="file" id="wallFile" accept="image/*" hidden>
+        <p class="hint">气泡上的字会按底色深浅自动选黑字或白字</p>
+      </section>
+
       <section class="card group">
         <div class="seclabel">外观</div>
         <div class="seg" id="appearance">
@@ -1216,6 +1250,8 @@
   if (!state.chatStyle) state.chatStyle = "official";
   if (!state.avatarMode) state.avatarMode = "top";
   if (!state.avatars) state.avatars = { me: null, him: null };
+  if (typeof state.meBubble !== "string") state.meBubble = "";      // "" = 跟皮肤走
+  if (typeof state.himBubble !== "string") state.himBubble = "";
   /* ⚠️ 默认从 85 改成 100(2026-09-19)。85% 半透明 + 毛玻璃会让卡片和渐变页底混在一起,
      整页发灰发闷 —— 并排比参考图,这是最刺眼的一条,比字号的影响大得多。
      参考图的卡是**实心近白**。滑杆还在,她想要半透明随时拉回去。 */
@@ -1294,6 +1330,7 @@
         if (!d || !d.ok) return;
         if (d.prefs.chatStyle) state.chatStyle = d.prefs.chatStyle;
         if (d.prefs.avatarMode) state.avatarMode = d.prefs.avatarMode;
+        state.meBubble = d.prefs.meBubble || ""; state.himBubble = d.prefs.himBubble || "";
         state.avatars = d.avatars || { me: null, him: null };
         save(state); apply();
       })
@@ -1301,7 +1338,8 @@
   }
   function pushPrefs() {
     fetch("api/prefs", { method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ prefs: { chatStyle: state.chatStyle, avatarMode: state.avatarMode } }) })
+      body: JSON.stringify({ prefs: { chatStyle: state.chatStyle, avatarMode: state.avatarMode,
+                                      meBubble: state.meBubble || "", himBubble: state.himBubble || "" } }) })
       .catch(function () {});
   }
   /* 聊天页同源:换了样式 / 头像就当场告诉它,不用重进 */
@@ -1309,7 +1347,8 @@
     try {
       var f = document.getElementById("chatframe");
       if (f && f.contentWindow) f.contentWindow.postMessage({ type: "dwell-prefs",
-        chatStyle: state.chatStyle, avatarMode: state.avatarMode, avatars: state.avatars }, location.origin);
+        chatStyle: state.chatStyle, avatarMode: state.avatarMode, avatars: state.avatars,
+        palette: state.palette, meBubble: state.meBubble, himBubble: state.himBubble }, location.origin);
     } catch (e) {}
   }
 
@@ -1357,6 +1396,88 @@
     });
   });
 
+  /* ---------- 聊天外观:皮肤配色 + 气泡颜色 + 壁纸(2026-10-09) ----------
+     聊天页是另一个文档,读不到这里的 CSS 变量,所以把当前皮肤算出来的几种颜色存进 state.palette
+     (它和本页同源,读得到 localStorage)并随 postMessage 递过去。深浅按底色亮度判断,
+     所以「雾山」这种本身就深的皮肤,聊天页也会切成深色玻璃。 */
+  function readPalette() {
+    var cs = getComputedStyle(document.documentElement), g = function (n) { return cs.getPropertyValue(n).trim(); };
+    var top = g("--paper-top"), card = g("--card");
+    return { top: top, bot: g("--paper-bot"), card: card, ink: g("--ink"), ink2: g("--ink-2"), dim: g("--dim"), line: g("--line"),
+             dark: lum(top) < 0.42 };
+  }
+  function lum(hex) {                    // #rrggbb → 0..1 相对亮度(够判断深浅就行)
+    var m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(hex || "").trim());
+    if (!m) return 1;
+    var c = [m[1], m[2], m[3]].map(function (x) { x = parseInt(x, 16) / 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); });
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  }
+  var ME_COLORS  = ["#1b191d", "#3a3f4b", "#5b5466", "#7a6556", "#4f6358", "#c9b9ab"];
+  var HIM_COLORS = ["#ffffff", "#f3eee6", "#e9eef3", "#f1e7ea", "#e8ede6", "#2b2a2e"];
+  function buildDots(boxId, key, list) {
+    var box = document.getElementById(boxId); if (!box) return;
+    box.innerHTML = "";
+    var def = document.createElement("button"); def.type = "button"; def.className = "dot def"; def.title = "跟皮肤走"; def.dataset.c = "";
+    box.appendChild(def);
+    list.forEach(function (c) { var b = document.createElement("button"); b.type = "button"; b.className = "dot"; b.style.background = c; b.title = c; b.dataset.c = c; box.appendChild(b); });
+    var cu = document.createElement("label"); cu.className = "dot custom"; cu.title = "自己调";
+    var inp = document.createElement("input"); inp.type = "color"; cu.appendChild(inp); box.appendChild(cu);
+    box.addEventListener("click", function (e) {
+      var b = e.target.closest("button.dot"); if (!b) return;
+      state[key] = b.dataset.c; save(state); apply(); pushPrefs();
+    });
+    inp.addEventListener("change", function () { state[key] = inp.value.toLowerCase(); save(state); apply(); pushPrefs(); });
+  }
+  buildDots("meDots", "meBubble", ME_COLORS);
+  buildDots("himDots", "himBubble", HIM_COLORS);
+  function paintChatLook() {
+    [["meDots", "meBubble", ME_COLORS], ["himDots", "himBubble", HIM_COLORS]].forEach(function (x) {
+      var box = document.getElementById(x[0]); if (!box) return;
+      var cur = state[x[1]] || "", hit = false;
+      Array.prototype.forEach.call(box.querySelectorAll("button.dot"), function (b) {
+        var on = b.dataset.c === cur; if (on) hit = true; b.setAttribute("aria-pressed", String(on)); });
+      var cu = box.querySelector(".dot.custom");
+      cu.setAttribute("aria-pressed", String(!hit && !!cur));
+      if (!hit && cur) cu.style.background = cur; else cu.style.background = "";
+    });
+    var th = document.getElementById("wallThumb"), u = avatarUrl("wall");
+    if (th) th.style.backgroundImage = u ? "url(" + JSON.stringify(u).slice(1, -1) + ")" : "";
+    var wh = document.getElementById("wallHint"); if (wh) wh.textContent = u ? "已换上,聊天页铺满显示" : "没设就跟皮肤的底色走";
+  }
+  /* 壁纸:长边压到 1600px 的 JPEG 再传(原图动辄几 MB);「去掉」带确认,只有她点才删 */
+  (function () {
+    var wf = document.getElementById("wallFile"), wh = document.getElementById("wallHint");
+    if (!wf) return;
+    document.getElementById("wallPick").addEventListener("click", function () { wf.value = ""; wf.click(); });
+    wf.addEventListener("change", function () {
+      var f = wf.files && wf.files[0]; if (!f) return;
+      var url = URL.createObjectURL(f), img = new Image();
+      wh.textContent = "正在处理…";
+      img.onload = function () {
+        try {
+          var k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+          var c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          var data = c.toDataURL("image/jpeg", 0.82); URL.revokeObjectURL(url);
+          fetch("api/avatar/wall", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ dataUrl: data }) })
+            .then(function (r) { return r.json().catch(function () { return { ok: false, why: "HTTP " + r.status }; }); })
+            .then(function (d) {
+              if (!d.ok) { wh.textContent = "没换成:" + (d.why || "服务器没收"); return; }
+              state.avatars.wall = d.ver; save(state); apply();
+            }).catch(function () { wh.textContent = "没换成:连不上服务器"; });
+        } catch (e) { wh.textContent = "没换成:这张图读不了"; }
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); wh.textContent = "没换成:这张图读不了"; };
+      img.src = url;
+    });
+    document.getElementById("wallReset").addEventListener("click", function () {
+      if (!state.avatars.wall) return;
+      if (!confirm("去掉聊天壁纸?换上去的那张会删掉,聊天页回到皮肤的底色。")) return;
+      fetch("api/avatar/wall", { method: "DELETE" }).then(function (r) { return r.json(); })
+        .then(function (d) { if (d.ok) { state.avatars.wall = null; save(state); apply(); } }).catch(function () {});
+    });
+  })();
+
   /* ---------- 应用 ---------- */
   function apply() {
     var root = document.documentElement;
@@ -1366,6 +1487,9 @@
     root.style.setProperty("--card-a", (state.opacity / 100).toFixed(3));
     paintAvatar(avatarUrl("him"));
     paintMe();
+    state.palette = readPalette();      // 皮肤的配色交给聊天页(TG 版跟它走,各页统一)
+    save(state);
+    paintChatLook();
     tellChat();
 
     Array.prototype.forEach.call(skinBox.children, function (b) {
@@ -1395,8 +1519,8 @@
   (function () {
     try {
       var mq = matchMedia("(prefers-color-scheme: dark)");
-      if (mq.addEventListener) mq.addEventListener("change", function () { syncThemeColor(); });
-      else if (mq.addListener) mq.addListener(function () { syncThemeColor(); });
+      if (mq.addEventListener) mq.addEventListener("change", function () { syncThemeColor(); apply(); });
+      else if (mq.addListener) mq.addListener(function () { syncThemeColor(); apply(); });
     } catch (e) {}
   })();
   function syncThemeColor() {
