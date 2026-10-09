@@ -4365,5 +4365,330 @@ box.focus();
         (wearTheme / localStorage 的 homeTheme),不需要它。 */
 })();
 </script>
+<!-- ══ 第二套聊天样式:仿 Telegram 气泡(2026-10-09 所有者要的) ════════════════
+     **只在设置里选了 Telegram 时生效**(<html data-chatstyle="tg">),选官端时这一整段都不起作用,
+     上面那 43 处「照官端」一处没碰。这里是**追加**的独立一段,原有代码一行不改。
+     数是从所有者同一台手机的 Telegram 截图量的(402pt,3px/pt):
+       字 15 / 行高 20、气泡单行高 33、圆角 17、左留 10 右留 11、最宽 322(八成屏宽)、
+       他连着的气泡之间 2.5、两人之间 7、时间塞在气泡右下角 10px。
+     拆泡规则**照抄 telegram-bridge 的 bubblesFor**:一行一个气泡;整条超过 200 字就是长文,整段一个泡。
+     ⚠️ 只在**定稿后**才拆(吐字时就是一个在长大的泡);原来那块 .gu 藏起来但还在,
+        复制 / 补全 / 自检这些逻辑照旧作用在它身上 —— 拆出来的只是**显示用的副本**。
+     设置(样式 / 头像位置 / 头像)存在 dwell-bridge 的 /api/prefs,外壳改了会 postMessage 过来。 -->
+<style>
+  html[data-chatstyle="tg"] { --tg-him: color-mix(in srgb, var(--text) 6.5%, var(--bg)); }
+  html[data-chatstyle="tg"] #log { padding-left: 10px; padding-right: 11px; gap: 7px; }
+  html[data-chatstyle="tg"] .acts { display: none; }      /* 官端那排操作按钮,TG 没有 */
+
+  /* 气泡:双方同一副骨架 */
+  html[data-chatstyle="tg"] .row.me .bubble,
+  html[data-chatstyle="tg"] .gu,
+  html[data-chatstyle="tg"] .tgb {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Noto Sans SC", sans-serif;
+    font-size: 15px; line-height: 20px; border-radius: 17px;
+    padding: 6px 10px 7px; max-width: 80%; width: fit-content;
+    white-space: pre-wrap; word-break: break-word; box-shadow: none;
+  }
+  html[data-chatstyle="tg"] .row.me .bubble { background: var(--text); color: var(--bg); border-bottom-right-radius: 6px; }
+  html[data-chatstyle="tg"] .gu, html[data-chatstyle="tg"] .tgb { background: var(--tg-him); color: var(--text); }
+  html[data-chatstyle="tg"] .gu { border-bottom-left-radius: 6px; }
+  html[data-chatstyle="tg"] .gu.tg-split { display: none; }
+  html[data-chatstyle="tg"] .tgset { display: flex; flex-direction: column; align-items: flex-start; gap: 2.5px; }
+  html[data-chatstyle="tg"] .tgset .tgb:last-child { border-bottom-left-radius: 6px; }
+  html:not([data-chatstyle="tg"]) .tgset,
+  html:not([data-chatstyle="tg"]) .tgname,
+  html:not([data-chatstyle="tg"]) .tgav { display: none !important; }
+
+  /* 时间:塞在气泡右下角,和 TG 一样跟在最后一行字后面 */
+  html[data-chatstyle="tg"] [data-tgt]::after {
+    content: attr(data-tgt); float: right; margin: 7px -2px -4px 8px;
+    font-size: 10px; line-height: 14px; font-variant-numeric: tabular-nums;
+    color: color-mix(in srgb, currentColor 48%, transparent); pointer-events: none;
+  }
+
+  /* 顶栏:左边返回圆(外壳放的)、中间名字胶囊、右边他的头像 —— 照 TG */
+  html[data-chatstyle="tg"] #newChatTop { display: none; }
+  html[data-chatstyle="tg"][data-avmode="top"] .headpill:not(.tgname) { display: none; }   /* 名字胶囊借了 .headpill 的玻璃,别把它一起藏了 */
+  .tgname {
+    position: absolute; left: 50%; top: 8px; transform: translateX(-50%);
+    min-width: 150px; height: 44px; padding: 0 22px; border-radius: 999px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    margin: 0; cursor: default;
+  }
+  .tgname b { font-size: 16px; font-weight: 600; line-height: 19px; color: var(--text); }
+  .tgname small { font-size: 12px; line-height: 15px; color: var(--dim); white-space: nowrap; max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+  .tgav { width: 44px; height: 44px; border-radius: 50%; margin-left: auto; padding: 0; flex: none; overflow: hidden; }
+  html[data-chatstyle="tg"][data-avmode="each"] .tgav { display: none; }
+
+  /* 头像:没换过就是默认那两样(她 = 粉灰渐变,他 = 深色底 + 菊花) */
+  html { --tg-av-me-def: linear-gradient(150deg,#e7d9d2,#c9aa9c 60%,#a98576);
+         --tg-av-him-def: center 62% / 46% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='%23e1734f'%3E%3Ccircle cx='12' cy='12' r='3.1'/%3E%3Cellipse cx='12' cy='4.6' rx='1.9' ry='3.5'/%3E%3Cellipse cx='12' cy='4.6' rx='1.9' ry='3.5' transform='rotate(45 12 12)'/%3E%3Cellipse cx='12' cy='4.6' rx='1.9' ry='3.5' transform='rotate(90 12 12)'/%3E%3Cellipse cx='12' cy='4.6' rx='1.9' ry='3.5' transform='rotate(135 12 12)'/%3E%3Cellipse cx='12' cy='4.6' rx='1.9' ry='3.5' transform='rotate(180 12 12)'/%3E%3Cellipse cx='12' cy='4.6' rx='1.9' ry='3.5' transform='rotate(225 12 12)'/%3E%3Cellipse cx='12' cy='4.6' rx='1.9' ry='3.5' transform='rotate(270 12 12)'/%3E%3Cellipse cx='12' cy='4.6' rx='1.9' ry='3.5' transform='rotate(315 12 12)'/%3E%3C/g%3E%3C/svg%3E"), linear-gradient(150deg,#6f6a63 0%,#3a3631 55%,#24211d 100%); }
+  .tgav, html[data-chatstyle="tg"][data-avmode="each"] .row:has(> .gu)::before {
+    background: var(--tg-av-him, var(--tg-av-him-def));
+  }
+  /* 每条消息旁边:他的在左、她的在右,贴着这一组的底边 */
+  html[data-chatstyle="tg"][data-avmode="each"] .row.me,
+  html[data-chatstyle="tg"][data-avmode="each"] .row:has(> .gu) { position: relative; }
+  html[data-chatstyle="tg"][data-avmode="each"] .row.me { padding-right: 36px; }
+  html[data-chatstyle="tg"][data-avmode="each"] .row:has(> .gu) { padding-left: 36px; }
+  html[data-chatstyle="tg"][data-avmode="each"] .row.me::after,
+  html[data-chatstyle="tg"][data-avmode="each"] .row:has(> .gu)::before {
+    content: ""; position: absolute; bottom: 0; width: 30px; height: 30px; border-radius: 50%;
+  }
+  html[data-chatstyle="tg"][data-avmode="each"] .row.me::after { right: 0; background: var(--tg-av-me, var(--tg-av-me-def)); }
+  html[data-chatstyle="tg"][data-avmode="each"] .row:has(> .gu)::before { left: 0; }
+  /* ── 输入区:照 TG(2026-10-09 所有者追加,两张截图量的,3px/pt)──
+       没字:[回形针圆钮] [Message 胶囊 …贴纸图标] [麦克风圆钮]
+       有字:麦克风收掉,胶囊伸到右端,黑色发送键(纸飞机)长在胶囊里,贴纸换成笑脸。
+     圆钮与胶囊高 41、间距 4.5;发送键直径 34、四周留 3.4;图标 19 宽,离胶囊右端 11 / 离发送键 13;字 16。
+     **过渡**:麦克风宽度收到 0 的同时胶囊自然伸长,发送键从右端放大浮出,两个图标交叉淡入淡出 ——
+       全是同一条弹簧曲线(和外壳入场那条同源),所以看着是「一下」而不是几件事各动各的。
+     贴纸 / 笑脸图标在 dwell 里**没有对应功能**,只是样子(点不到,pointer-events:none)。
+     模型胶囊在 TG 版里不摆(型号写在顶栏名字下面),点顶栏头像 /「更多」照样能换。 */
+  html[data-chatstyle="tg"] { --tg-ease: cubic-bezier(.32,.72,0,1); --tg-dur: .34s; }
+  /* 输入栏后面垫一道和页面同色的渐隐带:消息滚到底部被它盖住,不会从胶囊底下透出来(TG 也是这样) */
+  html[data-chatstyle="tg"] footer {
+    padding-left: 25px; padding-right: 25px;
+    background: linear-gradient(to top, var(--bg) 0, var(--bg) calc(100% - 22px), color-mix(in srgb, var(--bg) 0%, transparent) 100%);
+  }
+  html[data-chatstyle="tg"] .composer {
+    position: relative; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0;
+    background: none; border: 0; box-shadow: none; padding: 0; border-radius: 0;
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+  }
+  html[data-chatstyle="tg"] .ctlrow { display: contents; }
+  html[data-chatstyle="tg"] #attachStrip { order: -1; flex-basis: 100%; }
+  html[data-chatstyle="tg"] #modelPill, html[data-chatstyle="tg"] .ctlrow .gap { display: none; }
+  html[data-chatstyle="tg"] #plusBtn, html[data-chatstyle="tg"] #micBtn, html[data-chatstyle="tg"] #box {
+    background: var(--card) !important; color: var(--text) !important;   /* 实底,不透字 */
+    box-shadow: 0 1px 8px rgba(0,0,0,.06), inset 0 0 0 1px color-mix(in srgb, var(--line) 75%, transparent);
+  }
+  html[data-chatstyle="tg"] #plusBtn { order: 0; width: 41px; height: 41px; }
+  html[data-chatstyle="tg"] #box {
+    order: 1; flex: 1; width: auto; min-width: 0; min-height: 41px; max-height: 140px; margin-left: 4.5px;
+    border-radius: 20.5px; padding: 10px 46px 10px 13px; line-height: 21px; font-size: 16px;
+    transition: padding-right var(--tg-dur) var(--tg-ease);
+  }
+  html[data-chatstyle="tg"][data-tghas] #box { padding-right: 82px; }
+  /* 麦克风:有字时宽度收到 0(胶囊因此自然伸长),同时缩小淡出 */
+  html[data-chatstyle="tg"] #micBtn {
+    order: 2; width: 41px; height: 41px; margin-left: 4.5px; overflow: hidden;
+    transition: width var(--tg-dur) var(--tg-ease), margin-left var(--tg-dur) var(--tg-ease),
+                opacity .2s ease, transform var(--tg-dur) var(--tg-ease);
+  }
+  html[data-chatstyle="tg"][data-tghas] #micBtn {
+    width: 0; margin-left: 0; opacity: 0; transform: scale(.5); pointer-events: none;
+  }
+  /* 发送键:长在胶囊右端里面,从小放大浮出 */
+  html[data-chatstyle="tg"] #send {
+    position: absolute; right: 3.4px; bottom: 3.4px; width: 34px; height: 34px; z-index: 2;
+    opacity: 0; transform: scale(.4) rotate(-20deg); pointer-events: none;
+    transition: opacity .18s ease, transform var(--tg-dur) var(--tg-ease);
+  }
+  html[data-chatstyle="tg"][data-tghas] #send {
+    opacity: 1; transform: none; pointer-events: auto; transition-delay: .04s;
+  }
+  html[data-chatstyle="tg"] #send:not(.stop) { background: var(--text) !important; color: var(--bg) !important; }
+  html[data-chatstyle="tg"] #send:not(.stop) .ic { display: none; }
+  html[data-chatstyle="tg"] #send:not(.stop)::before {
+    content: ""; width: 18px; height: 18px; margin-left: -1px; background: currentColor;
+    -webkit-mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M2.6 10.6 20.1 3.3c.9-.4 1.8.5 1.4 1.4l-7.3 17.5c-.4.9-1.7.9-2-.1l-2-6.4a1 1 0 0 0-.6-.6l-6.4-2c-1-.3-1-1.6-.1-2Z' fill='black'/%3E%3C/svg%3E");
+            mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M2.6 10.6 20.1 3.3c.9-.4 1.8.5 1.4 1.4l-7.3 17.5c-.4.9-1.7.9-2-.1l-2-6.4a1 1 0 0 0-.6-.6l-6.4-2c-1-.3-1-1.6-.1-2Z' fill='black'/%3E%3C/svg%3E");
+  }
+  /* 胶囊右端的图标:没字是贴纸、有字是笑脸,原地交叉淡入淡出;位置跟着胶囊右端一起走 */
+  html[data-chatstyle="tg"] .composer::before, html[data-chatstyle="tg"] .composer::after {
+    content: ""; position: absolute; bottom: 11px; right: 56.5px; width: 19px; height: 19px;
+    background: var(--dim); pointer-events: none; z-index: 1;
+    transition: right var(--tg-dur) var(--tg-ease), opacity .22s ease, transform var(--tg-dur) var(--tg-ease);
+  }
+  html[data-chatstyle="tg"][data-tghas] .composer::before, html[data-chatstyle="tg"][data-tghas] .composer::after { right: 50.4px; }
+  html[data-chatstyle="tg"] .composer::before {   /* 贴纸 */
+    -webkit-mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linejoin='round'%3E%3Cpath d='M21 12a9 9 0 1 1-9-9h1.5A7.5 7.5 0 0 1 21 10.5Z'/%3E%3Cpath d='M21 12c-4.5-.3-8.7 3.9-9 9'/%3E%3C/svg%3E");
+            mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linejoin='round'%3E%3Cpath d='M21 12a9 9 0 1 1-9-9h1.5A7.5 7.5 0 0 1 21 10.5Z'/%3E%3Cpath d='M21 12c-4.5-.3-8.7 3.9-9 9'/%3E%3C/svg%3E");
+  }
+  html[data-chatstyle="tg"] .composer::after {    /* 笑脸 */
+    opacity: 0; transform: scale(.7) rotate(-30deg);
+    -webkit-mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M8.2 14.2a4.6 4.6 0 0 0 7.6 0'/%3E%3Ccircle cx='9' cy='9.8' r='.6' fill='black'/%3E%3Ccircle cx='15' cy='9.8' r='.6' fill='black'/%3E%3C/svg%3E");
+            mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M8.2 14.2a4.6 4.6 0 0 0 7.6 0'/%3E%3Ccircle cx='9' cy='9.8' r='.6' fill='black'/%3E%3Ccircle cx='15' cy='9.8' r='.6' fill='black'/%3E%3C/svg%3E");
+  }
+  html[data-chatstyle="tg"][data-tghas] .composer::before { opacity: 0; transform: scale(.7) rotate(30deg); }
+  html[data-chatstyle="tg"][data-tghas] .composer::after { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    html[data-chatstyle="tg"] #box, html[data-chatstyle="tg"] #micBtn, html[data-chatstyle="tg"] #send,
+    html[data-chatstyle="tg"] .composer::before, html[data-chatstyle="tg"] .composer::after { transition-duration: .01s !important; }
+  }
+  /* 回形针:TG 那颗。按钮本身照旧是「添加照片和文件」,只换图标 */
+  html[data-chatstyle="tg"] #plusBtn .ic { display: none; }
+  html[data-chatstyle="tg"] #plusBtn::before {
+    content: ""; width: 21px; height: 21px; background: currentColor;
+    -webkit-mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21.4 11.1-8.9 8.9a5.5 5.5 0 0 1-7.8-7.8l8.9-8.9a3.7 3.7 0 0 1 5.2 5.2l-8.9 8.9a1.8 1.8 0 0 1-2.6-2.6l8.2-8.2'/%3E%3C/svg%3E");
+            mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21.4 11.1-8.9 8.9a5.5 5.5 0 0 1-7.8-7.8l8.9-8.9a3.7 3.7 0 0 1 5.2 5.2l-8.9 8.9a1.8 1.8 0 0 1-2.6-2.6l8.2-8.2'/%3E%3C/svg%3E");
+  }
+  /* 菊花和「Claude is AI and can make mistakes」那句:TG 版不要(所有者 2026-10-09) */
+  html[data-chatstyle="tg"] .brandline { display: none !important; }
+
+  /* .acts 藏了,但它还在行里 —— 别让它把头像顶上去 */
+  html[data-chatstyle="tg"][data-avmode="each"] .row:has(> .gu) > .acts { display: none; }
+</style>
+<script>
+(function () {
+  "use strict";
+  var root = document.documentElement;
+  var log = document.getElementById("log");
+  var header = document.querySelector("header");
+  if (!log || !header) return;
+
+  /* ── 设置:先用外壳在本机留的副本(打开时不闪),再问服务器,外壳改了会 postMessage ── */
+  var prefs = { chatStyle: "official", avatarMode: "top", avatars: { me: null, him: null } };
+  try {
+    var cached = JSON.parse(localStorage.getItem("dwell-shell-v1") || "{}") || {};
+    if (cached.chatStyle) prefs.chatStyle = cached.chatStyle;
+    if (cached.avatarMode) prefs.avatarMode = cached.avatarMode;
+    if (cached.avatars) prefs.avatars = cached.avatars;
+  } catch (e) {}
+  function applyPrefs() {
+    if (prefs.chatStyle === "tg") root.setAttribute("data-chatstyle", "tg");
+    else root.removeAttribute("data-chatstyle");
+    root.setAttribute("data-avmode", prefs.avatarMode === "each" ? "each" : "top");
+    ["me", "him"].forEach(function (w) {
+      var v = prefs.avatars && prefs.avatars[w];
+      if (v) root.style.setProperty("--tg-av-" + w, 'center / cover no-repeat url("api/avatar/' + w + "?v=" + v + '")');
+      else root.style.removeProperty("--tg-av-" + w);
+    });
+    schedule();
+    if (typeof syncComposer === "function") syncComposer();
+  }
+  applyPrefs();
+  fetch("api/prefs", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+    if (!d || !d.ok) return;
+    prefs.chatStyle = d.prefs.chatStyle || "official";
+    prefs.avatarMode = d.prefs.avatarMode || "top";
+    prefs.avatars = d.avatars || prefs.avatars;
+    applyPrefs();
+  }).catch(function () {});
+  window.addEventListener("message", function (e) {
+    if (e.origin !== location.origin || !e.data || e.data.type !== "dwell-prefs") return;
+    prefs.chatStyle = e.data.chatStyle; prefs.avatarMode = e.data.avatarMode; prefs.avatars = e.data.avatars || prefs.avatars;
+    applyPrefs();
+  });
+
+  /* ── 输入框:TG 版占位字换成「Message」;有没有字决定显示麦克风还是发送(回话中照旧是停止键) ── */
+  var box = document.getElementById("box"), sendBtn = document.getElementById("send");
+  var origPh = box ? box.getAttribute("placeholder") : "";
+  function syncComposer() {
+    if (!box) return;
+    var tg = root.getAttribute("data-chatstyle") === "tg";
+    var want = tg ? "Message" : origPh;
+    if (box.getAttribute("placeholder") !== want) box.setAttribute("placeholder", want);
+    var n = 0; try { n = (typeof attachments !== "undefined" && attachments) ? attachments.length : 0; } catch (e) {}
+    var has = !!(box.value || "").trim() || n > 0 || (sendBtn && sendBtn.classList.contains("stop"));
+    if (has) root.setAttribute("data-tghas", ""); else root.removeAttribute("data-tghas");
+  }
+  if (box) box.addEventListener("input", syncComposer);
+  if (sendBtn) new MutationObserver(syncComposer).observe(sendBtn, { attributes: true, attributeFilter: ["class"] });
+  var strip = document.getElementById("attachStrip");
+  if (strip) new MutationObserver(syncComposer).observe(strip, { childList: true });
+  setInterval(syncComposer, 1000);   // 发送后输入框被代码清空不触发 input,兜一下
+  syncComposer();
+
+  /* ── 顶栏:名字胶囊 + 他的头像(点头像 = 点原来那颗「更多」) ── */
+  var nameEl = document.createElement("div");
+  nameEl.className = "tgname headpill";
+  nameEl.innerHTML = "<b>晏</b><small></small>";
+  var avEl = document.createElement("button");
+  avEl.className = "tgav"; avEl.type = "button"; avEl.title = "更多"; avEl.setAttribute("aria-label", "更多");
+  avEl.addEventListener("click", function () { var d = document.getElementById("dotsBtn"); if (d) d.click(); });
+  header.appendChild(nameEl);
+  header.appendChild(avEl);
+  function syncSub() {
+    /* 胶囊里是「型号」「档位」两截,各在各的元素里 —— 直接取 textContent 会粘成「Opus 4.6Medium」 */
+    var pill = document.getElementById("modelPill"), t = "";
+    if (pill) {
+      var parts = [];
+      (function walk(n) { n.childNodes.forEach(function (c) {
+        if (c.nodeType === 3) { var x = c.textContent.trim(); if (x) parts.push(x); } else walk(c); }); })(pill);
+      t = parts.join(" ");
+    }
+    var sm = nameEl.querySelector("small");
+    if (sm.textContent !== t) sm.textContent = t && t !== "…" ? t : "";
+  }
+
+  /* ── 时间:历史那条路从库里的 at 取,实时的就用第一眼看到它的时刻 ── */
+  var _rs = window.renderSaid;
+  if (typeof _rs === "function") {
+    window.renderSaid = function (msgs) {
+      var mark = log.children.length;
+      var out = _rs.apply(this, arguments);
+      try {
+        var me = msgs.filter(function (m) { return m.kind === "me"; });
+        var gu = msgs.filter(function (m) { return m.kind === "gu"; });
+        var i = 0, j = 0;
+        Array.prototype.slice.call(log.children, mark).forEach(function (row) {
+          var b = row.querySelector(":scope > .bubble"), g = row.querySelector(":scope > .gu");
+          if (row.classList.contains("me") && b) { var m = me[i++]; if (m && m.at) b.dataset.at = m.at; }
+          else if (g) { var n = gu[j++]; if (n && n.at) g.dataset.at = n.at; }
+        });
+      } catch (e) {}
+      return out;
+    };
+  }
+  function hhmm(sec) {
+    var d = new Date(sec * 1000), h = d.getHours(), m = d.getMinutes();
+    return (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m;
+  }
+  function stamp(el) {
+    if (!el.dataset.at) el.dataset.at = String(Math.floor(Date.now() / 1000));
+    return hhmm(+el.dataset.at);
+  }
+
+  /* ── 拆泡(照 telegram-bridge 的 bubblesFor:一行一泡;超过 200 字整段一泡;有代码块不拆) ── */
+  function linesOf(raw) {
+    var t = (raw || "").trim();
+    if (!t || t.length > 200 || t.indexOf("```") >= 0 || t.indexOf("\n") < 0) return null;
+    var out = t.split("\n").map(function (x) { return x.trim(); }).filter(Boolean);
+    return out.length > 1 ? out : null;
+  }
+  function pass() {
+    queued = false;
+    if (root.getAttribute("data-chatstyle") !== "tg") return;
+    syncSub();
+    Array.prototype.forEach.call(log.querySelectorAll(".row.me > .bubble"), function (b) {
+      var t = stamp(b); if (b.getAttribute("data-tgt") !== t) b.setAttribute("data-tgt", t);
+    });
+    Array.prototype.forEach.call(log.querySelectorAll(".gu"), function (el) {
+      var raw = el._raw != null ? el._raw : el.textContent;
+      var t = stamp(el);
+      var set = el.nextElementSibling && el.nextElementSibling.classList.contains("tgset") ? el.nextElementSibling : null;
+      var lines = el._final ? linesOf(raw) : null;
+      if (!lines) {                       // 吐字中 / 长文 / 单行:就用它自己当一个泡
+        if (set) set.remove();
+        el.classList.remove("tg-split");
+        if (el.getAttribute("data-tgt") !== t) el.setAttribute("data-tgt", t);
+        return;
+      }
+      if (set && el._tgRaw === raw) return;
+      if (set) set.remove();
+      set = document.createElement("div");
+      set.className = "tgset";
+      lines.forEach(function (line) {
+        var b = document.createElement("div");
+        b.className = "tgb";
+        b.textContent = line;
+        try { if (typeof renderPlainInto === "function") renderPlainInto(b, line, true); } catch (e) { b.textContent = line; }
+        b.setAttribute("data-tgt", t);
+        set.appendChild(b);
+      });
+      el.after(set);
+      el.classList.add("tg-split");
+      el._tgRaw = raw;
+    });
+  }
+  var queued = false;
+  function schedule() { if (!queued) { queued = true; requestAnimationFrame(pass); } }
+  new MutationObserver(schedule).observe(log, { childList: true, subtree: true, characterData: true });
+  var mp = document.getElementById("modelPill");
+  if (mp) new MutationObserver(schedule).observe(mp, { childList: true, subtree: true, characterData: true });
+})();
+</script>
 </body>
 </html>

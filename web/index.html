@@ -1011,12 +1011,20 @@
       </section>
 
       <section class="card group">
+        <!-- 2026-10-09 所有者定:两版 —— 仿官端(现在这套,默认)/ 仿 Telegram 气泡。
+             ~~简约 / 气泡~~ 那颗分段从来没接上聊天页(只存在外壳里),这次换成真的。
+             存在 dwell-bridge 的 /data 上(/api/prefs),换设备也在。 -->
         <div class="seclabel">聊天样式</div>
-        <div class="seg" id="bubble">
-          <button data-v="plain">简约</button>
-          <button data-v="bubble" aria-pressed="true">气泡</button>
+        <div class="seg" id="chatStyle">
+          <button data-v="official" aria-pressed="true">官端</button>
+          <button data-v="tg">Telegram</button>
         </div>
-        <p class="hint">气泡:每条消息带头像,双方都在气泡里,像聊天软件</p>
+        <p class="hint">官端:照 Claude App 的样子。Telegram:双方都在气泡里,他一段话一个气泡</p>
+        <div class="seclabel" style="margin-top:14px">头像放哪儿(Telegram 版)</div>
+        <div class="seg" id="avatarMode">
+          <button data-v="top" aria-pressed="true">顶栏右边</button>
+          <button data-v="each">每条消息旁边</button>
+        </div>
       </section>
 
       <section class="card group">
@@ -1030,13 +1038,25 @@
       </section>
 
       <section class="card group">
+        <!-- 2026-10-09 接上:换的图存在 dwell-bridge 的 /data 上,换设备也在。
+             他的头像同时用在 Chats 列表、首页悄悄话卡、Telegram 版聊天页。
+             ⚠️ 「恢复默认」**只有她点、并确认过**才删,没有任何自动清除的路径。 -->
         <div class="seclabel">头像</div>
         <div class="srow">
-          <span class="av" aria-hidden="true" style="background:linear-gradient(150deg,#e7d9d2,#c9aa9c 60%,#a98576)"></span>
+          <span class="av" data-avatar="me" aria-hidden="true"></span>
           <span class="grow t">佳佳</span>
-          <button class="datum" style="color:var(--dim)">恢复默认</button>
-          <button class="datum" style="color:var(--ink)">换一张</button>
+          <button class="datum" data-avreset="me" style="color:var(--dim)">恢复默认</button>
+          <button class="datum" data-avpick="me" style="color:var(--ink)">换一张</button>
         </div>
+        <hr class="grouprule">
+        <div class="srow">
+          <span class="av" data-avatar="him" data-bloom aria-hidden="true"></span>
+          <span class="grow t">晏</span>
+          <button class="datum" data-avreset="him" style="color:var(--dim)">恢复默认</button>
+          <button class="datum" data-avpick="him" style="color:var(--ink)">换一张</button>
+        </div>
+        <input type="file" id="avFile" accept="image/*" hidden>
+        <p class="hint" id="avHint">图会先在手机上裁成正方形、压小再传,存在服务器上,换设备也在</p>
       </section>
 
       <section class="card group">
@@ -1065,13 +1085,10 @@
     el.innerHTML = daisy;
   });
 
-  /* ---------- 悄悄话卡的头像:先把口子留出来 ----------
-     参考图那颗是**一张照片**,我们这边现在是程序画的菊花。
-     所以这里只铺路:state.avatar 里存一张图(dataURL 或 URL),有就盖上去、
-     没有就退回菊花。**换图的界面还没做**(所有者 2026-09-19:「这个可以后面做,先留出来」)。
-     以后要做,只需在设置页加一个 <input type="file">,读成 dataURL 存进 state.avatar 即可 ——
-     apply() 里已经接好了,不用再动这段。
-     ⚠️ dataURL 会占 localStorage 配额,存之前记得压到 ~200px 见方。 */
+  /* ---------- 他的头像(所有 [data-bloom] 那几处:悄悄话卡、Chats 列表、设置) ----------
+     有换过的图就盖上去,没有就退回程序画的菊花。
+     ✅ 2026-10-09 换图界面接上了:设置 → 头像 → 换一张,图存在服务器(/api/avatar/him),
+     这里收到的 url 就是那个地址(带 ?v=版本号)。~~原来打算存 dataURL 进 localStorage~~ —— 换设备会丢,没用。 */
   function paintAvatar(url) {
     Array.prototype.forEach.call(document.querySelectorAll("[data-bloom]"), function (el) {
       if (url) {
@@ -1194,7 +1211,11 @@
   var state = load();
   if (!state.skin) state.skin = "ivory";
   if (!state.appearance) state.appearance = "system";
-  if (!state.bubble) state.bubble = "bubble";
+  /* 聊天样式 / 头像位置 / 头像版本号:**以服务器为准**(/api/prefs),这里只是上次的副本,
+     好让打开时不闪一下。~~state.bubble~~ 那颗旧分段从来没接上,不再用。 */
+  if (!state.chatStyle) state.chatStyle = "official";
+  if (!state.avatarMode) state.avatarMode = "top";
+  if (!state.avatars) state.avatars = { me: null, him: null };
   /* ⚠️ 默认从 85 改成 100(2026-09-19)。85% 半透明 + 毛玻璃会让卡片和渐变页底混在一起,
      整页发灰发闷 —— 并排比参考图,这是最刺眼的一条,比字号的影响大得多。
      参考图的卡是**实心近白**。滑杆还在,她想要半透明随时拉回去。 */
@@ -1233,9 +1254,11 @@
       state[key] = b.dataset.v;
       apply();
       save(state);
+      if (key === "chatStyle" || key === "avatarMode") pushPrefs();
     });
   }
-  wireSeg("bubble", "bubble");
+  wireSeg("chatStyle", "chatStyle");
+  wireSeg("avatarMode", "avatarMode");
   wireSeg("appearance", "appearance");
 
   /* ---------- 透明度 ---------- */
@@ -1250,6 +1273,90 @@
     state.opacity = 100; apply(); save(state);
   });
 
+  /* ---------- 头像与聊天样式:跟服务器同步(2026-10-09) ----------
+     服务器 = dwell-bridge 的 /api/prefs 与 /api/avatar/<me|him>(存在 /data 卷上)。
+     读不到(比如当成文件直接打开)就照本地副本和默认头像走,什么都不坏。 */
+  function avatarUrl(who) {
+    var v = state.avatars && state.avatars[who];
+    return v ? "api/avatar/" + who + "?v=" + v : "";
+  }
+  function paintMe() {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-avatar="me"]'), function (el) {
+      var u = avatarUrl("me");
+      el.style.background = u ? "center / cover no-repeat url(" + JSON.stringify(u).slice(1, -1) + ")"
+                              : "linear-gradient(150deg,#e7d9d2,#c9aa9c 60%,#a98576)";
+    });
+  }
+  function pullPrefs() {
+    fetch("api/prefs", { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d || !d.ok) return;
+        if (d.prefs.chatStyle) state.chatStyle = d.prefs.chatStyle;
+        if (d.prefs.avatarMode) state.avatarMode = d.prefs.avatarMode;
+        state.avatars = d.avatars || { me: null, him: null };
+        save(state); apply();
+      })
+      .catch(function () {});
+  }
+  function pushPrefs() {
+    fetch("api/prefs", { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ prefs: { chatStyle: state.chatStyle, avatarMode: state.avatarMode } }) })
+      .catch(function () {});
+  }
+  /* 聊天页同源:换了样式 / 头像就当场告诉它,不用重进 */
+  function tellChat() {
+    try {
+      var f = document.getElementById("chatframe");
+      if (f && f.contentWindow) f.contentWindow.postMessage({ type: "dwell-prefs",
+        chatStyle: state.chatStyle, avatarMode: state.avatarMode, avatars: state.avatars }, location.origin);
+    } catch (e) {}
+  }
+
+  /* 换一张:裁成正方形、缩到 256px、压成 JPEG 再传(原图动辄几 MB,头像用不着) */
+  var avFile = document.getElementById("avFile"), avHint = document.getElementById("avHint");
+  var avWho = "";
+  function avSay(t) { avHint.textContent = t; }
+  Array.prototype.forEach.call(document.querySelectorAll("[data-avpick]"), function (b) {
+    b.addEventListener("click", function () { avWho = b.getAttribute("data-avpick"); avFile.value = ""; avFile.click(); });
+  });
+  avFile.addEventListener("change", function () {
+    var f = avFile.files && avFile.files[0];
+    if (!f || !avWho) return;
+    var who = avWho, url = URL.createObjectURL(f), img = new Image();
+    avSay("正在处理…");
+    img.onload = function () {
+      try {
+        var S = 256, side = Math.min(img.naturalWidth, img.naturalHeight);
+        var c = document.createElement("canvas"); c.width = S; c.height = S;
+        c.getContext("2d").drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, S, S);
+        var data = c.toDataURL("image/jpeg", 0.86);
+        URL.revokeObjectURL(url);
+        fetch("api/avatar/" + who, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ dataUrl: data }) })
+          .then(function (r) { return r.json().catch(function () { return { ok: false, why: "HTTP " + r.status }; }); })
+          .then(function (d) {
+            if (!d.ok) { avSay("没换成:" + (d.why || "服务器没收")); return; }
+            state.avatars[who] = d.ver; save(state); apply();
+            avSay(d.persisted ? "换好了,存在服务器上" : "换好了 —— 但服务器这会儿没开落盘,重启会丢");
+          })
+          .catch(function () { avSay("没换成:连不上服务器"); });
+      } catch (e) { avSay("没换成:这张图读不了"); }
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); avSay("没换成:这张图读不了(试试 JPG / PNG)"); };
+    img.src = url;
+  });
+  Array.prototype.forEach.call(document.querySelectorAll("[data-avreset]"), function (b) {
+    b.addEventListener("click", function () {
+      var who = b.getAttribute("data-avreset");
+      if (!state.avatars[who]) { avSay("现在就是默认的"); return; }
+      if (!confirm("把" + (who === "me" ? "你" : "他") + "的头像换回默认?换上去的那张会删掉。")) return;
+      fetch("api/avatar/" + who, { method: "DELETE" })
+        .then(function (r) { return r.json(); })
+        .then(function (d) { if (d.ok) { state.avatars[who] = null; save(state); apply(); avSay("已换回默认"); } })
+        .catch(function () { avSay("没换成:连不上服务器"); });
+    });
+  });
+
   /* ---------- 应用 ---------- */
   function apply() {
     var root = document.documentElement;
@@ -1257,12 +1364,14 @@
     if (state.appearance === "system") root.removeAttribute("data-theme");
     else root.setAttribute("data-theme", state.appearance);
     root.style.setProperty("--card-a", (state.opacity / 100).toFixed(3));
-    paintAvatar(state.avatar);
+    paintAvatar(avatarUrl("him"));
+    paintMe();
+    tellChat();
 
     Array.prototype.forEach.call(skinBox.children, function (b) {
       b.setAttribute("aria-pressed", String(b.dataset.skin === state.skin));
     });
-    ["bubble", "appearance"].forEach(function (id) {
+    ["chatStyle", "avatarMode", "appearance"].forEach(function (id) {
       var key = id;
       Array.prototype.forEach.call(document.getElementById(id).children, function (b) {
         b.setAttribute("aria-pressed", String(b.dataset.v === state[key]));
@@ -1370,7 +1479,7 @@
     var live = [
       ["当前皮肤", (SKINS.filter(function (s) { return s.id === state.skin; })[0] || {}).name],
       ["外观", { system: "跟随系统", light: "浅色", dark: "夜间" }[state.appearance]],
-      ["聊天样式", state.bubble === "bubble" ? "气泡" : "简约"],
+      ["聊天样式", state.chatStyle === "tg" ? "Telegram" : "官端"],
       ["卡片透明度", state.opacity + "%"],
       ["页面底(上)", cs.getPropertyValue("--paper-top").trim()],
       ["页面底(下)", cs.getPropertyValue("--paper-bot").trim()],
@@ -1492,6 +1601,7 @@
   document.getElementById("closeSettings").addEventListener("click", function () { sheet.hidden = true; });
 
   apply();
+  pullPrefs();
 
   /* ── 部署完自己刷新 ──
      这条契约是从旧 index.html 继承来的(它叫 tryReload):读后端 /api/health 的 ver,
