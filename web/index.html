@@ -526,8 +526,6 @@
   /* ---------- 会话列表 ---------- */
   .pagehead { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
   .pagehead .grow { flex: 1; min-width: 0; }
-  .online { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--dim); }
-  .online i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink); display: block; }
   .list { padding: 0; overflow: hidden; }
   .crow {
     display: flex; align-items: center; gap: 14px;
@@ -544,8 +542,37 @@
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .crow .right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex: none; }
-  .chev { width: 9px; height: 15px; color: var(--dim-2); }
   .crow .muted .name, .crow .muted { color: var(--dim); }
+
+  /* ---------- Chats:Telegram 式通栏列表(2026-10-09) ----------
+     数是从所有者同一台手机(402pt,3px/pt)的 Telegram 截图量的,单位 pt:
+       标题居中、中心 85.8;第一行顶 120.2;行高 60.3;头像 52、左 16、头像→文字 10;
+       名字墨顶距行顶 11.1、预览 27.5、时间 12.5;时间右距 17.3;
+       分隔线从文字左缘到右留 16,最后一行下面那条通栏。
+     字号按 SF 的大写高 .705em 反推:名字 14.3 半粗、预览 13.2、时间 12.8。
+     ⚠️ 只在 #tab-chats 里生效 —— .pagehead / .crow 那套 Diary 和别处还在用,别改共用规则。 */
+  .tgtitle {
+    margin: -3.2px 0 23.4px; text-align: center;
+    font-family: var(--sans); font-size: 17px; font-weight: 600; line-height: 22px; color: var(--ink);
+  }
+  .tglist { margin-inline: calc(-1 * var(--gutter)); position: relative; }
+  .tglist::after {   /* 最后一行下面那条:通栏 */
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: var(--hair); background: var(--line);
+  }
+  #tab-chats .crow {
+    min-height: 60.3px; padding: 0 var(--gutter); gap: 10px; align-items: flex-start;
+  }
+  #tab-chats .crow .av { width: 52px; height: 52px; align-self: center; }
+  #tab-chats .crow + .crow::before { left: calc(var(--gutter) + 52px + 10px); right: 16px; }
+  #tab-chats .crow .grow { padding: 7.6px 0 0; }
+  #tab-chats .crow .name {
+    font-family: var(--sans); font-size: 14.3px; font-weight: 600; line-height: 17px; color: var(--ink);
+  }
+  #tab-chats .crow .prev {
+    font-family: var(--sans); font-size: 13.2px; line-height: 17px; margin-top: 0; color: var(--dim);
+  }
+  #tab-chats .crow .right { padding-top: 9.4px; padding-right: 1px; }
+  #tab-chats .crow .datum { font-family: var(--sans); font-size: 12.8px; line-height: 15.2px; color: var(--dim); }
 
   /* ---------- 日记 ---------- */
   .entry .when { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
@@ -855,23 +882,20 @@
   </section>
 
   <!-- ================= CHATS ================= -->
-  <section class="screen" id="tab-chats" aria-label="Chats" hidden>
-    <div class="pagehead">
-      <h1 class="title grow" style="margin:0">Chats</h1>
-      <span class="online"><i aria-hidden="true"></i>在线</span>
-    </div>
+  <section class="screen tgscreen" id="tab-chats" aria-label="Chats" hidden>
+    <!-- 2026-10-09 照所有者给的 Telegram 截图改成「通栏列表」:标题居中、无卡片底、无箭头。
+         所有者要求**左上 / 右上不放胶囊按钮**(Telegram 的 Edit / 新建那两颗不抄)。
+         ~~卡片列表 + 左对齐衬线标题 + 「在线」+ 底下那段说明文字~~ 已撤。 -->
+    <h1 class="tgtitle">Chats</h1>
 
-    <div class="card list">
+    <div class="tglist">
       <button class="crow" data-chat="chat.html" data-who="晏">
         <span class="av" data-bloom aria-hidden="true"></span>
         <span class="grow">
           <span class="name" style="display:block">晏</span>
           <span class="prev" style="display:block">把你今天写的东西、动过的东西告诉我</span>
         </span>
-        <span class="right">
-          <span class="datum">6:40 PM</span>
-          <svg class="chev" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.2 1.2 7.4 7.5l-6.2 6.3"/></svg>
-        </span>
+        <span class="right"><span class="datum">6:40 PM</span></span>
       </button>
 
       <button class="crow" data-chat="" data-who="另一个 AI 的房间">
@@ -880,17 +904,9 @@
           <span class="name" style="display:block">另一个 AI 的房间</span>
           <span class="prev" style="display:block">工位还没开张 · 派活入口在这儿</span>
         </span>
-        <span class="right">
-          <span class="datum">未接通</span>
-          <svg class="chev" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.2 1.2 7.4 7.5l-6.2 6.3"/></svg>
-        </span>
+        <span class="right"><span class="datum">未接通</span></span>
       </button>
     </div>
-
-    <p class="caption" style="margin:14px 4px 0;line-height:1.6">
-      点第一行进聊天。只有两行是因为晏只有一个常驻窗口 —— Telegram 和网页进的是同一间;
-      第二行那间屋的服务还没部署。
-    </p>
   </section>
 
   <!-- ================= DIARY ================= -->
