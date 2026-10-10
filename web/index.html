@@ -649,7 +649,11 @@
   .hstats b { display: block; font-family: var(--serif); font-size: 28px; font-weight: 500; line-height: 32px; letter-spacing: -.01em; color: var(--ink); }
   .hstats b.na { color: var(--dim-2); }
   .hstats span { font-family: var(--sans); font-size: 12.5px; color: var(--dim); }
-  .homefeed .whisper { border-radius: 26px; box-shadow: 0 16px 34px -14px rgba(0,0,0,.45); }
+  /* 悄悄话卡也换成和别的卡一样的白卡(2026-10-10 她:「黑色的也改成和其他卡片一样吧,不然好突兀」);
+     排版照旧(左头像、右正文、衬线小链接),靠正文字号稍大和位置当这一页的重点。~~深色底 var(--deep) + 重阴影~~ */
+  .homefeed .whisper { border-radius: 24px; background: var(--card); color: var(--ink);
+    box-shadow: 0 1px 2px rgba(0,0,0,.03), 0 14px 32px -10px rgba(0,0,0,.12); }
+  .homefeed .whisper .more { color: var(--dim); }
   .huscard { display: flex; align-items: center; gap: 18px; padding: 18px 20px; }
   .hpair { position: relative; width: 84px; height: 56px; flex: none; }
   .hav { position: absolute; top: 0; width: 56px; height: 56px; box-shadow: 0 0 0 3px var(--card); }
