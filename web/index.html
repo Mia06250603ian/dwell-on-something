@@ -789,6 +789,84 @@
   }
   .seg button[aria-pressed="true"] { background: var(--ink); color: var(--card); }
   @media (prefers-reduced-motion: reduce) { .seg button, .swatch, .swatch .tick { transition: none } }
+  /* ---------- 设置页:iOS 分组列表(2026-10-10,所有者「这个界面能用 TG 的 UI 设计优化一下吗」)----------
+     照 iOS「设置」/ Telegram iOS 设置页的骨架,数是 iOS 的系统值(pt):
+       组标题在卡片外上方 13 灰、左缩 16;说明在卡片下方 13 灰当脚注;行 ≥44、左右 16、正文 17;
+       分隔线半像素、从文字处起(左缩 16,有头像的行缩到头像后面);组间 35。
+       分段按钮 = UISegmentedControl:灰槽(系统 fill 12%)高 32、圆角 9,白滑块圆角 7 + 细投影,字 13 中粗,滑块会滑。
+     **只管样式**:颜色照旧跟皮肤走(不加 TG 的彩色图标 —— 她定过「整页零彩色」);全页字体换 SF(系统字),
+     大标题也是 SF 粗体 34(~~衬线 Settings~~,首页那套衬线是照参考图的,设置页照 iOS)。
+     作用范围 = #settings 里那个 .stack.ios,首页 / Diary 的 .card .srow .seg 一个没动。 */
+  #settings { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Noto Sans SC", sans-serif; }
+  #settings .sheethead { align-items: center; padding: 10px 4px 8px; }
+  #settings .sheethead .title { font-family: inherit; font-size: 34px; font-weight: 700; letter-spacing: .01em; line-height: 41px; }
+  #settings .sheethead .done { font-size: 17px; font-weight: 600; padding: 8px 2px 8px 12px; }
+  #settings .sheethead .done:active { opacity: .45; }
+  .stack.ios { gap: 0; }
+  .stack.ios .ghead { margin: 26px 16px 7px; font-size: 13px; font-weight: 400; line-height: 18px; color: var(--dim); letter-spacing: .01em; }
+  .stack.ios .ghead:first-child { margin-top: 10px; }
+  .stack.ios > .hint { margin: 7px 16px 0; font-size: 13px; line-height: 18px; color: var(--dim); }
+  .stack.ios .group { padding: 0; overflow: hidden; }
+  /* 一格:没有分隔线以外的装饰,分隔线从左边 16 起(iOS 的 separatorInset) */
+  .stack.ios .group > .srow, .stack.ios .group > .gcell { position: relative; padding: 11px 16px; min-height: 44px; }
+  .stack.ios .group > .gcell { padding-top: 13px; padding-bottom: 13px; }
+  .stack.ios .group > * + .srow::before, .stack.ios .group > * + .gcell::before {
+    content: ""; position: absolute; top: 0; left: 16px; right: 0; height: var(--hair); background: var(--line); }
+  .stack.ios .group > * + .srow:has(> .av)::before { left: 66px; }   /* 头像行之间缩到名字下面;头像行下面那行照常从 16 起 */
+  .stack.ios .srow.flat { padding: 0; min-height: 0; }
+  .stack.ios .srow { gap: 12px; }
+  .stack.ios .t, .stack.ios .srow .t { font-size: 17px; line-height: 22px; letter-spacing: -.01em; }
+  .stack.ios .gcell > .t { margin-bottom: 10px; }
+  .stack.ios .srow .s { font-size: 13px; line-height: 18px; margin-top: 1px; }
+  .stack.ios .group:active { }
+  .stack.ios .datum { font-family: inherit; font-size: 15px; color: var(--dim); padding: 6px 0; }
+  .stack.ios .datum.act { color: var(--ink); font-weight: 500; }
+  .stack.ios .datum:active { opacity: .45; }
+  .stack.ios .nameinput { font-size: 17px; color: var(--dim); }
+  .stack.ios .nameinput:focus { color: var(--ink); }
+  .stack.ios .skins { gap: 14px 8px; }
+  .stack.ios .swatch { width: 54px; height: 54px; }
+  .stack.ios .skin .nm { font-size: 12px; }
+  .stack.ios .slider { margin-top: 8px; }
+  .stack.ios input[type="range"]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; }
+  .stack.ios input[type="range"]::-webkit-slider-thumb { width: 28px; height: 28px; border-radius: 14px; margin-top: -12px;
+    box-shadow: 0 .5px 4px rgba(0,0,0,.12), 0 6px 13px rgba(0,0,0,.12), 0 0 0 .5px rgba(0,0,0,.04); }
+  .stack.ios .dots { margin-top: 0; gap: 12px; }
+
+  /* UISegmentedControl:槽 + 一块会滑的白滑块(.segthumb,脚本放进去、按选中那颗算位置) */
+  .stack.ios .seg { position: relative; display: flex; gap: 0; margin: 0; padding: 2px; height: 32px; border-radius: 9px;
+    background: color-mix(in srgb, var(--ink) 9%, transparent); isolation: isolate; }
+  .stack.ios .seg button { position: relative; z-index: 1; flex: 1; height: 28px; border-radius: 7px; background: none !important;
+    font-size: 13px; font-weight: 500; color: var(--ink); letter-spacing: -.005em; transition: opacity .2s ease; }
+  .stack.ios .seg button[aria-pressed="true"] { font-weight: 600; color: var(--ink); }
+  .stack.ios .seg button:active { opacity: .5; }
+  /* 相邻两颗都没选中时中间一道细竖线(iOS 有);选中那颗两边的不画 */
+  .stack.ios .seg button + button::before { content: ""; position: absolute; left: 0; top: 7px; bottom: 7px; width: 1px;
+    background: color-mix(in srgb, var(--ink) 14%, transparent); transition: opacity .2s ease; }
+  .stack.ios .seg button[aria-pressed="true"]::before, .stack.ios .seg button[aria-pressed="true"] + button::before { opacity: 0; }
+  .stack.ios .segthumb { position: absolute; z-index: 0; top: 2px; left: 2px; height: 28px; border-radius: 7px; pointer-events: none;
+    background: var(--card); box-shadow: 0 3px 8px rgba(0,0,0,.12), 0 3px 1px rgba(0,0,0,.04), 0 0 0 .5px rgba(0,0,0,.04);
+    transition: transform .42s var(--spring-ui, cubic-bezier(.32,.72,0,1)), width .42s var(--spring-ui, cubic-bezier(.32,.72,0,1)); }
+  .stack.ios .seg:not([data-on]) .segthumb { opacity: 0; }
+  .stack.ios .seg.dk .segthumb { background: color-mix(in srgb, var(--ink) 30%, var(--card)); box-shadow: 0 3px 8px rgba(0,0,0,.25); }
+  @supports (transition-timing-function: linear(0, 1)) {
+    :root { --spring-ui: linear(0, 0.0671, 0.2058, 0.3592, 0.5008, 0.6207, 0.7171, 0.792, 0.8488, 0.8911, 0.9222, 0.9447, 0.961, 0.9726, 0.9808, 0.9866, 0.9907, 0.9936, 0.9956, 0.9969, 0.9979, 0.9986, 1); }
+  }
+  @media (prefers-reduced-motion: reduce) { .stack.ios .segthumb { transition: none; } }
+
+  /* 「设计参数」那一行:平时收起(她 10-10「藏起来,别像毛坯房」),右边灰字 + ›,展开时 › 转 90° */
+  .stack.ios .srow.disc { width: 100%; text-align: left; font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  .stack.ios .srow.disc:active { background: color-mix(in srgb, var(--ink) 5%, transparent); }
+  .stack.ios .srow.disc .dval { font-size: 15px; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 48%; }
+  .stack.ios .srow.disc .chev { flex: none; color: color-mix(in srgb, var(--ink) 30%, transparent); transition: transform .42s var(--spring-ui, cubic-bezier(.32,.72,0,1)); }
+  .stack.ios .srow.disc[aria-expanded="true"] .chev { transform: rotate(90deg); }
+  .stack.ios .specbody:not([hidden]) { animation: specin .36s var(--spring-ui, cubic-bezier(.32,.72,0,1)); }
+  @keyframes specin { from { opacity: 0; transform: translate3d(0, -6px, 0); } }
+  @media (prefers-reduced-motion: reduce) { .stack.ios .specbody { animation: none !important; } .stack.ios .srow.disc .chev { transition: none; } }
+
+  /* 打开 / 关闭:iOS 模态那样从底下整页推上来、点「完成」滑下去(同聊天页那条弹簧);脚本驱动 */
+  #settings.ios-in { animation: none; }
+
 
   .speclist { font-size: 13.5px; line-height: 1.85; }
   .speclist div { display: flex; gap: 12px; }
@@ -1023,11 +1101,14 @@
       <button class="done" id="closeSettings">完成</button>
     </div>
 
-    <div class="stack">
+    <!-- 2026-10-10 所有者:「这个界面能用 TG 的 UI 设计优化一下吗」—— 改成 iOS / Telegram 设置页的「分组列表」:
+         组标题在卡片**外面**上方(灰色小字)、说明在卡片**下面**当脚注、每行 ≥44pt、分隔线左缩进半像素、
+         分段按钮换成 iOS 原生那种(浅灰槽 + 白滑块,滑块会滑)。**只改结构和样式,所有 id / 按钮 / 存的东西都没动**。
+         样式在 <style> 里搜「设置页:iOS 分组列表」。 -->
+    <div class="stack ios">
+      <h3 class="ghead">皮肤</h3>
       <section class="card group">
-        <div class="seclabel">皮肤</div>
-        <div class="skins" id="skins"></div>
-        <hr class="grouprule">
+        <div class="gcell"><div class="skins" id="skins"></div></div>
         <div class="srow">
           <div class="grow">
             <div class="t">调色板</div>
@@ -1035,7 +1116,6 @@
           </div>
           <span class="well" style="--wellc:#1b191d" aria-hidden="true"></span>
         </div>
-        <hr class="grouprule">
         <div class="srow">
           <div class="grow">
             <div class="t">卡片颜色</div>
@@ -1043,96 +1123,104 @@
           </div>
           <span class="well" style="--wellc:#ffffff" aria-hidden="true"></span>
         </div>
-        <hr class="grouprule">
-        <div class="srow">
-          <label class="grow t" for="opacity">卡片透明度</label>
-          <span class="datum" id="opacityVal">100%</span>
-          <button class="datum" id="opacityReset" style="color:var(--ink)">恢复默认</button>
-        </div>
-        <div class="slider">
-          <input type="range" id="opacity" min="40" max="100" value="100" style="--fill:100%">
-        </div>
-      </section>
-
-      <section class="card group">
-        <!-- 2026-10-09 所有者定:两版 —— 仿官端(现在这套,默认)/ 仿 Telegram 气泡。
-             ~~简约 / 气泡~~ 那颗分段从来没接上聊天页(只存在外壳里),这次换成真的。
-             存在 dwell-bridge 的 /data 上(/api/prefs),换设备也在。 -->
-        <div class="seclabel">聊天样式</div>
-        <div class="seg" id="chatStyle">
-          <button data-v="official" aria-pressed="true">官端</button>
-          <button data-v="tg">Telegram</button>
-        </div>
-        <p class="hint">官端:照 Claude App 的样子。Telegram:双方都在气泡里,他一段话一个气泡</p>
-        <div class="seclabel" style="margin-top:14px">头像放哪儿(Telegram 版)</div>
-        <div class="seg" id="avatarMode">
-          <button data-v="top" aria-pressed="true">顶栏右边</button>
-          <button data-v="each">每条消息旁边</button>
+        <div class="gcell">
+          <div class="srow flat">
+            <label class="grow t" for="opacity">卡片透明度</label>
+            <span class="datum" id="opacityVal">100%</span>
+            <button class="datum act" id="opacityReset">恢复默认</button>
+          </div>
+          <div class="slider">
+            <input type="range" id="opacity" min="40" max="100" value="100" style="--fill:100%">
+          </div>
         </div>
       </section>
 
-      <!-- 2026-10-09 所有者:「最好有一个可以换气泡颜色和壁纸的功能」。只作用在 Telegram 版;
-           底色本来就跟上面的皮肤走,这里是在皮肤之上再自己定。存在 dwell-bridge 的 /data(换设备也在)。 -->
+      <!-- 2026-10-09 所有者定:两版 —— 仿官端(默认)/ 仿 Telegram 气泡。存在 dwell-bridge 的 /data 上(/api/prefs),换设备也在。 -->
+      <h3 class="ghead">聊天样式</h3>
       <section class="card group">
-        <div class="seclabel">聊天外观(Telegram 版)</div>
-        <div class="t" style="font-size:15px">我的气泡</div>
-        <div class="dots" id="meDots"></div>
-        <hr class="grouprule">
-        <div class="t" style="font-size:15px">他的气泡</div>
-        <div class="dots" id="himDots"></div>
-        <hr class="grouprule">
+        <div class="gcell">
+          <div class="seg" id="chatStyle">
+            <button data-v="official" aria-pressed="true">官端</button>
+            <button data-v="tg">Telegram</button>
+          </div>
+        </div>
+      </section>
+      <p class="hint">官端:照 Claude App 的样子。Telegram:双方都在气泡里,他一段话一个气泡</p>
+
+      <h3 class="ghead">头像放哪儿(Telegram 版)</h3>
+      <section class="card group">
+        <div class="gcell">
+          <div class="seg" id="avatarMode">
+            <button data-v="top" aria-pressed="true">顶栏右边</button>
+            <button data-v="each">每条消息旁边</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2026-10-09 所有者:「最好有一个可以换气泡颜色和壁纸的功能」。只作用在 Telegram 版;存在 dwell-bridge 的 /data。 -->
+      <h3 class="ghead">聊天外观(Telegram 版)</h3>
+      <section class="card group">
+        <div class="gcell">
+          <div class="t">我的气泡</div>
+          <div class="dots" id="meDots"></div>
+        </div>
+        <div class="gcell">
+          <div class="t">他的气泡</div>
+          <div class="dots" id="himDots"></div>
+        </div>
         <div class="srow">
           <span class="wallthumb" id="wallThumb" aria-hidden="true"></span>
           <div class="grow">
             <div class="t">壁纸</div>
             <div class="s" id="wallHint">没设就跟皮肤的底色走</div>
           </div>
-          <button class="datum" id="wallReset" style="color:var(--dim)">去掉</button>
-          <button class="datum" id="wallPick" style="color:var(--ink)">换一张</button>
+          <button class="datum" id="wallReset">去掉</button>
+          <button class="datum act" id="wallPick">换一张</button>
         </div>
         <input type="file" id="wallFile" accept="image/*" hidden>
-        <hr class="grouprule">
         <!-- 2026-10-10 所有者:「聊天里的字有点偏大,我想要一个自己可以修改字号的功能」。存 /api/prefs(换设备也在) -->
-        <div class="t" style="font-size:15px">聊天字号</div>
-        <div class="seg" id="chatFont">
-          <button data-v="13.5" aria-pressed="false">小</button>
-          <button data-v="14.5" aria-pressed="false">标准</button>
-          <button data-v="15.5" aria-pressed="false">中</button>
-          <button data-v="16.5" aria-pressed="false">大</button>
-          <button data-v="17.5" aria-pressed="false">特大</button>
+        <div class="gcell">
+          <div class="t">聊天字号</div>
+          <div class="seg" id="chatFont">
+            <button data-v="13.5" aria-pressed="false">小</button>
+            <button data-v="14.5" aria-pressed="false">标准</button>
+            <button data-v="15.5" aria-pressed="false">中</button>
+            <button data-v="16.5" aria-pressed="false">大</button>
+            <button data-v="17.5" aria-pressed="false">特大</button>
+          </div>
         </div>
-        <p class="hint">气泡上的字会按底色深浅自动选黑字或白字</p>
       </section>
+      <p class="hint">气泡上的字会按底色深浅自动选黑字或白字</p>
 
+      <h3 class="ghead">外观</h3>
       <section class="card group">
-        <div class="seclabel">外观</div>
-        <div class="seg" id="appearance">
-          <button data-v="system" aria-pressed="true">跟随系统</button>
-          <button data-v="light">浅色</button>
-          <button data-v="dark">夜间</button>
+        <div class="gcell">
+          <div class="seg" id="appearance">
+            <button data-v="system" aria-pressed="true">跟随系统</button>
+            <button data-v="light">浅色</button>
+            <button data-v="dark">夜间</button>
+          </div>
         </div>
-        <p class="hint">玻璃皮肤自带昼夜气质,这里只对象牙纸张生效</p>
       </section>
+      <p class="hint">玻璃皮肤自带昼夜气质,这里只对象牙纸张生效</p>
 
+      <!-- 2026-10-09 接上:换的图存在 dwell-bridge 的 /data 上,换设备也在。
+           他的头像同时用在 Chats 列表、首页悄悄话卡、Telegram 版聊天页。
+           ⚠️ 「恢复默认」**只有她点、并确认过**才删,没有任何自动清除的路径。 -->
+      <h3 class="ghead">头像</h3>
       <section class="card group">
-        <!-- 2026-10-09 接上:换的图存在 dwell-bridge 的 /data 上,换设备也在。
-             他的头像同时用在 Chats 列表、首页悄悄话卡、Telegram 版聊天页。
-             ⚠️ 「恢复默认」**只有她点、并确认过**才删,没有任何自动清除的路径。 -->
-        <div class="seclabel">头像</div>
         <div class="srow">
           <span class="av" data-avatar="me" aria-hidden="true"></span>
           <span class="grow t">佳佳</span>
-          <button class="datum" data-avreset="me" style="color:var(--dim)">恢复默认</button>
-          <button class="datum" data-avpick="me" style="color:var(--ink)">换一张</button>
+          <button class="datum" data-avreset="me">恢复默认</button>
+          <button class="datum act" data-avpick="me">换一张</button>
         </div>
-        <hr class="grouprule">
         <div class="srow">
           <span class="av" data-avatar="him" data-bloom aria-hidden="true"></span>
           <span class="grow t" data-himname>晏</span>
-          <button class="datum" data-avreset="him" style="color:var(--dim)">恢复默认</button>
-          <button class="datum" data-avpick="him" style="color:var(--ink)">换一张</button>
+          <button class="datum" data-avreset="him">恢复默认</button>
+          <button class="datum act" data-avpick="him">换一张</button>
         </div>
-        <hr class="grouprule">
         <!-- 2026-10-10 所有者:「想要一个可以给他改名的选项」。**只改网页上显示的名字**(顶栏、Chats、他那一页),
              不碰他的人设、不告诉他。存 /api/prefs(换设备也在);清空 = 回到「晏」。 -->
         <label class="srow">
@@ -1140,15 +1228,24 @@
           <input id="himName" class="nameinput" maxlength="16" placeholder="晏" enterkeyhint="done" autocomplete="off" spellcheck="false">
         </label>
         <input type="file" id="avFile" accept="image/*" hidden>
-        <p class="hint" id="avHint">图会先在手机上裁成正方形、压小再传,存在服务器上,换设备也在</p>
       </section>
+      <p class="hint" id="avHint">图会先在手机上裁成正方形、压小再传,存在服务器上,换设备也在</p>
 
+      <!-- 2026-10-10 所有者:「最下面那个参数用一个按钮包起来,藏起来,不要在外面漏着像毛坯房」。
+           收成一行「设计参数 ›」,点了原地展开、再点收起(iOS 列表的展开行)。里面的东西和复制按钮一样没少,只是默认不露。 -->
+      <h3 class="ghead">其他</h3>
       <section class="card group">
-        <div class="seclabel">这套数(参考图实测 + 这台设备)</div>
-        <div class="speclist" id="spec"></div>
-        <textarea class="copybox" id="specText" readonly aria-label="设计系统数值,可复制"></textarea>
-        <div style="margin-top:12px"><button class="btn" id="copySpec">复制这套数</button></div>
-        <p class="hint">改了什么这里就跟着变,随手复制一份就是备份 —— 这一页不会自动清空任何东西。</p>
+        <button type="button" class="srow disc" id="specToggle" aria-expanded="false" aria-controls="specBody">
+          <span class="grow t">设计参数</span>
+          <span class="dval">参考图实测 + 这台设备</span>
+          <svg class="chev" viewBox="0 0 8 13" width="8" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 1.5 6.5 6.5l-5 5"/></svg>
+        </button>
+        <div class="gcell specbody" id="specBody" hidden>
+          <div class="speclist" id="spec"></div>
+          <textarea class="copybox" id="specText" readonly aria-label="设计系统数值,可复制"></textarea>
+          <div style="margin-top:12px"><button class="btn" id="copySpec">复制这套数</button></div>
+          <p class="hint" style="margin:10px 0 0">改了什么这里就跟着变,随手复制一份就是备份 —— 这一页不会自动清空任何东西。</p>
+        </div>
       </section>
     </div>
   </div>
@@ -1947,8 +2044,58 @@
 
   /* ---------- 设置开合 ---------- */
   var sheet = document.getElementById("settings");
-  document.getElementById("openSettings").addEventListener("click", function () { sheet.hidden = false; });
-  document.getElementById("closeSettings").addEventListener("click", function () { sheet.hidden = true; });
+  /* 2026-10-10 第三轮:iOS 模态 —— 从底下整页推上来,点「完成」滑下去。曲线同聊天页推入(PUSH_EASE,临界阻尼弹簧)。
+     ~~sheet.hidden = false / true 直接开关 + 上浮 18px 淡入~~。系统开「减弱动态效果」照旧直接开关。 */
+  var sheetRun = null;
+  function sheetMove(open) {
+    if (sheetRun) { try { sheetRun.cancel(); } catch (e) {} sheetRun = null; }
+    if (open) { sheet.hidden = false; segAll(); }
+    if (reduceMotion || !sheet.animate) { sheet.hidden = !open; return; }
+    sheet.classList.add("ios-in");
+    var y = innerHeight;
+    var a = sheet.animate([{ transform: "translate3d(0," + (open ? y : 0) + "px,0)" }, { transform: "translate3d(0," + (open ? 0 : y) + "px,0)" }],
+                          { duration: PUSH_MS, easing: PUSH_EASE, fill: "both" });
+    sheetRun = a;
+    a.onfinish = function () {
+      if (sheetRun !== a) return;
+      sheetRun = null; a.cancel();
+      if (!open) sheet.hidden = true;
+    };
+  }
+  document.getElementById("openSettings").addEventListener("click", function () { sheetMove(true); });
+  document.getElementById("closeSettings").addEventListener("click", function () { sheetMove(false); });
+
+  /* iOS 分段控件的白滑块:每个 .seg 里放一块 .segthumb,按 aria-pressed 那颗的位置挪(transform,不动布局)。
+     谁改了 aria-pressed(点选、从服务器读回设置)都会跟着走 —— 盯的是属性,不用改原来那几处逻辑。
+     深色(卡片底暗)时滑块换成亮一档的灰,iOS 深色也是这样。 */
+  function segPlace(seg) {
+    var on = seg.querySelector('button[aria-pressed="true"]'), th = seg.querySelector(".segthumb");
+    if (!th) { th = document.createElement("span"); th.className = "segthumb"; th.setAttribute("aria-hidden", "true"); seg.insertBefore(th, seg.firstChild); }
+    if (!on || !on.offsetWidth) { seg.removeAttribute("data-on"); return; }
+    seg.setAttribute("data-on", "");
+    th.style.width = on.offsetWidth + "px";
+    th.style.transform = "translate3d(" + (on.offsetLeft - 2) + "px,0,0)";
+    /* 深不深看字色(字是浅的 = 深色皮肤);卡片底是 color-mix 出来的,有的浏览器报成 color(srgb …) 不好解析 */
+    try {
+      var c = getComputedStyle(on).color, m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c), k = 1;
+      if (!m) { m = /color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)/.exec(c); k = 255; }
+      seg.classList.toggle("dk", !!m && (0.299 * m[1] + 0.587 * m[2] + 0.114 * m[3]) * k > 140);
+    } catch (e) {}
+  }
+  function segAll() { Array.prototype.forEach.call(document.querySelectorAll(".stack.ios .seg"), segPlace); }
+  Array.prototype.forEach.call(document.querySelectorAll(".stack.ios .seg"), function (seg) {
+    new MutationObserver(function () { segPlace(seg); }).observe(seg, { attributes: true, subtree: true, attributeFilter: ["aria-pressed"] });
+  });
+  window.addEventListener("resize", segAll);
+  /* 「设计参数」展开 / 收起 —— 只是藏起来,内容照常每次生成,复制照旧能用 */
+  (function () {
+    var tg = document.getElementById("specToggle"), body = document.getElementById("specBody");
+    if (!tg || !body) return;
+    tg.addEventListener("click", function () {
+      var open = body.hidden;
+      body.hidden = !open; tg.setAttribute("aria-expanded", String(open));
+    });
+  })();
 
   apply();
   pullPrefs();
