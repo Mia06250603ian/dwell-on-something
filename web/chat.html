@@ -4691,6 +4691,11 @@ box.focus();
                     filter: blur(60px) saturate(1.15); opacity: .85; }
   .tgprof .poster::after { content: ""; position: absolute; inset: 0;
                     background: linear-gradient(to bottom, var(--fog) 0%, color-mix(in srgb, var(--bg) 70%, transparent) 55%, var(--bg) 100%); }
+  /* 2026-10-10 所有者:「这个页面也有分层」—— iOS 26 把状态栏那截涂成外壳的底色(= 聊天页的 --tg-page),
+     海报是头像虚化、颜色对不上就成了两层。顶上盖一道从同一个实色起步的渐隐,和那截连成一片(同聊天顶栏的做法)。 */
+  .tgprof::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 120px; z-index: 1; pointer-events: none;
+                    background: linear-gradient(to bottom, var(--tg-page, var(--bg)) 0%, color-mix(in srgb, var(--tg-page, var(--bg)) 55%, transparent) 45%, transparent 100%); }
+  .tgprof .scroll { z-index: 2; }
   .tgprof .scroll { position: absolute; inset: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
                     padding: calc(6px + var(--dw-sat, env(safe-area-inset-top))) 20px calc(40px + var(--dw-sab, env(safe-area-inset-bottom))); }
   .tgprof .glass { background: var(--gl); -webkit-backdrop-filter: blur(30px) saturate(1.6); backdrop-filter: blur(30px) saturate(1.6);

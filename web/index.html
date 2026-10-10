@@ -698,7 +698,9 @@
   /* ---------- 设置 ---------- */
   .sheet {
     position: fixed; inset: 0; z-index: 90;
-    background: var(--paper-bot);
+    /* 底色用 --paper-top(~~--paper-bot~~,2026-10-10):iOS 26 拿这块的**底色**去涂状态栏那截,
+       而这页顶上看到的是渐变起点 --paper-top;底色是 bot 就会差一档、成了「分层」。渐变照旧盖在上面,样子不变。 */
+    background: var(--paper-top);
     background-image: linear-gradient(180deg, var(--paper-top) 0%, var(--paper-bot) 62%);
     overflow-y: auto; -webkit-overflow-scrolling: touch;
     padding-top: var(--sat);
