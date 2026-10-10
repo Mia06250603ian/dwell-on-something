@@ -4466,7 +4466,9 @@ box.focus();
   html[data-chatstyle="tg"] #newChatTop { display: none; }
   html[data-chatstyle="tg"][data-avmode="top"] .headpill:not(.tgname) { display: none; }   /* 名字胶囊借了 .headpill 的玻璃,别把它一起藏了 */
   .tgname {
-    position: absolute; left: 50%; top: 8px; transform: translateX(-50%);
+    /* 顶要加安全区(2026-10-10):原来写死 8px,在 iOS 的 iframe 里安全区恒为 0 才碰巧对齐;
+       外壳改成铺满整屏后它会顶进灵动岛。和 header 的 padding-top 同一个算法,与两边按钮同一行。 */
+    position: absolute; left: 50%; top: calc(8px + var(--dw-sat, env(safe-area-inset-top))); transform: translateX(-50%);
     min-width: 150px; height: 44px; padding: 0 22px; border-radius: 999px;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     margin: 0; cursor: default;
