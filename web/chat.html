@@ -4945,6 +4945,60 @@ box.focus();
   @media (prefers-reduced-motion: reduce) {
     html[data-chatstyle="tg"] .tgtyping, html[data-chatstyle="tg"] .tgdots i { animation: none; }
   }
+
+  /* ══ TG 质感 第二版(2026-10-10,所有者发来 Telegram iOS 截图:「我们要这种质感」)══
+     对着那张图逐项改的四处,**都只在 TG 版**:
+     ① 气泡尾巴:一串连发的最后一颗带 TG 那种小尾巴(他的在左下、她的在右下),中间的不带;
+     ② 气泡是平的:他的纯白、她的纯黑,不要阴影、不要光泽渐变(图里就是平的,浮感靠底色衬);
+     ③ 液态玻璃更「透」:底更淡、模糊收小,边上一圈亮高光(左上更亮、右下一道暗边)—— 图里的按钮能看见后面的东西;
+        模糊 22 → 14 顺带省帧;
+     ④ 间距收紧:同一串里的泡隔 2px。
+     ⚠️ 尾巴用 ::before + SVG 遮罩画(::after 已经给时间用了),颜色就是气泡底色,换气泡色会跟着变。 */
+  html[data-chatstyle="tg"] {
+    --lg-bg: rgba(255,255,255,.34); --lg-hi: rgba(255,255,255,.98); --lg-lo: rgba(0,0,0,.06);
+    --lg-edge: rgba(255,255,255,.55); --lg-sh: 0 2px 10px rgba(0,0,0,.08);
+    --lg-sheen: linear-gradient(160deg, rgba(255,255,255,.42) 0%, rgba(255,255,255,.08) 45%, rgba(255,255,255,0) 70%);
+    --tg-tail-l: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 18'%3E%3Cpath d='M11 0v18H1.2c-.9 0-1.4-1-.8-1.7C3 13.3 5 9.5 6 5.5 6.7 3 8.5 1 11 0z'/%3E%3C/svg%3E");
+    --tg-tail-r: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 18'%3E%3Cpath d='M0 0v18h9.8c.9 0 1.4-1 .8-1.7C8 13.3 6 9.5 5 5.5 4.3 3 2.5 1 0 0z'/%3E%3C/svg%3E");
+  }
+  html[data-chatstyle="tg"][data-tgdark] {
+    --lg-bg: rgba(40,40,42,.40); --lg-hi: rgba(255,255,255,.30); --lg-lo: rgba(0,0,0,.25);
+    --lg-edge: rgba(255,255,255,.14); --lg-sh: 0 2px 12px rgba(0,0,0,.35);
+    --lg-sheen: linear-gradient(160deg, rgba(255,255,255,.14) 0%, rgba(255,255,255,0) 55%);
+  }
+  /* ③ 玻璃:边上那圈亮光是质感的关键 —— 左上一道高光、右下一道暗边、外圈一道细亮线 */
+  html[data-chatstyle="tg"] #menuBtn, html[data-chatstyle="tg"] .tgname,
+  html[data-chatstyle="tg"] .headpill:not(.tgname),
+  html[data-chatstyle="tg"] #plusBtn, html[data-chatstyle="tg"] #box, html[data-chatstyle="tg"] #micBtn {
+    -webkit-backdrop-filter: blur(14px) saturate(1.7); backdrop-filter: blur(14px) saturate(1.7);
+    box-shadow: inset 1.5px 1.5px 1px -1px var(--lg-hi), inset -1px -1px 1px -.5px var(--lg-lo),
+                inset 0 0 0 1px var(--lg-edge), var(--lg-sh) !important;
+  }
+  /* ② 平的气泡 */
+  html[data-chatstyle="tg"] .gu, html[data-chatstyle="tg"] .tgb { box-shadow: none; }
+  html[data-chatstyle="tg"] .row.me .bubble { background: var(--tg-me); box-shadow: none; }
+  html[data-chatstyle="tg"] .row.me .bubble, html[data-chatstyle="tg"] .gu, html[data-chatstyle="tg"] .tgb { border-radius: 18px; }
+  /* ④ 同一串里隔 2px */
+  html[data-chatstyle="tg"] .tgset { gap: 2px; }
+  /* ① 尾巴:只给一串的最后一颗。他的:单颗的 .gu,或拆开那串的最后一颗 .tgb;她的:后面紧跟的不是她的泡才给 */
+  html[data-chatstyle="tg"] .gu:not(.tg-split):not(.stkonly),
+  html[data-chatstyle="tg"] .tgset .tgb:last-child:not(.stkonly),
+  html[data-chatstyle="tg"] .row.me:not(:has(+ .row.me)) > .bubble:not(.stkonly) { position: relative; }
+  html[data-chatstyle="tg"] .gu:not(.tg-split):not(.stkonly),
+  html[data-chatstyle="tg"] .tgset .tgb:last-child:not(.stkonly) { border-bottom-left-radius: 5px; }
+  html[data-chatstyle="tg"] .row.me:not(:has(+ .row.me)) > .bubble:not(.stkonly) { border-bottom-right-radius: 5px; }
+  html[data-chatstyle="tg"] .row.me:has(+ .row.me) > .bubble { border-bottom-right-radius: 18px; }
+  html[data-chatstyle="tg"] .gu:not(.tg-split):not(.stkonly)::before,
+  html[data-chatstyle="tg"] .tgset .tgb:last-child:not(.stkonly)::before,
+  html[data-chatstyle="tg"] .row.me:not(:has(+ .row.me)) > .bubble:not(.stkonly)::before {
+    content: ""; position: absolute; bottom: 0; width: 11px; height: 18px; pointer-events: none;
+    -webkit-mask: var(--tg-tail-l) no-repeat center / 100% 100%; mask: var(--tg-tail-l) no-repeat center / 100% 100%;
+    left: -6px; background: var(--tg-him);
+  }
+  html[data-chatstyle="tg"] .row.me:not(:has(+ .row.me)) > .bubble:not(.stkonly)::before {
+    left: auto; right: -6px; background: var(--tg-me);
+    -webkit-mask-image: var(--tg-tail-r); mask-image: var(--tg-tail-r);
+  }
 </style>
 <script>
 (function () {
