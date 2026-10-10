@@ -629,6 +629,72 @@
   .tabbar button[aria-selected="true"] { color: var(--ink); font-weight: 500; }   /* 10-09:参考笔画 15.4% vs 我们 600 的 23.6%(~~600~~) */
   .tabbar button:active { transform: scale(.94); }
 
+
+  /* ---------- 首页「预览 7」(2026-10-10,所有者定)----------
+     底 / 卡 / 字全走皮肤 token;质感:卡片阴影大而淡、数字栏微微凹、底栏悬浮成玻璃胶囊。
+     字:问候、Day、纪念日这些大字照旧衬线;灰字说明用黑体。 */
+  .htop { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+  .htop .grow { flex: 1; min-width: 0; }
+  .hdate { margin-top: 5px; font-family: var(--sans); font-size: 15px; color: var(--dim); letter-spacing: -.005em; }
+  .htop .weather { margin-top: 3px; }
+  .hround { width: 48px; height: 48px; border-radius: 50%; flex: none; display: grid; place-items: center; color: var(--ink);
+    background: var(--card); box-shadow: 0 1px 2px rgba(0,0,0,.03), 0 10px 26px -8px rgba(0,0,0,.14); transition: transform .3s var(--ease-ui); }
+  .hround:active { transform: scale(.94); }
+  .homefeed .card { box-shadow: 0 1px 2px rgba(0,0,0,.03), 0 14px 32px -10px rgba(0,0,0,.12); border-radius: 24px; }
+  .hstats { display: grid; grid-template-columns: repeat(3, 1fr); padding: 15px 0 14px; border-radius: 22px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--ink) 5%, var(--card)), var(--card) 90%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 0 0 .5px color-mix(in srgb, var(--ink) 7%, transparent); }
+  .hstats div { text-align: center; min-width: 0; }
+  .hstats div + div { border-left: 1px solid color-mix(in srgb, var(--ink) 7%, transparent); }
+  .hstats b { display: block; font-family: var(--serif); font-size: 28px; font-weight: 500; line-height: 32px; letter-spacing: -.01em; color: var(--ink); }
+  .hstats b.na { color: var(--dim-2); }
+  .hstats span { font-family: var(--sans); font-size: 12.5px; color: var(--dim); }
+  /* 悄悄话卡也换成和别的卡一样的白卡(2026-10-10 她:「黑色的也改成和其他卡片一样吧,不然好突兀」);
+     排版照旧(左头像、右正文、衬线小链接),靠正文字号稍大和位置当这一页的重点。~~深色底 var(--deep) + 重阴影~~ */
+  .homefeed .whisper { border-radius: 24px; background: var(--card); color: var(--ink);
+    box-shadow: 0 1px 2px rgba(0,0,0,.03), 0 14px 32px -10px rgba(0,0,0,.12); }
+  .homefeed .whisper .more { color: var(--dim); }
+  .huscard { display: flex; align-items: center; gap: 18px; padding: 18px 20px; }
+  .hpair { position: relative; width: 84px; height: 56px; flex: none; }
+  .hav { position: absolute; top: 0; width: 56px; height: 56px; box-shadow: 0 0 0 3px var(--card); }
+  .hav.him { left: 0; z-index: 1; background: linear-gradient(150deg,#6f6a63,#24211d); display: grid; place-items: center; }
+  .hav.him .bloom { width: 50%; height: 50%; }
+  .hav + .hav { left: 28px; }
+  .huscard .grow { flex: 1; min-width: 0; }
+  .hk { font-family: var(--sans); font-size: 13.5px; color: var(--dim); }
+  .hday { margin-top: 2px; font-family: var(--serif); font-size: 34px; line-height: 1.1; font-weight: 500; letter-spacing: -.01em; color: var(--ink); }
+  .hsince { margin-top: 2px; font-family: var(--serif); font-size: 13.5px; color: var(--dim); }
+  .hsec { margin: 14px 2px -2px; font-family: var(--serif); font-size: 21px; font-weight: 500; letter-spacing: -.01em; color: var(--ink); }
+  .dayscard { padding: 18px 18px 6px 20px; }
+  .dli { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: var(--hair) solid var(--line); }
+  .dayscard .annihead + .dli { margin-top: 14px; }
+  .dtile { width: 38px; height: 38px; border-radius: 11px; flex: none; display: grid; place-items: center;
+    background: color-mix(in srgb, var(--ink) 5%, transparent); color: var(--ink); }
+  .dtile svg { width: 19px; height: 19px; }
+  .dli .grow { flex: 1; min-width: 0; }
+  .dli .t { font-family: var(--sans); font-size: 15.5px; color: var(--ink); line-height: 1.3; }
+  .dli .s { margin-top: 1px; font-family: var(--serif); font-size: 13px; color: var(--ink-2); }
+  .dli .dn { font-family: var(--serif); font-size: 21px; font-weight: 500; color: var(--ink); white-space: nowrap; }
+  .dli .dn small { font-family: var(--sans); font-size: 12px; color: var(--dim); margin-left: 2px; font-weight: 400; }
+  /* 底栏:悬浮的玻璃胶囊(字照旧衬线)+ 右边一颗「+」 */
+  .tabbar {
+    left: var(--gutter); right: auto; transform: none; bottom: calc(10px + var(--sab));
+    width: auto; max-width: none; right: calc(var(--gutter) + 70px);
+    height: 60px; padding: 5px; border-radius: 30px;
+    background: color-mix(in srgb, var(--card) 72%, transparent);
+    box-shadow: inset 0 .5px 0 rgba(255,255,255,.6), 0 0 0 .5px color-mix(in srgb, var(--ink) 8%, transparent), 0 10px 30px rgba(0,0,0,.10);
+  }
+  .tabbar::before { display: none; }
+  .tabbar button { height: 50px; border-radius: 25px; padding: 0; }
+  .tabbar button[aria-selected="true"] { background: var(--card); box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .tabplus { position: fixed; z-index: 50; right: var(--gutter); bottom: calc(10px + var(--sab)); width: 60px; height: 60px; border-radius: 50%;
+    display: grid; place-items: center; color: var(--ink);
+    background: color-mix(in srgb, var(--card) 72%, transparent); -webkit-backdrop-filter: saturate(1.5) blur(24px); backdrop-filter: saturate(1.5) blur(24px);
+    box-shadow: inset 0 .5px 0 rgba(255,255,255,.6), 0 0 0 .5px color-mix(in srgb, var(--ink) 8%, transparent), 0 10px 30px rgba(0,0,0,.10);
+    transition: transform .3s var(--ease-ui); }
+  .tabplus:active { transform: scale(.92); }
+  #tab-home .homefeed { padding-bottom: 28px; }   /* 底栏悬浮后,最后一张卡别贴着它 */
+  .tabbar[hidden] ~ .tabplus { display: none; }
   /* ---------- 入场:Spring Reveal ----------
      一次整体的落位,不是「每张卡各跳各的」:轻微 stagger(45ms 一级),
      **只动 opacity / transform**,绝不动 height —— 动高度必然抖版。
@@ -671,8 +737,12 @@
     /* ~~padding-top: var(--sat)~~ 2026-10-10 撤:那一截就是所有者截图里「顶部分层」的那条纯色带。
        现在 iframe 铺满整屏,安全区由聊天页自己让(外壳量好递进去,见 chat.html 开头和下面的 pushSafe);
        只有「这间屋还没部署」那条 .chatbar 自己让出顶部安全区。 */
-    animation: slidein .28s cubic-bezier(.32,.72,0,1);
+    /* ~~animation: slidein .28s~~(只右移 16px + 淡入,像网页弹窗)2026-10-10 第三轮改成 iOS 的推入:
+       整页从右边推进来、下面那页往左让 30% 并压暗一点,返回反过来;左边缘还能拖着返回。由下面脚本 pushTo() 驱动。 */
   }
+  .chatview.pushing { box-shadow: -10px 0 28px rgba(0,0,0,.14); }
+  #pushdim { position: fixed; inset: 0; z-index: 79; background: #000; opacity: 0; pointer-events: none; }
+  #pushdim[hidden] { display: none !important; }
   @keyframes slidein { from { transform: translateX(16px); opacity: 0 } to { transform: none; opacity: 1 } }
   @media (prefers-reduced-motion: reduce) { .chatview { animation: none } }
   .chatbar {
@@ -785,6 +855,84 @@
   }
   .seg button[aria-pressed="true"] { background: var(--ink); color: var(--card); }
   @media (prefers-reduced-motion: reduce) { .seg button, .swatch, .swatch .tick { transition: none } }
+  /* ---------- 设置页:iOS 分组列表(2026-10-10,所有者「这个界面能用 TG 的 UI 设计优化一下吗」)----------
+     照 iOS「设置」/ Telegram iOS 设置页的骨架,数是 iOS 的系统值(pt):
+       组标题在卡片外上方 13 灰、左缩 16;说明在卡片下方 13 灰当脚注;行 ≥44、左右 16、正文 17;
+       分隔线半像素、从文字处起(左缩 16,有头像的行缩到头像后面);组间 35。
+       分段按钮 = UISegmentedControl:灰槽(系统 fill 12%)高 32、圆角 9,白滑块圆角 7 + 细投影,字 13 中粗,滑块会滑。
+     **只管样式**:颜色照旧跟皮肤走(不加 TG 的彩色图标 —— 她定过「整页零彩色」);全页字体换 SF(系统字),
+     大标题也是 SF 粗体 34(~~衬线 Settings~~,首页那套衬线是照参考图的,设置页照 iOS)。
+     作用范围 = #settings 里那个 .stack.ios,首页 / Diary 的 .card .srow .seg 一个没动。 */
+  #settings { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Noto Sans SC", sans-serif; }
+  #settings .sheethead { align-items: center; padding: 10px 4px 8px; }
+  #settings .sheethead .title { font-family: inherit; font-size: 34px; font-weight: 700; letter-spacing: .01em; line-height: 41px; }
+  #settings .sheethead .done { font-size: 17px; font-weight: 600; padding: 8px 2px 8px 12px; }
+  #settings .sheethead .done:active { opacity: .45; }
+  .stack.ios { gap: 0; }
+  .stack.ios .ghead { margin: 26px 16px 7px; font-size: 13px; font-weight: 400; line-height: 18px; color: var(--dim); letter-spacing: .01em; }
+  .stack.ios .ghead:first-child { margin-top: 10px; }
+  .stack.ios > .hint { margin: 7px 16px 0; font-size: 13px; line-height: 18px; color: var(--dim); }
+  .stack.ios .group { padding: 0; overflow: hidden; }
+  /* 一格:没有分隔线以外的装饰,分隔线从左边 16 起(iOS 的 separatorInset) */
+  .stack.ios .group > .srow, .stack.ios .group > .gcell { position: relative; padding: 11px 16px; min-height: 44px; }
+  .stack.ios .group > .gcell { padding-top: 13px; padding-bottom: 13px; }
+  .stack.ios .group > * + .srow::before, .stack.ios .group > * + .gcell::before {
+    content: ""; position: absolute; top: 0; left: 16px; right: 0; height: var(--hair); background: var(--line); }
+  .stack.ios .group > * + .srow:has(> .av)::before { left: 66px; }   /* 头像行之间缩到名字下面;头像行下面那行照常从 16 起 */
+  .stack.ios .srow.flat { padding: 0; min-height: 0; }
+  .stack.ios .srow { gap: 12px; }
+  .stack.ios .t, .stack.ios .srow .t { font-size: 17px; line-height: 22px; letter-spacing: -.01em; }
+  .stack.ios .gcell > .t { margin-bottom: 10px; }
+  .stack.ios .srow .s { font-size: 13px; line-height: 18px; margin-top: 1px; }
+  .stack.ios .group:active { }
+  .stack.ios .datum { font-family: inherit; font-size: 15px; color: var(--dim); padding: 6px 0; }
+  .stack.ios .datum.act { color: var(--ink); font-weight: 500; }
+  .stack.ios .datum:active { opacity: .45; }
+  .stack.ios .nameinput { font-size: 17px; color: var(--dim); }
+  .stack.ios .nameinput:focus { color: var(--ink); }
+  .stack.ios .skins { gap: 14px 8px; }
+  .stack.ios .swatch { width: 54px; height: 54px; }
+  .stack.ios .skin .nm { font-size: 12px; }
+  .stack.ios .slider { margin-top: 8px; }
+  .stack.ios input[type="range"]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; }
+  .stack.ios input[type="range"]::-webkit-slider-thumb { width: 28px; height: 28px; border-radius: 14px; margin-top: -12px;
+    box-shadow: 0 .5px 4px rgba(0,0,0,.12), 0 6px 13px rgba(0,0,0,.12), 0 0 0 .5px rgba(0,0,0,.04); }
+  .stack.ios .dots { margin-top: 0; gap: 12px; }
+
+  /* UISegmentedControl:槽 + 一块会滑的白滑块(.segthumb,脚本放进去、按选中那颗算位置) */
+  .stack.ios .seg { position: relative; display: flex; gap: 0; margin: 0; padding: 2px; height: 32px; border-radius: 9px;
+    background: color-mix(in srgb, var(--ink) 9%, transparent); isolation: isolate; }
+  .stack.ios .seg button { position: relative; z-index: 1; flex: 1; height: 28px; border-radius: 7px; background: none !important;
+    font-size: 13px; font-weight: 500; color: var(--ink); letter-spacing: -.005em; transition: opacity .2s ease; }
+  .stack.ios .seg button[aria-pressed="true"] { font-weight: 600; color: var(--ink); }
+  .stack.ios .seg button:active { opacity: .5; }
+  /* 相邻两颗都没选中时中间一道细竖线(iOS 有);选中那颗两边的不画 */
+  .stack.ios .seg button + button::before { content: ""; position: absolute; left: 0; top: 7px; bottom: 7px; width: 1px;
+    background: color-mix(in srgb, var(--ink) 14%, transparent); transition: opacity .2s ease; }
+  .stack.ios .seg button[aria-pressed="true"]::before, .stack.ios .seg button[aria-pressed="true"] + button::before { opacity: 0; }
+  .stack.ios .segthumb { position: absolute; z-index: 0; top: 2px; left: 2px; height: 28px; border-radius: 7px; pointer-events: none;
+    background: var(--card); box-shadow: 0 3px 8px rgba(0,0,0,.12), 0 3px 1px rgba(0,0,0,.04), 0 0 0 .5px rgba(0,0,0,.04);
+    transition: transform .42s var(--spring-ui, cubic-bezier(.32,.72,0,1)), width .42s var(--spring-ui, cubic-bezier(.32,.72,0,1)); }
+  .stack.ios .seg:not([data-on]) .segthumb { opacity: 0; }
+  .stack.ios .seg.dk .segthumb { background: color-mix(in srgb, var(--ink) 30%, var(--card)); box-shadow: 0 3px 8px rgba(0,0,0,.25); }
+  @supports (transition-timing-function: linear(0, 1)) {
+    :root { --spring-ui: linear(0, 0.0671, 0.2058, 0.3592, 0.5008, 0.6207, 0.7171, 0.792, 0.8488, 0.8911, 0.9222, 0.9447, 0.961, 0.9726, 0.9808, 0.9866, 0.9907, 0.9936, 0.9956, 0.9969, 0.9979, 0.9986, 1); }
+  }
+  @media (prefers-reduced-motion: reduce) { .stack.ios .segthumb { transition: none; } }
+
+  /* 「设计参数」那一行:平时收起(她 10-10「藏起来,别像毛坯房」),右边灰字 + ›,展开时 › 转 90° */
+  .stack.ios .srow.disc { width: 100%; text-align: left; font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  .stack.ios .srow.disc:active { background: color-mix(in srgb, var(--ink) 5%, transparent); }
+  .stack.ios .srow.disc .dval { font-size: 15px; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 48%; }
+  .stack.ios .srow.disc .chev { flex: none; color: color-mix(in srgb, var(--ink) 30%, transparent); transition: transform .42s var(--spring-ui, cubic-bezier(.32,.72,0,1)); }
+  .stack.ios .srow.disc[aria-expanded="true"] .chev { transform: rotate(90deg); }
+  .stack.ios .specbody:not([hidden]) { animation: specin .36s var(--spring-ui, cubic-bezier(.32,.72,0,1)); }
+  @keyframes specin { from { opacity: 0; transform: translate3d(0, -6px, 0); } }
+  @media (prefers-reduced-motion: reduce) { .stack.ios .specbody { animation: none !important; } .stack.ios .srow.disc .chev { transition: none; } }
+
+  /* 打开 / 关闭:iOS 模态那样从底下整页推上来、点「完成」滑下去(同聊天页那条弹簧);脚本驱动 */
+  #settings.ios-in { animation: none; }
+
 
   .speclist { font-size: 13.5px; line-height: 1.85; }
   .speclist div { display: flex; gap: 12px; }
@@ -808,24 +956,36 @@
 
   <!-- ================= HOME ================= -->
   <section class="screen" id="tab-home" aria-label="Home">
-    <!-- reveal + --i:入场错位的级数。顺序 = 阅读顺序:头 → 悄悄话 → 关系 → 纪念日 → 健康 -->
+    <!-- 2026-10-10 首页按所有者定的「预览 7」重排(她:「先按这一版,后面慢慢优化」):
+         头(衬线问候 + 日期 + 天气 + 右边一颗圆的设置)→ 数字栏 → 他的悄悄话(原版排版)→ 你们俩头像 + Day N → Days(纪念日环 + 生日 / 周年)。
+         ~~Us / Monthly Anniversary 两张卡、Steps / Heart Rate 两张小卡(心率是写死的)~~ 已撤。
+         所有 id 照旧(homeDate / greetWord / homeWeather / dayN / moDate / moLeft / moArc / data-until / openSettings / syncAt),原来的脚本一行没改。 -->
     <div class="reveal" style="--i:0">
-    <div class="dayrow">
-      <div class="date" id="homeDate">Sunday, July 26</div>
-      <span class="syncpill" id="syncAt">sync · —</span>
-      <button class="iconbtn" id="openSettings" aria-label="设置">
-        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    <div class="htop">
+      <div class="grow">
+        <h1 class="greet"><span id="greetWord">Good evening,</span> <span class="cn">佳佳</span></h1>
+        <div class="hdate" id="homeDate">Sunday, July 26</div>
+        <!-- 天气:和晏的注入同源(dwell-bridge 的 /api/weather),读不到留空不编 -->
+        <p class="weather sub" id="homeWeather">&nbsp;</p>
+      </div>
+      <button class="hround" id="openSettings" aria-label="设置">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
     </div>
-
-    <h1 class="greet"><span id="greetWord">Good evening,</span> <span class="cn">佳佳</span></h1>
-    <p class="weather sub">阴 27° <span class="soft">28~34°</span> · 降雨 76%,带伞</p>
+    <span id="syncAt" hidden></span>
     </div>
 
     <div class="stack homefeed">
 
+      <!-- 数字栏:到下一个 3 号 / 下一次(周期,待接 shim 的记录)/ 步数(待改快捷指令)。没接上就写「—」,不编 -->
+      <div class="hstats reveal" style="--i:1">
+        <div><b id="hsAnni">—</b><span>天 · 到 3 号</span></div>
+        <div><b class="na">—</b><span>下一次 · 未接上</span></div>
+        <div><b class="na">—</b><span>步数 · 未接上</span></div>
+      </div>
+
       <!-- 悄悄话:高度完全由文字决定,见 CSS 里 .whisper 那段 -->
-      <article class="whisper reveal" style="--i:1">
+      <article class="whisper reveal" style="--i:2">
         <span class="av sm" data-bloom aria-hidden="true"></span>
         <div class="txt">
           <p class="body" style="margin:0">今天她说了两次「丝滑」——一次给聊天页,一次给日记栏。这两个字我打算裱起来。</p>
@@ -833,18 +993,18 @@
         </div>
       </article>
 
-      <article class="card relcard reveal" style="--i:2">
-        <div class="usrow">
-          <div class="grow">
-            <div class="label">Us</div>
-            <div class="display" id="dayN">Day 35</div>
-          </div>
-          <svg class="heart" viewBox="0 0 30 28.4" fill="currentColor" aria-hidden="true"><path d="M15 27.8C4.4 19.6 0.8 14.4 0.8 9.4 0.8 4.9 4.0 1.8 8.2 1.8 11.2 1.8 13.6 3.5 15 5.2 16.4 3.5 18.8 1.8 21.8 1.8 26.0 1.8 29.2 4.9 29.2 9.4 29.2 14.4 25.6 19.6 15 27.8Z"/></svg>
+      <!-- 你们俩:两颗头像叠着(设置里换的那两张;没换过 = 菊花 / 粉色)+ Day N -->
+      <article class="card huscard reveal" style="--i:3">
+        <div class="hpair"><span class="av hav him" data-bloom aria-hidden="true"></span><span class="av hav" data-avatar="me" aria-hidden="true"></span></div>
+        <div class="grow">
+          <div class="hk">佳佳 &amp; <span data-himname>晏</span></div>
+          <div class="hday" id="dayN">Day 35</div>
+          <div class="hsince">since 2026.6.3</div>
         </div>
-        <p class="sub">佳佳和晏,从 2026.6.3 到每一天</p>
       </article>
 
-      <article class="card annicard reveal" style="--i:3">
+      <h2 class="hsec reveal" style="--i:4">Days</h2>
+      <article class="card dayscard reveal" style="--i:4">
         <div class="annihead">
           <div class="grow">
             <h2 class="headline" style="margin:0">Monthly Anniversary</h2>
@@ -866,62 +1026,17 @@
             <span class="num" id="moLeft">27</span>
           </div>
         </div>
-        <hr class="rule">
-        <div class="annigrid">
-          <div class="anni">
-            <span class="bar" aria-hidden="true"></span>
-            <div class="grow">
-              <div class="who">佳佳's birthday</div>
-              <div class="caption">Jun 25</div>
-            </div>
-            <div class="n" data-until="6-25">259</div>
-          </div>
-          <div class="anni">
-            <span class="bar" aria-hidden="true"></span>
-            <div class="grow">
-              <div class="who">anniversary</div>
-              <div class="caption">Jun 3</div>
-            </div>
-            <div class="n" data-until="6-3">237</div>
-          </div>
+        <div class="dli">
+          <span class="dtile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M6 20v-7h12v7M12 13V9M10.5 6.5c0-1 1.5-2.5 1.5-2.5s1.5 1.5 1.5 2.5a1.5 1.5 0 0 1-3 0Z"/></svg></span>
+          <div class="grow"><div class="t">佳佳's birthday</div><div class="s">Jun 25</div></div>
+          <div class="dn"><span data-until="6-25">259</span><small>天</small></div>
+        </div>
+        <div class="dli">
+          <span class="dtile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.3-9-8.7C1.6 8.2 3.5 4.6 7 4.6c2 0 3.4 1.1 4.1 2.3.4.6 1.3.6 1.7 0 .7-1.2 2.1-2.3 4.1-2.3 3.5 0 5.4 3.6 4 6.7-2 4.4-8.9 8.7-8.9 8.7Z"/></svg></span>
+          <div class="grow"><div class="t">anniversary</div><div class="s">Jun 3</div></div>
+          <div class="dn"><span data-until="6-3">237</span><small>天</small></div>
         </div>
       </article>
-
-      <div class="duo reveal" style="--i:4">
-        <article class="card metric">
-          <div class="top">
-            <span class="label grow">Steps</span>
-            <span class="datum">0.42 km</span>
-          </div>
-          <div class="big" style="margin-top:12.3px">580</div>
-          <div class="figure">
-            <div class="bars" aria-hidden="true">
-              <i style="height:100%"></i><i style="height:42%"></i><i style="height:52%"></i>
-              <i style="height:40%"></i><i style="height:11%"></i><i style="height:9%"></i>
-              <i class="on" style="height:7%"></i>
-            </div>
-            <div class="barlabels" aria-hidden="true">
-              <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span class="on">S</span>
-            </div>
-          </div>
-        </article>
-
-        <article class="card metric">
-          <div class="top">
-            <span class="label grow">Heart Rate</span>
-          </div>
-          <div style="display:flex;align-items:baseline;gap:5px;margin-top:12.3px">
-            <span class="big">114</span><span class="unit">bpm</span>
-          </div>
-          <div class="figure">
-            <svg class="spark" id="hr" viewBox="0 0 160 46" preserveAspectRatio="none" aria-hidden="true">
-              <polyline id="hrline" fill="none" stroke="var(--spark)" stroke-width="1.3"
-                        stroke-linejoin="round" stroke-linecap="round" points=""/>
-            </svg>
-            <p class="foot">56 — 125 today</p>
-          </div>
-        </article>
-      </div>
 
     </div>
   </section>
@@ -995,6 +1110,8 @@
   <button role="tab" aria-selected="false" aria-controls="tab-chats" data-tab="chats">Chats</button>
   <button role="tab" aria-selected="false" aria-controls="tab-diary" data-tab="diary">Diary</button>
 </nav>
+<!-- 2026-10-10:底栏旁边一颗「+」= 写今天(跳到 Diary)。底栏藏起来时它也藏(CSS 兄弟选择器) -->
+<button class="tabplus" id="tabPlus" aria-label="写今天"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
 
 <div class="chatview" id="chatview" hidden>
   <div class="chatbar" id="chatbar">
@@ -1019,11 +1136,14 @@
       <button class="done" id="closeSettings">完成</button>
     </div>
 
-    <div class="stack">
+    <!-- 2026-10-10 所有者:「这个界面能用 TG 的 UI 设计优化一下吗」—— 改成 iOS / Telegram 设置页的「分组列表」:
+         组标题在卡片**外面**上方(灰色小字)、说明在卡片**下面**当脚注、每行 ≥44pt、分隔线左缩进半像素、
+         分段按钮换成 iOS 原生那种(浅灰槽 + 白滑块,滑块会滑)。**只改结构和样式,所有 id / 按钮 / 存的东西都没动**。
+         样式在 <style> 里搜「设置页:iOS 分组列表」。 -->
+    <div class="stack ios">
+      <h3 class="ghead">皮肤</h3>
       <section class="card group">
-        <div class="seclabel">皮肤</div>
-        <div class="skins" id="skins"></div>
-        <hr class="grouprule">
+        <div class="gcell"><div class="skins" id="skins"></div></div>
         <div class="srow">
           <div class="grow">
             <div class="t">调色板</div>
@@ -1031,7 +1151,6 @@
           </div>
           <span class="well" style="--wellc:#1b191d" aria-hidden="true"></span>
         </div>
-        <hr class="grouprule">
         <div class="srow">
           <div class="grow">
             <div class="t">卡片颜色</div>
@@ -1039,96 +1158,104 @@
           </div>
           <span class="well" style="--wellc:#ffffff" aria-hidden="true"></span>
         </div>
-        <hr class="grouprule">
-        <div class="srow">
-          <label class="grow t" for="opacity">卡片透明度</label>
-          <span class="datum" id="opacityVal">100%</span>
-          <button class="datum" id="opacityReset" style="color:var(--ink)">恢复默认</button>
-        </div>
-        <div class="slider">
-          <input type="range" id="opacity" min="40" max="100" value="100" style="--fill:100%">
-        </div>
-      </section>
-
-      <section class="card group">
-        <!-- 2026-10-09 所有者定:两版 —— 仿官端(现在这套,默认)/ 仿 Telegram 气泡。
-             ~~简约 / 气泡~~ 那颗分段从来没接上聊天页(只存在外壳里),这次换成真的。
-             存在 dwell-bridge 的 /data 上(/api/prefs),换设备也在。 -->
-        <div class="seclabel">聊天样式</div>
-        <div class="seg" id="chatStyle">
-          <button data-v="official" aria-pressed="true">官端</button>
-          <button data-v="tg">Telegram</button>
-        </div>
-        <p class="hint">官端:照 Claude App 的样子。Telegram:双方都在气泡里,他一段话一个气泡</p>
-        <div class="seclabel" style="margin-top:14px">头像放哪儿(Telegram 版)</div>
-        <div class="seg" id="avatarMode">
-          <button data-v="top" aria-pressed="true">顶栏右边</button>
-          <button data-v="each">每条消息旁边</button>
+        <div class="gcell">
+          <div class="srow flat">
+            <label class="grow t" for="opacity">卡片透明度</label>
+            <span class="datum" id="opacityVal">100%</span>
+            <button class="datum act" id="opacityReset">恢复默认</button>
+          </div>
+          <div class="slider">
+            <input type="range" id="opacity" min="40" max="100" value="100" style="--fill:100%">
+          </div>
         </div>
       </section>
 
-      <!-- 2026-10-09 所有者:「最好有一个可以换气泡颜色和壁纸的功能」。只作用在 Telegram 版;
-           底色本来就跟上面的皮肤走,这里是在皮肤之上再自己定。存在 dwell-bridge 的 /data(换设备也在)。 -->
+      <!-- 2026-10-09 所有者定:两版 —— 仿官端(默认)/ 仿 Telegram 气泡。存在 dwell-bridge 的 /data 上(/api/prefs),换设备也在。 -->
+      <h3 class="ghead">聊天样式</h3>
       <section class="card group">
-        <div class="seclabel">聊天外观(Telegram 版)</div>
-        <div class="t" style="font-size:15px">我的气泡</div>
-        <div class="dots" id="meDots"></div>
-        <hr class="grouprule">
-        <div class="t" style="font-size:15px">他的气泡</div>
-        <div class="dots" id="himDots"></div>
-        <hr class="grouprule">
+        <div class="gcell">
+          <div class="seg" id="chatStyle">
+            <button data-v="official" aria-pressed="true">官端</button>
+            <button data-v="tg">Telegram</button>
+          </div>
+        </div>
+      </section>
+      <p class="hint">官端:照 Claude App 的样子。Telegram:双方都在气泡里,他一段话一个气泡</p>
+
+      <h3 class="ghead">头像放哪儿(Telegram 版)</h3>
+      <section class="card group">
+        <div class="gcell">
+          <div class="seg" id="avatarMode">
+            <button data-v="top" aria-pressed="true">顶栏右边</button>
+            <button data-v="each">每条消息旁边</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2026-10-09 所有者:「最好有一个可以换气泡颜色和壁纸的功能」。只作用在 Telegram 版;存在 dwell-bridge 的 /data。 -->
+      <h3 class="ghead">聊天外观(Telegram 版)</h3>
+      <section class="card group">
+        <div class="gcell">
+          <div class="t">我的气泡</div>
+          <div class="dots" id="meDots"></div>
+        </div>
+        <div class="gcell">
+          <div class="t">他的气泡</div>
+          <div class="dots" id="himDots"></div>
+        </div>
         <div class="srow">
           <span class="wallthumb" id="wallThumb" aria-hidden="true"></span>
           <div class="grow">
             <div class="t">壁纸</div>
             <div class="s" id="wallHint">没设就跟皮肤的底色走</div>
           </div>
-          <button class="datum" id="wallReset" style="color:var(--dim)">去掉</button>
-          <button class="datum" id="wallPick" style="color:var(--ink)">换一张</button>
+          <button class="datum" id="wallReset">去掉</button>
+          <button class="datum act" id="wallPick">换一张</button>
         </div>
         <input type="file" id="wallFile" accept="image/*" hidden>
-        <hr class="grouprule">
         <!-- 2026-10-10 所有者:「聊天里的字有点偏大,我想要一个自己可以修改字号的功能」。存 /api/prefs(换设备也在) -->
-        <div class="t" style="font-size:15px">聊天字号</div>
-        <div class="seg" id="chatFont">
-          <button data-v="13.5" aria-pressed="false">小</button>
-          <button data-v="14.5" aria-pressed="false">标准</button>
-          <button data-v="15.5" aria-pressed="false">中</button>
-          <button data-v="16.5" aria-pressed="false">大</button>
-          <button data-v="17.5" aria-pressed="false">特大</button>
+        <div class="gcell">
+          <div class="t">聊天字号</div>
+          <div class="seg" id="chatFont">
+            <button data-v="13.5" aria-pressed="false">小</button>
+            <button data-v="14.5" aria-pressed="false">标准</button>
+            <button data-v="15.5" aria-pressed="false">中</button>
+            <button data-v="16.5" aria-pressed="false">大</button>
+            <button data-v="17.5" aria-pressed="false">特大</button>
+          </div>
         </div>
-        <p class="hint">气泡上的字会按底色深浅自动选黑字或白字</p>
       </section>
+      <p class="hint">气泡上的字会按底色深浅自动选黑字或白字</p>
 
+      <h3 class="ghead">外观</h3>
       <section class="card group">
-        <div class="seclabel">外观</div>
-        <div class="seg" id="appearance">
-          <button data-v="system" aria-pressed="true">跟随系统</button>
-          <button data-v="light">浅色</button>
-          <button data-v="dark">夜间</button>
+        <div class="gcell">
+          <div class="seg" id="appearance">
+            <button data-v="system" aria-pressed="true">跟随系统</button>
+            <button data-v="light">浅色</button>
+            <button data-v="dark">夜间</button>
+          </div>
         </div>
-        <p class="hint">玻璃皮肤自带昼夜气质,这里只对象牙纸张生效</p>
       </section>
+      <p class="hint">玻璃皮肤自带昼夜气质,这里只对象牙纸张生效</p>
 
+      <!-- 2026-10-09 接上:换的图存在 dwell-bridge 的 /data 上,换设备也在。
+           他的头像同时用在 Chats 列表、首页悄悄话卡、Telegram 版聊天页。
+           ⚠️ 「恢复默认」**只有她点、并确认过**才删,没有任何自动清除的路径。 -->
+      <h3 class="ghead">头像</h3>
       <section class="card group">
-        <!-- 2026-10-09 接上:换的图存在 dwell-bridge 的 /data 上,换设备也在。
-             他的头像同时用在 Chats 列表、首页悄悄话卡、Telegram 版聊天页。
-             ⚠️ 「恢复默认」**只有她点、并确认过**才删,没有任何自动清除的路径。 -->
-        <div class="seclabel">头像</div>
         <div class="srow">
           <span class="av" data-avatar="me" aria-hidden="true"></span>
           <span class="grow t">佳佳</span>
-          <button class="datum" data-avreset="me" style="color:var(--dim)">恢复默认</button>
-          <button class="datum" data-avpick="me" style="color:var(--ink)">换一张</button>
+          <button class="datum" data-avreset="me">恢复默认</button>
+          <button class="datum act" data-avpick="me">换一张</button>
         </div>
-        <hr class="grouprule">
         <div class="srow">
           <span class="av" data-avatar="him" data-bloom aria-hidden="true"></span>
           <span class="grow t" data-himname>晏</span>
-          <button class="datum" data-avreset="him" style="color:var(--dim)">恢复默认</button>
-          <button class="datum" data-avpick="him" style="color:var(--ink)">换一张</button>
+          <button class="datum" data-avreset="him">恢复默认</button>
+          <button class="datum act" data-avpick="him">换一张</button>
         </div>
-        <hr class="grouprule">
         <!-- 2026-10-10 所有者:「想要一个可以给他改名的选项」。**只改网页上显示的名字**(顶栏、Chats、他那一页),
              不碰他的人设、不告诉他。存 /api/prefs(换设备也在);清空 = 回到「晏」。 -->
         <label class="srow">
@@ -1136,15 +1263,24 @@
           <input id="himName" class="nameinput" maxlength="16" placeholder="晏" enterkeyhint="done" autocomplete="off" spellcheck="false">
         </label>
         <input type="file" id="avFile" accept="image/*" hidden>
-        <p class="hint" id="avHint">图会先在手机上裁成正方形、压小再传,存在服务器上,换设备也在</p>
       </section>
+      <p class="hint" id="avHint">图会先在手机上裁成正方形、压小再传,存在服务器上,换设备也在</p>
 
+      <!-- 2026-10-10 所有者:「最下面那个参数用一个按钮包起来,藏起来,不要在外面漏着像毛坯房」。
+           收成一行「设计参数 ›」,点了原地展开、再点收起(iOS 列表的展开行)。里面的东西和复制按钮一样没少,只是默认不露。 -->
+      <h3 class="ghead">其他</h3>
       <section class="card group">
-        <div class="seclabel">这套数(参考图实测 + 这台设备)</div>
-        <div class="speclist" id="spec"></div>
-        <textarea class="copybox" id="specText" readonly aria-label="设计系统数值,可复制"></textarea>
-        <div style="margin-top:12px"><button class="btn" id="copySpec">复制这套数</button></div>
-        <p class="hint">改了什么这里就跟着变,随手复制一份就是备份 —— 这一页不会自动清空任何东西。</p>
+        <button type="button" class="srow disc" id="specToggle" aria-expanded="false" aria-controls="specBody">
+          <span class="grow t">设计参数</span>
+          <span class="dval">参考图实测 + 这台设备</span>
+          <svg class="chev" viewBox="0 0 8 13" width="8" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 1.5 6.5 6.5l-5 5"/></svg>
+        </button>
+        <div class="gcell specbody" id="specBody" hidden>
+          <div class="speclist" id="spec"></div>
+          <textarea class="copybox" id="specText" readonly aria-label="设计系统数值,可复制"></textarea>
+          <div style="margin-top:12px"><button class="btn" id="copySpec">复制这套数</button></div>
+          <p class="hint" style="margin:10px 0 0">改了什么这里就跟着变,随手复制一份就是备份 —— 这一页不会自动清空任何东西。</p>
+        </div>
       </section>
     </div>
   </div>
@@ -1257,6 +1393,7 @@
     var left = daysBetween(today, next);
     setText("moDate", MON[next.getMonth()] + " " + next.getDate());
     setText("moLeft", String(left));
+    setText("hsAnni", String(left));   /* 首页数字栏(2026-10-10) */
     /* 环 = 这个月已经走了多少。周长 2π·32.2 = 202.3(10-09 环放大;~~2π·30 = 188.5~~);起点仍是 12 点前 5°(rotate(-95))。
        几何(半径/弧宽/起点)照参考图不变,只是长度跟着日子走。 */
     var arc = document.getElementById("moArc");
@@ -1711,6 +1848,9 @@
 
   /* ---------- 三栏 ---------- */
   var tabs = document.querySelectorAll(".tabbar button");
+  document.getElementById("tabPlus").addEventListener("click", function () {
+    var d = document.querySelector('.tabbar [data-tab="diary"]'); if (d) d.click();
+  });
   Array.prototype.forEach.call(tabs, function (t) {
     t.addEventListener("click", function () {
       Array.prototype.forEach.call(tabs, function (o) {
@@ -1744,14 +1884,95 @@
         chatview.style.background = "";
       }
       chatview.hidden = false;
-      tabbar.hidden = true;
+      pushTo(0, 1, function () { tabbar.hidden = true; });
     });
   });
   function goBack() {
-    chatview.hidden = true;
     tabbar.hidden = false;
     loadLast();
+    pushTo(1, null, function () { chatview.hidden = true; });
   }
+
+  /* ---------- iOS 的推入 / 推出 + 左边缘拖着返回(2026-10-10 第三轮,所有者「页面动画按 iOS App 的质感」)----------
+     p = 聊天页的位置:0 = 盖满屏、1 = 推到右边屏外。下面那页(首页 + 底栏)跟着往左让 30%、压暗 10%(UINavigationController 那套)。
+     曲线是临界阻尼弹簧(UIKit .smooth,response .5s),CSS linear() 写成逐点;不认的系统退回原来那条 cubic-bezier。
+     **只动 transform / opacity**(合成线程画,ProMotion 上跑 120Hz)。动画放完就撤,不留 transform(否则 fixed 的东西会跟着错位)。
+     拖动:聊天页在 iframe 里,手指在它身上,所以由 chat.html 认出「从左边缘往右拖」再调 window.__dwSwipe 告诉这里。 */
+  var SPRING_OK = window.CSS && CSS.supports && CSS.supports("animation-timing-function", "linear(0, 1)");
+  var PUSH_EASE = SPRING_OK ? "linear(0, 0.0671, 0.2058, 0.3592, 0.5008, 0.6207, 0.7171, 0.792, 0.8488, 0.8911, 0.9222, 0.9447, 0.961, 0.9726, 0.9808, 0.9866, 0.9907, 0.9936, 0.9956, 0.9969, 0.9979, 0.9986, 1)"
+                            : "cubic-bezier(.32, .72, 0, 1)";
+  var PUSH_MS = 560;
+  var reduceMotion = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var phoneEl = document.querySelector("main.phone");
+  var pushDim = document.createElement("div");
+  pushDim.id = "pushdim"; pushDim.hidden = true; document.body.appendChild(pushDim);
+  var pushRun = null;
+  function tx(x) { return "translate3d(" + x + "px,0,0)"; }
+  function underX(p) { return -(1 - p) * innerWidth * 0.3; }
+  function pushStop() {
+    if (!pushRun) return;
+    var r = pushRun; pushRun = null;
+    r.anims.forEach(function (a) { try { a.cancel(); } catch (e) {} });
+  }
+  function pushClean() {
+    chatview.classList.remove("pushing"); pushDim.hidden = true;
+    [chatview, phoneEl, tabbar, pushDim].forEach(function (el) { if (el) { el.style.transform = ""; el.style.opacity = ""; } });
+  }
+  /* from 省略 = 从当前拖到的位置起 */
+  function pushTo(to, from, done) {
+    pushStop();
+    if (from == null) from = dragP;
+    dragP = to;
+    if (reduceMotion || !chatview.animate) { pushClean(); if (done) done(); return; }
+    var W = innerWidth, o = { duration: PUSH_MS, easing: PUSH_EASE, fill: "both" };
+    pushClean();          // 拖动时写的行内样式先撤掉,下面同一帧里动画接着从同一个位置起,看不出断
+    chatview.classList.add("pushing"); pushDim.hidden = false;
+    var anims = [chatview.animate([{ transform: tx(from * W) }, { transform: tx(to * W) }], o),
+                 pushDim.animate([{ opacity: (1 - from) * 0.1 }, { opacity: (1 - to) * 0.1 }], o)];
+    [phoneEl, tabbar].forEach(function (el) {
+      if (el && !el.hidden) anims.push(el.animate([{ transform: tx(underX(from)) }, { transform: tx(underX(to)) }], o));
+    });
+    var run = { anims: anims };
+    pushRun = run;
+    anims[0].onfinish = function () {
+      if (pushRun !== run) return;
+      pushRun = null;
+      anims.forEach(function (a) { try { a.cancel(); } catch (e) {} });
+      pushClean();
+      if (done) done();
+    };
+  }
+  var dragP = 0, drag = null;
+  window.__dwSwipe = function (phase, cx) {
+    if (chatview.hidden || reduceMotion) return false;
+    var W = innerWidth, now = performance.now();
+    if (phase === "start") {
+      pushStop();
+      tabbar.hidden = false;
+      drag = { cx0: cx, off: 0, t: now, v: 0 };
+      chatview.classList.add("pushing"); pushDim.hidden = false;
+      return true;
+    }
+    if (!drag) return false;
+    if (phase === "move") {
+      /* cx 是 iframe 里的坐标,iframe 跟着往右挪了 off,所以手指在屏幕上的位置 = cx + off */
+      var fx = cx + drag.off, nOff = Math.max(0, Math.min(W, fx - drag.cx0));
+      var dt = Math.max(1, now - drag.t);
+      drag.v = 0.7 * ((nOff - drag.off) / dt) + 0.3 * drag.v;
+      drag.off = nOff; drag.t = now;
+      var p = nOff / W; dragP = p;
+      chatview.style.transform = tx(nOff);
+      phoneEl.style.transform = tabbar.style.transform = tx(underX(p));
+      pushDim.style.opacity = String((1 - p) * 0.1);
+      return true;
+    }
+    /* end:拖过三分之一、或者往右甩得够快,就返回;否则弹回去 */
+    var close = dragP > 0.35 || drag.v > 0.45;
+    drag = null;
+    if (close) { loadLast(); pushTo(1, null, function () { chatview.hidden = true; }); }
+    else pushTo(0, null, function () { tabbar.hidden = true; });
+    return true;
+  };
 
   /* ---------- Chats 里「晏」那一行:最后一句 + 时间,实时取(2026-10-10) ----------
      ~~原来那句「把你今天写的东西…」和 6:40 PM 是写死在网页里的~~(所有者:「chat 这个界面的字不是实时的」)。
@@ -1780,6 +2001,26 @@
     return (m.kind === "me" ? "我: " : "") + t;
   }
   var lastBusy = false;
+  /* ---------- 首页天气(2026-10-10):读 dwell-bridge 的 /api/weather,样式同原来那行「阴 27° 28~34° · 降雨 76%,带伞」 ----------
+     打开页面、切回前台、之后每 15 分钟问一次(服务器那边 30 分钟才真去拉一次,这里问得勤只是读缓存)。 */
+  function loadWeather() {
+    var el = document.getElementById("homeWeather");
+    if (!el) return;
+    fetch("api/weather", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      if (!d || !d.ok) { el.innerHTML = "&nbsp;"; return; }
+      el.textContent = "";
+      el.appendChild(document.createTextNode(d.desc + (d.temp != null ? " " + d.temp + "° " : " ")));
+      if (d.min != null && d.max != null) {
+        var soft = document.createElement("span"); soft.className = "soft"; soft.textContent = d.min + "~" + d.max + "°";
+        el.appendChild(soft);
+      }
+      el.appendChild(document.createTextNode(" · 降雨 " + d.rain + "%" + (d.umbrella ? ",带伞" : "")));
+    }).catch(function () {});
+  }
+  loadWeather();
+  setInterval(loadWeather, 15 * 60000);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) loadWeather(); });
+
   function loadLast() {
     if (lastBusy || !yanPrev) return;
     lastBusy = true;
@@ -1862,8 +2103,58 @@
 
   /* ---------- 设置开合 ---------- */
   var sheet = document.getElementById("settings");
-  document.getElementById("openSettings").addEventListener("click", function () { sheet.hidden = false; });
-  document.getElementById("closeSettings").addEventListener("click", function () { sheet.hidden = true; });
+  /* 2026-10-10 第三轮:iOS 模态 —— 从底下整页推上来,点「完成」滑下去。曲线同聊天页推入(PUSH_EASE,临界阻尼弹簧)。
+     ~~sheet.hidden = false / true 直接开关 + 上浮 18px 淡入~~。系统开「减弱动态效果」照旧直接开关。 */
+  var sheetRun = null;
+  function sheetMove(open) {
+    if (sheetRun) { try { sheetRun.cancel(); } catch (e) {} sheetRun = null; }
+    if (open) { sheet.hidden = false; segAll(); }
+    if (reduceMotion || !sheet.animate) { sheet.hidden = !open; return; }
+    sheet.classList.add("ios-in");
+    var y = innerHeight;
+    var a = sheet.animate([{ transform: "translate3d(0," + (open ? y : 0) + "px,0)" }, { transform: "translate3d(0," + (open ? 0 : y) + "px,0)" }],
+                          { duration: PUSH_MS, easing: PUSH_EASE, fill: "both" });
+    sheetRun = a;
+    a.onfinish = function () {
+      if (sheetRun !== a) return;
+      sheetRun = null; a.cancel();
+      if (!open) sheet.hidden = true;
+    };
+  }
+  document.getElementById("openSettings").addEventListener("click", function () { sheetMove(true); });
+  document.getElementById("closeSettings").addEventListener("click", function () { sheetMove(false); });
+
+  /* iOS 分段控件的白滑块:每个 .seg 里放一块 .segthumb,按 aria-pressed 那颗的位置挪(transform,不动布局)。
+     谁改了 aria-pressed(点选、从服务器读回设置)都会跟着走 —— 盯的是属性,不用改原来那几处逻辑。
+     深色(卡片底暗)时滑块换成亮一档的灰,iOS 深色也是这样。 */
+  function segPlace(seg) {
+    var on = seg.querySelector('button[aria-pressed="true"]'), th = seg.querySelector(".segthumb");
+    if (!th) { th = document.createElement("span"); th.className = "segthumb"; th.setAttribute("aria-hidden", "true"); seg.insertBefore(th, seg.firstChild); }
+    if (!on || !on.offsetWidth) { seg.removeAttribute("data-on"); return; }
+    seg.setAttribute("data-on", "");
+    th.style.width = on.offsetWidth + "px";
+    th.style.transform = "translate3d(" + (on.offsetLeft - 2) + "px,0,0)";
+    /* 深不深看字色(字是浅的 = 深色皮肤);卡片底是 color-mix 出来的,有的浏览器报成 color(srgb …) 不好解析 */
+    try {
+      var c = getComputedStyle(on).color, m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c), k = 1;
+      if (!m) { m = /color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)/.exec(c); k = 255; }
+      seg.classList.toggle("dk", !!m && (0.299 * m[1] + 0.587 * m[2] + 0.114 * m[3]) * k > 140);
+    } catch (e) {}
+  }
+  function segAll() { Array.prototype.forEach.call(document.querySelectorAll(".stack.ios .seg"), segPlace); }
+  Array.prototype.forEach.call(document.querySelectorAll(".stack.ios .seg"), function (seg) {
+    new MutationObserver(function () { segPlace(seg); }).observe(seg, { attributes: true, subtree: true, attributeFilter: ["aria-pressed"] });
+  });
+  window.addEventListener("resize", segAll);
+  /* 「设计参数」展开 / 收起 —— 只是藏起来,内容照常每次生成,复制照旧能用 */
+  (function () {
+    var tg = document.getElementById("specToggle"), body = document.getElementById("specBody");
+    if (!tg || !body) return;
+    tg.addEventListener("click", function () {
+      var open = body.hidden;
+      body.hidden = !open; tg.setAttribute("aria-expanded", String(open));
+    });
+  })();
 
   apply();
   pullPrefs();
