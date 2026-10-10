@@ -5017,6 +5017,8 @@ box.focus();
   html[data-chatstyle="tg"] [data-tgt]::after { font-size: calc(var(--tg-fs, 14.5px) * .6); letter-spacing: .01em;
     color: color-mix(in srgb, currentColor 42%, transparent); }
   html[data-chatstyle="tg"] .row.me .bubble:not(.stkonly)[data-tgt]::after { color: color-mix(in srgb, currentColor 65%, transparent); }
+  /* 时间掉到下一行时(脚本 tighten 加 .tgtw):那行贴着字,不再空出一大截(原来上边距 7px + 整行高) */
+  html[data-chatstyle="tg"] .tgtw[data-tgt]:not(.stkonly)::after { margin-top: 0; margin-bottom: -3px; }
   html[data-chatstyle="tg"][data-tgmeink="dark"] .row.me .bubble:not(.stkonly)[data-tgt]::after { color: color-mix(in srgb, currentColor 45%, transparent); }
   /* 她的泡:时间后面带对勾(2026-10-10,照 TG):✓ = 送到了(服务器回声过才会有这颗泡),✓✓ = 他开始看了(后面有他的动静) */
   /* 对勾(2026-10-10 第二版,所有者:「和 tg 不一样,做不好就删掉」):~~两个文字「✓」~~ 字形随字体走、不像 TG。
@@ -5367,6 +5369,86 @@ box.focus();
   html[data-chatstyle="tg"] .row.me .bubble, html[data-chatstyle="tg"] .gu, html[data-chatstyle="tg"] .tgb {
     font-variant-numeric: normal; text-rendering: optimizeLegibility; -webkit-text-size-adjust: 100%; }
   html[data-chatstyle="tg"] .gu .mdh, html[data-chatstyle="tg"] .tgb .mdh { font-family: inherit; font-weight: 600; }
+
+  /* ══ 液态玻璃 第三版(2026-10-10 晚,所有者:「前端现在的质感更像亚克力,UI 我也想要 1:1 复刻」+ 她 TG 的四张截图)══
+     **量出来的差别**(她的真机截图 3px/pt,叠着比):几何本来就对(回形针 / 麦克风 40.7pt、胶囊同宽同高、发送键 34 / 内缩 3.4),
+     差在**材质和图标**:
+     ① 亚克力 = 厚底色 + 大团投影 + 光泽渐变;TG(iOS 26 液态玻璃)= **底几乎透明、后面的东西提亮一点、
+        一圈半像素细灰描边 + 内沿一道亮边、投影只剩一层很散很淡的雾**。所以:底色 .34→.5 但去掉光泽渐变和那团投影,
+        模糊 14→10 加一点提亮(brightness),外圈半像素描边换成灰的。
+     ② 图标偏小:TG 的笑脸 / 贴纸 / 回形针约 19–20pt,麦克风 18×24pt(我们 14 / 16 / 15pt 高)—— 照量的放大,麦克风换成细线那支。
+     ③ 名字胶囊:TG 宽 178pt、高 44.7、名字 17、副标题 12.5;返回 / 右上那颗 44.7。
+     ④ iOS 26 的「边缘渐隐」:消息滑到顶栏 / 输入栏底下时**越靠边越糊、越淡**(TG 截图左上那条「00:43」),
+        原来只是变淡 —— 顶上那层的模糊加强、遮罩换成缓动曲线;底下补一层同样的。
+     ⚠️ 只在 TG 版;官端一个像素不动。数都在下面,要调透明度只动 --lg-bg 一个数。 */
+  html[data-chatstyle="tg"] {
+    --lg-bg: rgba(255,255,255,.5); --lg-sheen: linear-gradient(transparent, transparent);
+    --lg-ring: 0 0 0 .5px rgba(0,0,0,.12); --lg-in: inset 0 .5px 0 rgba(255,255,255,.95), inset 0 -.5px 0 rgba(255,255,255,.55), inset 0 0 0 .5px rgba(255,255,255,.5);
+    --lg-haze: 0 4px 18px rgba(0,0,0,.045);
+    --lg-filter: blur(10px) saturate(1.8) brightness(1.06);
+  }
+  html[data-chatstyle="tg"][data-tgdark] {
+    --lg-bg: rgba(30,30,32,.46);
+    --lg-ring: 0 0 0 .5px rgba(255,255,255,.11); --lg-in: inset 0 .5px 0 rgba(255,255,255,.16), inset 0 0 0 .5px rgba(255,255,255,.05);
+    --lg-haze: 0 4px 18px rgba(0,0,0,.35);
+    --lg-filter: blur(10px) saturate(1.6) brightness(.95);
+  }
+  html[data-chatstyle="tg"] #menuBtn, html[data-chatstyle="tg"] .tgname, html[data-chatstyle="tg"] .tgsrch, html[data-chatstyle="tg"] .tgdown,
+  html[data-chatstyle="tg"] #plusBtn, html[data-chatstyle="tg"] #box, html[data-chatstyle="tg"] #micBtn {
+    background: var(--lg-bg) !important;
+    -webkit-backdrop-filter: var(--lg-filter); backdrop-filter: var(--lg-filter);
+    box-shadow: var(--lg-in), var(--lg-ring), var(--lg-haze) !important;
+  }
+  html[data-chatstyle="tg"][data-tgrec] #micBtn { background: #ff3b30 !important; }
+  /* ③ 顶栏尺寸照 TG */
+  html[data-chatstyle="tg"] #menuBtn, html[data-chatstyle="tg"] .tgsrch { width: 44px; height: 44px; }
+  html[data-chatstyle="tg"] .tgname { min-width: 176px; height: 44px; padding-left: 28px; padding-right: 28px; }
+  html[data-chatstyle="tg"] .tgname b { font-size: 17px; line-height: 20px; }
+  html[data-chatstyle="tg"] .tgname .tgst { font-size: 12.5px; line-height: 15px; }
+  /* ② 图标 */
+  html[data-chatstyle="tg"] #plusBtn::before { width: 23px; height: 23px; }
+  html[data-chatstyle="tg"] #micBtn .ic { display: none; }
+  html[data-chatstyle="tg"]:not([data-tgrec]) #micBtn::before { content: ""; width: 26px; height: 26px; background: currentColor;
+    -webkit-mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.55' stroke-linecap='round'%3E%3Crect x='8.6' y='2.4' width='6.8' height='12.4' rx='3.4'/%3E%3Cpath d='M5.2 11.2a6.8 6.8 0 0 0 13.6 0M12 18v3.6'/%3E%3C/svg%3E"); mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.55' stroke-linecap='round'%3E%3Crect x='8.6' y='2.4' width='6.8' height='12.4' rx='3.4'/%3E%3Cpath d='M5.2 11.2a6.8 6.8 0 0 0 13.6 0M12 18v3.6'/%3E%3C/svg%3E"); }
+  html[data-chatstyle="tg"] .tgstk { width: 34px; height: 34px; bottom: 3.5px; right: 49px; }
+  html[data-chatstyle="tg"][data-tghas] .tgstk { right: 46.4px; }    /* 笑脸中心到发送键中心 43pt(TG 截图) */
+  html[data-chatstyle="tg"] .tgstk i { left: 5px; top: 5px; width: 24px; height: 24px; }
+  html[data-chatstyle="tg"] #box { font-size: 16px; padding-left: 14px; }   /* 叠图量:16.5 比 TG 宽 2.7pt,16 正好 */
+  /* ⑤ 1:1 叠图(2026-10-10 晚,她:「能 1:1 按截图画吗」):按她手机同尺寸渲染(402pt@3x、安全区 62 / 34)和她的 TG 截图逐像素量 ——
+     大小本来就对,**差的是位置**:TG 输入栏离屏幕底 27.7pt(我们 44,高了 16);顶栏贴着安全区下 1.7pt(我们 8);左右留边 15.7(我们 12);
+     名字胶囊 178.6 宽;麦克风高 24pt、回形针高 22pt。 */
+  html[data-chatstyle="tg"] footer { padding-bottom: max(8px, calc(var(--dw-sab, env(safe-area-inset-bottom)) - 6.3px)); }
+  html[data-chatstyle="tg"] header { padding-top: calc(1.7px + var(--dw-sat, env(safe-area-inset-top))); padding-left: 15.7px; padding-right: 15.7px; }
+  html[data-chatstyle="tg"] .tgname { top: calc(1.7px + var(--dw-sat, env(safe-area-inset-top))); min-width: 178.6px; }
+  html[data-chatstyle="tg"]:not([data-tgrec]) #micBtn::before { width: 30px; height: 30px; -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round'%3E%3Crect x='8.6' y='2.4' width='6.8' height='12.4' rx='3.4'/%3E%3Cpath d='M5.2 11.2a6.8 6.8 0 0 0 13.6 0M12 18v3.6'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round'%3E%3Crect x='8.6' y='2.4' width='6.8' height='12.4' rx='3.4'/%3E%3Cpath d='M5.2 11.2a6.8 6.8 0 0 0 13.6 0M12 18v3.6'/%3E%3C/svg%3E"); }
+  html[data-chatstyle="tg"] #plusBtn::before { width: 25px; height: 25px; }
+  html[data-chatstyle="tg"]:not([data-tgrec]) #micBtn::before { margin-left: -2px; }   /* 叠图:麦克风比 TG 偏右 1pt */
+  html[data-chatstyle="tg"] .tgstk { right: 50px; }                                   /* 叠图:贴纸偏右 1pt */
+  html[data-chatstyle="tg"] .tgstk .b { left: 4.5px; top: 4.5px; width: 25px; height: 25px; }   /* P3:笑脸 19pt */
+  html[data-chatstyle="tg"] .tgname b { position: relative; top: 2.2px; }             /* 叠图:名字比 TG 高 2.3pt */
+  html[data-chatstyle="tg"] .tgname .tgst { position: relative; top: .7px; }
+  /* 贴纸图标:TG 那支卷角在右上(她的 P4),原来画成了右下;回形针线细一点(1.9 → 1.65) */
+  html[data-chatstyle="tg"] .tgstk .a { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpath d='M21 12a9 9 0 1 1-9-9h1.5A7.5 7.5 0 0 1 21 10.5Z' transform='matrix(1 0 0 -1 0 24)'/%3E%3Cpath d='M21 12c-4.5-.3-8.7 3.9-9 9' transform='matrix(1 0 0 -1 0 24)'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpath d='M21 12a9 9 0 1 1-9-9h1.5A7.5 7.5 0 0 1 21 10.5Z' transform='matrix(1 0 0 -1 0 24)'/%3E%3Cpath d='M21 12c-4.5-.3-8.7 3.9-9 9' transform='matrix(1 0 0 -1 0 24)'/%3E%3C/svg%3E"); }
+  html[data-chatstyle="tg"] #plusBtn::before { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.65' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21.4 11.1-8.9 8.9a5.5 5.5 0 0 1-7.8-7.8l8.9-8.9a3.7 3.7 0 0 1 5.2 5.2l-8.9 8.9a1.8 1.8 0 0 1-2.6-2.6l8.2-8.2'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.65' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21.4 11.1-8.9 8.9a5.5 5.5 0 0 1-7.8-7.8l8.9-8.9a3.7 3.7 0 0 1 5.2 5.2l-8.9 8.9a1.8 1.8 0 0 1-2.6-2.6l8.2-8.2'/%3E%3C/svg%3E"); }
+  /* 发送键:TG 是平的纯色圆,没有光泽和投影 */
+  html[data-chatstyle="tg"] #send:not(.stop) { background: var(--tg-me) !important; color: var(--tg-me-ink) !important; box-shadow: none !important; }
+  /* ④ 边缘渐隐:顶上 / 底下各一层「越靠边越糊」,遮罩是缓动曲线(不会看出一条带) */
+  html[data-chatstyle="tg"] header::before {
+    background: linear-gradient(to bottom, color-mix(in srgb, var(--tg-page) 72%, transparent) 0%, color-mix(in srgb, var(--tg-page) 30%, transparent) 60%, transparent 100%);
+    -webkit-backdrop-filter: blur(12px) saturate(1.4); backdrop-filter: blur(12px) saturate(1.4);
+    --edge: linear-gradient(to bottom, #000 0%, #000 38%, rgba(0,0,0,.82) 52%, rgba(0,0,0,.55) 66%, rgba(0,0,0,.28) 80%, rgba(0,0,0,.09) 91%, transparent 100%);
+    -webkit-mask-image: var(--edge); mask-image: var(--edge);
+  }
+  html[data-chatstyle="tg"][data-tgwall] header::before {
+    background: linear-gradient(to bottom, var(--tg-page) 0%, color-mix(in srgb, var(--tg-page) 45%, transparent) 50%, transparent 100%); }
+  html[data-chatstyle="tg"] footer, html[data-chatstyle="tg"][data-tgwall] footer { background: none !important; }
+  html[data-chatstyle="tg"] footer::before {
+    content: ""; position: absolute; inset: -14px 0 0; z-index: -1; pointer-events: none;
+    background: linear-gradient(to top, color-mix(in srgb, var(--tg-page) 72%, transparent) 0%, color-mix(in srgb, var(--tg-page) 30%, transparent) 60%, transparent 100%);
+    -webkit-backdrop-filter: blur(12px) saturate(1.4); backdrop-filter: blur(12px) saturate(1.4);
+    --edge: linear-gradient(to top, #000 0%, #000 38%, rgba(0,0,0,.82) 52%, rgba(0,0,0,.55) 66%, rgba(0,0,0,.28) 80%, rgba(0,0,0,.09) 91%, transparent 100%);
+    -webkit-mask-image: var(--edge); mask-image: var(--edge);
+  }
 </style>
 <script>
 (function () {
@@ -6162,8 +6244,38 @@ box.focus();
       reactPass(sc);
     });
     if (tg) checks(scopes[0] === log);
+    if (tg) scopes.forEach(function (sc) {
+      Array.prototype.forEach.call(sc.querySelectorAll(".row.me > .bubble[data-tgt], .tgb[data-tgt], .gu[data-tgt]:not(.tg-split)"), tighten);
+    });
     typing();
     if (tg) settle();
+  }
+  /* ── 时间放不下时别让泡变胖(2026-10-10 晚,她:「消息一长气泡就变胖、日期到下一行、间距太胖」)──
+     时间是挂在泡末尾的浮动块:最后一行放不下它就掉到下一行,可泡的宽度是**掉行之前**按「字 + 时间」算的 = 撑满可用宽度,
+     于是下面多出一行、空出一大截。这里补一步:量出最后一行字的右边界,时间确实放不下(掉行了)时,掉下去那行压矮(.tgtw)。
+     ~~时间掉行时把泡收到最长那行字那么宽~~ —— 做过,她当场说「长度不要变,之前的长度没问题」,**宽度一律不动**,别再加回来。
+     只处理纯文字泡(里面有块级东西 / 语音条 / 图就不动);换字号 / 转屏时整页过一遍照样对。 */
+  function tighten(b) {
+    if (b.style.width) b.style.width = "";
+    b.classList.remove("tgtw");
+    if (b.classList.contains("stkonly") || b.offsetParent === null) return;
+    if (b.querySelector("div, p, ul, ol, pre, blockquote, table, img, audio, button, .tgvoice")) return;
+    var tm = getComputedStyle(b, "::after");   // 她的泡时间后面还有对勾,画在右内边距里 —— 内边距要算上(10-10 漏过一次)
+    var tw = parseFloat(tm.width) + parseFloat(tm.paddingLeft) + parseFloat(tm.paddingRight) + parseFloat(tm.marginLeft) + parseFloat(tm.marginRight);
+    if (!(tw > 0)) return;
+    var cs = getComputedStyle(b), box = b.getBoundingClientRect();
+    var left = box.left + parseFloat(cs.paddingLeft) + parseFloat(cs.borderLeftWidth);
+    var right = box.right - parseFloat(cs.paddingRight) - parseFloat(cs.borderRightWidth);
+    var rg = document.createRange(); rg.selectNodeContents(b);
+    var rects = Array.prototype.filter.call(rg.getClientRects(), function (r) { return r.width > 0 && r.height > 0; });
+    if (!rects.length) return;
+    var maxR = 0, lastTop = -1e9, lastR = 0;
+    rects.forEach(function (r) {
+      if (r.right > maxR) maxR = r.right;
+      if (r.top > lastTop + 2) { lastTop = r.top; lastR = r.right; } else if (Math.abs(r.top - lastTop) <= 2 && r.right > lastR) lastR = r.right;
+    });
+    if (lastR + tw <= right + .5) return;            // 时间跟在最后一行后面放得下:本来就不胖
+    b.classList.add("tgtw");                           // 掉行了:那一行压矮(宽度不动 —— 她 10-10 晚:「长度不要变,之前的长度没问题」)
   }
   /* 她的泡上的对勾(2026-10-10,照 TG):✓ = 送到了 —— 这颗泡本来就是服务器回声(echo)之后才画的;
      ✓✓ = 他开始看了 —— 后面出现了他的任何动静(思考 / 工具 / 回话)。
