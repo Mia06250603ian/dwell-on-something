@@ -629,6 +629,68 @@
   .tabbar button[aria-selected="true"] { color: var(--ink); font-weight: 500; }   /* 10-09:参考笔画 15.4% vs 我们 600 的 23.6%(~~600~~) */
   .tabbar button:active { transform: scale(.94); }
 
+
+  /* ---------- 首页「预览 7」(2026-10-10,所有者定)----------
+     底 / 卡 / 字全走皮肤 token;质感:卡片阴影大而淡、数字栏微微凹、底栏悬浮成玻璃胶囊。
+     字:问候、Day、纪念日这些大字照旧衬线;灰字说明用黑体。 */
+  .htop { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+  .htop .grow { flex: 1; min-width: 0; }
+  .hdate { margin-top: 5px; font-family: var(--sans); font-size: 15px; color: var(--dim); letter-spacing: -.005em; }
+  .htop .weather { margin-top: 3px; }
+  .hround { width: 48px; height: 48px; border-radius: 50%; flex: none; display: grid; place-items: center; color: var(--ink);
+    background: var(--card); box-shadow: 0 1px 2px rgba(0,0,0,.03), 0 10px 26px -8px rgba(0,0,0,.14); transition: transform .3s var(--ease-ui); }
+  .hround:active { transform: scale(.94); }
+  .homefeed .card { box-shadow: 0 1px 2px rgba(0,0,0,.03), 0 14px 32px -10px rgba(0,0,0,.12); border-radius: 24px; }
+  .hstats { display: grid; grid-template-columns: repeat(3, 1fr); padding: 15px 0 14px; border-radius: 22px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--ink) 5%, var(--card)), var(--card) 90%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 0 0 .5px color-mix(in srgb, var(--ink) 7%, transparent); }
+  .hstats div { text-align: center; min-width: 0; }
+  .hstats div + div { border-left: 1px solid color-mix(in srgb, var(--ink) 7%, transparent); }
+  .hstats b { display: block; font-family: var(--serif); font-size: 28px; font-weight: 500; line-height: 32px; letter-spacing: -.01em; color: var(--ink); }
+  .hstats b.na { color: var(--dim-2); }
+  .hstats span { font-family: var(--sans); font-size: 12.5px; color: var(--dim); }
+  .homefeed .whisper { border-radius: 26px; box-shadow: 0 16px 34px -14px rgba(0,0,0,.45); }
+  .huscard { display: flex; align-items: center; gap: 18px; padding: 18px 20px; }
+  .hpair { position: relative; width: 84px; height: 56px; flex: none; }
+  .hav { position: absolute; top: 0; width: 56px; height: 56px; box-shadow: 0 0 0 3px var(--card); }
+  .hav.him { left: 0; z-index: 1; background: linear-gradient(150deg,#6f6a63,#24211d); display: grid; place-items: center; }
+  .hav.him .bloom { width: 50%; height: 50%; }
+  .hav + .hav { left: 28px; }
+  .huscard .grow { flex: 1; min-width: 0; }
+  .hk { font-family: var(--sans); font-size: 13.5px; color: var(--dim); }
+  .hday { margin-top: 2px; font-family: var(--serif); font-size: 34px; line-height: 1.1; font-weight: 500; letter-spacing: -.01em; color: var(--ink); }
+  .hsince { margin-top: 2px; font-family: var(--serif); font-size: 13.5px; color: var(--dim); }
+  .hsec { margin: 14px 2px -2px; font-family: var(--serif); font-size: 21px; font-weight: 500; letter-spacing: -.01em; color: var(--ink); }
+  .dayscard { padding: 18px 18px 6px 20px; }
+  .dli { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: var(--hair) solid var(--line); }
+  .dayscard .annihead + .dli { margin-top: 14px; }
+  .dtile { width: 38px; height: 38px; border-radius: 11px; flex: none; display: grid; place-items: center;
+    background: color-mix(in srgb, var(--ink) 5%, transparent); color: var(--ink); }
+  .dtile svg { width: 19px; height: 19px; }
+  .dli .grow { flex: 1; min-width: 0; }
+  .dli .t { font-family: var(--sans); font-size: 15.5px; color: var(--ink); line-height: 1.3; }
+  .dli .s { margin-top: 1px; font-family: var(--serif); font-size: 13px; color: var(--ink-2); }
+  .dli .dn { font-family: var(--serif); font-size: 21px; font-weight: 500; color: var(--ink); white-space: nowrap; }
+  .dli .dn small { font-family: var(--sans); font-size: 12px; color: var(--dim); margin-left: 2px; font-weight: 400; }
+  /* 底栏:悬浮的玻璃胶囊(字照旧衬线)+ 右边一颗「+」 */
+  .tabbar {
+    left: var(--gutter); right: auto; transform: none; bottom: calc(10px + var(--sab));
+    width: auto; max-width: none; right: calc(var(--gutter) + 70px);
+    height: 60px; padding: 5px; border-radius: 30px;
+    background: color-mix(in srgb, var(--card) 72%, transparent);
+    box-shadow: inset 0 .5px 0 rgba(255,255,255,.6), 0 0 0 .5px color-mix(in srgb, var(--ink) 8%, transparent), 0 10px 30px rgba(0,0,0,.10);
+  }
+  .tabbar::before { display: none; }
+  .tabbar button { height: 50px; border-radius: 25px; padding: 0; }
+  .tabbar button[aria-selected="true"] { background: var(--card); box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .tabplus { position: fixed; z-index: 50; right: var(--gutter); bottom: calc(10px + var(--sab)); width: 60px; height: 60px; border-radius: 50%;
+    display: grid; place-items: center; color: var(--ink);
+    background: color-mix(in srgb, var(--card) 72%, transparent); -webkit-backdrop-filter: saturate(1.5) blur(24px); backdrop-filter: saturate(1.5) blur(24px);
+    box-shadow: inset 0 .5px 0 rgba(255,255,255,.6), 0 0 0 .5px color-mix(in srgb, var(--ink) 8%, transparent), 0 10px 30px rgba(0,0,0,.10);
+    transition: transform .3s var(--ease-ui); }
+  .tabplus:active { transform: scale(.92); }
+  #tab-home .homefeed { padding-bottom: 28px; }   /* 底栏悬浮后,最后一张卡别贴着它 */
+  .tabbar[hidden] ~ .tabplus { display: none; }
   /* ---------- 入场:Spring Reveal ----------
      一次整体的落位,不是「每张卡各跳各的」:轻微 stagger(45ms 一级),
      **只动 opacity / transform**,绝不动 height —— 动高度必然抖版。
@@ -890,26 +952,36 @@
 
   <!-- ================= HOME ================= -->
   <section class="screen" id="tab-home" aria-label="Home">
-    <!-- reveal + --i:入场错位的级数。顺序 = 阅读顺序:头 → 悄悄话 → 关系 → 纪念日 → 健康 -->
+    <!-- 2026-10-10 首页按所有者定的「预览 7」重排(她:「先按这一版,后面慢慢优化」):
+         头(衬线问候 + 日期 + 天气 + 右边一颗圆的设置)→ 数字栏 → 他的悄悄话(原版排版)→ 你们俩头像 + Day N → Days(纪念日环 + 生日 / 周年)。
+         ~~Us / Monthly Anniversary 两张卡、Steps / Heart Rate 两张小卡(心率是写死的)~~ 已撤。
+         所有 id 照旧(homeDate / greetWord / homeWeather / dayN / moDate / moLeft / moArc / data-until / openSettings / syncAt),原来的脚本一行没改。 -->
     <div class="reveal" style="--i:0">
-    <div class="dayrow">
-      <div class="date" id="homeDate">Sunday, July 26</div>
-      <span class="syncpill" id="syncAt">sync · —</span>
-      <button class="iconbtn" id="openSettings" aria-label="设置">
-        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    <div class="htop">
+      <div class="grow">
+        <h1 class="greet"><span id="greetWord">Good evening,</span> <span class="cn">佳佳</span></h1>
+        <div class="hdate" id="homeDate">Sunday, July 26</div>
+        <!-- 天气:和晏的注入同源(dwell-bridge 的 /api/weather),读不到留空不编 -->
+        <p class="weather sub" id="homeWeather">&nbsp;</p>
+      </div>
+      <button class="hround" id="openSettings" aria-label="设置">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
     </div>
-
-    <h1 class="greet"><span id="greetWord">Good evening,</span> <span class="cn">佳佳</span></h1>
-    <!-- 2026-10-10 接上真天气:~~「阴 27° 28~34° · 降雨 76%,带伞」写死的~~。和晏的注入同一个数据源(dwell-bridge 的 /api/weather,
-         同一个 wttr.in + 同一个城市,规则照抄 shim 的 senses.mjs)。读不到就空着(留着行高,卡片不跳),不编。 -->
-    <p class="weather sub" id="homeWeather">&nbsp;</p>
+    <span id="syncAt" hidden></span>
     </div>
 
     <div class="stack homefeed">
 
+      <!-- 数字栏:到下一个 3 号 / 下一次(周期,待接 shim 的记录)/ 步数(待改快捷指令)。没接上就写「—」,不编 -->
+      <div class="hstats reveal" style="--i:1">
+        <div><b id="hsAnni">—</b><span>天 · 到 3 号</span></div>
+        <div><b class="na">—</b><span>下一次 · 未接上</span></div>
+        <div><b class="na">—</b><span>步数 · 未接上</span></div>
+      </div>
+
       <!-- 悄悄话:高度完全由文字决定,见 CSS 里 .whisper 那段 -->
-      <article class="whisper reveal" style="--i:1">
+      <article class="whisper reveal" style="--i:2">
         <span class="av sm" data-bloom aria-hidden="true"></span>
         <div class="txt">
           <p class="body" style="margin:0">今天她说了两次「丝滑」——一次给聊天页,一次给日记栏。这两个字我打算裱起来。</p>
@@ -917,18 +989,18 @@
         </div>
       </article>
 
-      <article class="card relcard reveal" style="--i:2">
-        <div class="usrow">
-          <div class="grow">
-            <div class="label">Us</div>
-            <div class="display" id="dayN">Day 35</div>
-          </div>
-          <svg class="heart" viewBox="0 0 30 28.4" fill="currentColor" aria-hidden="true"><path d="M15 27.8C4.4 19.6 0.8 14.4 0.8 9.4 0.8 4.9 4.0 1.8 8.2 1.8 11.2 1.8 13.6 3.5 15 5.2 16.4 3.5 18.8 1.8 21.8 1.8 26.0 1.8 29.2 4.9 29.2 9.4 29.2 14.4 25.6 19.6 15 27.8Z"/></svg>
+      <!-- 你们俩:两颗头像叠着(设置里换的那两张;没换过 = 菊花 / 粉色)+ Day N -->
+      <article class="card huscard reveal" style="--i:3">
+        <div class="hpair"><span class="av hav him" data-bloom aria-hidden="true"></span><span class="av hav" data-avatar="me" aria-hidden="true"></span></div>
+        <div class="grow">
+          <div class="hk">佳佳 &amp; <span data-himname>晏</span></div>
+          <div class="hday" id="dayN">Day 35</div>
+          <div class="hsince">since 2026.6.3</div>
         </div>
-        <p class="sub">佳佳和晏,从 2026.6.3 到每一天</p>
       </article>
 
-      <article class="card annicard reveal" style="--i:3">
+      <h2 class="hsec reveal" style="--i:4">Days</h2>
+      <article class="card dayscard reveal" style="--i:4">
         <div class="annihead">
           <div class="grow">
             <h2 class="headline" style="margin:0">Monthly Anniversary</h2>
@@ -950,62 +1022,17 @@
             <span class="num" id="moLeft">27</span>
           </div>
         </div>
-        <hr class="rule">
-        <div class="annigrid">
-          <div class="anni">
-            <span class="bar" aria-hidden="true"></span>
-            <div class="grow">
-              <div class="who">佳佳's birthday</div>
-              <div class="caption">Jun 25</div>
-            </div>
-            <div class="n" data-until="6-25">259</div>
-          </div>
-          <div class="anni">
-            <span class="bar" aria-hidden="true"></span>
-            <div class="grow">
-              <div class="who">anniversary</div>
-              <div class="caption">Jun 3</div>
-            </div>
-            <div class="n" data-until="6-3">237</div>
-          </div>
+        <div class="dli">
+          <span class="dtile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M6 20v-7h12v7M12 13V9M10.5 6.5c0-1 1.5-2.5 1.5-2.5s1.5 1.5 1.5 2.5a1.5 1.5 0 0 1-3 0Z"/></svg></span>
+          <div class="grow"><div class="t">佳佳's birthday</div><div class="s">Jun 25</div></div>
+          <div class="dn"><span data-until="6-25">259</span><small>天</small></div>
+        </div>
+        <div class="dli">
+          <span class="dtile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.3-9-8.7C1.6 8.2 3.5 4.6 7 4.6c2 0 3.4 1.1 4.1 2.3.4.6 1.3.6 1.7 0 .7-1.2 2.1-2.3 4.1-2.3 3.5 0 5.4 3.6 4 6.7-2 4.4-8.9 8.7-8.9 8.7Z"/></svg></span>
+          <div class="grow"><div class="t">anniversary</div><div class="s">Jun 3</div></div>
+          <div class="dn"><span data-until="6-3">237</span><small>天</small></div>
         </div>
       </article>
-
-      <div class="duo reveal" style="--i:4">
-        <article class="card metric">
-          <div class="top">
-            <span class="label grow">Steps</span>
-            <span class="datum">0.42 km</span>
-          </div>
-          <div class="big" style="margin-top:12.3px">580</div>
-          <div class="figure">
-            <div class="bars" aria-hidden="true">
-              <i style="height:100%"></i><i style="height:42%"></i><i style="height:52%"></i>
-              <i style="height:40%"></i><i style="height:11%"></i><i style="height:9%"></i>
-              <i class="on" style="height:7%"></i>
-            </div>
-            <div class="barlabels" aria-hidden="true">
-              <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span class="on">S</span>
-            </div>
-          </div>
-        </article>
-
-        <article class="card metric">
-          <div class="top">
-            <span class="label grow">Heart Rate</span>
-          </div>
-          <div style="display:flex;align-items:baseline;gap:5px;margin-top:12.3px">
-            <span class="big">114</span><span class="unit">bpm</span>
-          </div>
-          <div class="figure">
-            <svg class="spark" id="hr" viewBox="0 0 160 46" preserveAspectRatio="none" aria-hidden="true">
-              <polyline id="hrline" fill="none" stroke="var(--spark)" stroke-width="1.3"
-                        stroke-linejoin="round" stroke-linecap="round" points=""/>
-            </svg>
-            <p class="foot">56 — 125 today</p>
-          </div>
-        </article>
-      </div>
 
     </div>
   </section>
@@ -1079,6 +1106,8 @@
   <button role="tab" aria-selected="false" aria-controls="tab-chats" data-tab="chats">Chats</button>
   <button role="tab" aria-selected="false" aria-controls="tab-diary" data-tab="diary">Diary</button>
 </nav>
+<!-- 2026-10-10:底栏旁边一颗「+」= 写今天(跳到 Diary)。底栏藏起来时它也藏(CSS 兄弟选择器) -->
+<button class="tabplus" id="tabPlus" aria-label="写今天"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
 
 <div class="chatview" id="chatview" hidden>
   <div class="chatbar" id="chatbar">
@@ -1360,6 +1389,7 @@
     var left = daysBetween(today, next);
     setText("moDate", MON[next.getMonth()] + " " + next.getDate());
     setText("moLeft", String(left));
+    setText("hsAnni", String(left));   /* 首页数字栏(2026-10-10) */
     /* 环 = 这个月已经走了多少。周长 2π·32.2 = 202.3(10-09 环放大;~~2π·30 = 188.5~~);起点仍是 12 点前 5°(rotate(-95))。
        几何(半径/弧宽/起点)照参考图不变,只是长度跟着日子走。 */
     var arc = document.getElementById("moArc");
@@ -1814,6 +1844,9 @@
 
   /* ---------- 三栏 ---------- */
   var tabs = document.querySelectorAll(".tabbar button");
+  document.getElementById("tabPlus").addEventListener("click", function () {
+    var d = document.querySelector('.tabbar [data-tab="diary"]'); if (d) d.click();
+  });
   Array.prototype.forEach.call(tabs, function (t) {
     t.addEventListener("click", function () {
       Array.prototype.forEach.call(tabs, function (o) {
