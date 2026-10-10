@@ -770,6 +770,9 @@
   .wallthumb { width: 46px; height: 64px; border-radius: 10px; flex: none; background: var(--paper-bot) center / cover no-repeat;
                box-shadow: inset 0 0 0 .5px rgba(0,0,0,.14); }
   .seg { display: flex; gap: 8px; margin-top: 4px; }
+  .nameinput { flex: 0 1 50%; min-width: 0; text-align: right; border: 0; background: none; padding: 6px 0;
+    font: inherit; font-size: 16px; color: var(--ink); outline: none; }   /* 16px:iOS 低于 16 会在聚焦时自动放大页面 */
+  .nameinput::placeholder { color: var(--dim); }
   .seg button {
     flex: 1; height: 46px; border-radius: 20px;
     font-size: 15px; color: var(--dim);
@@ -929,7 +932,7 @@
       <button class="crow" data-chat="chat.html" data-who="晏">
         <span class="av" data-bloom aria-hidden="true"></span>
         <span class="grow">
-          <span class="name" style="display:block">晏</span>
+          <span class="name" style="display:block" data-himname>晏</span>
           <span class="prev" id="yanPrev" style="display:block">&nbsp;</span>
         </span>
         <span class="right"><span class="datum" id="yanWhen"></span></span>
@@ -1115,10 +1118,17 @@
         <hr class="grouprule">
         <div class="srow">
           <span class="av" data-avatar="him" data-bloom aria-hidden="true"></span>
-          <span class="grow t">晏</span>
+          <span class="grow t" data-himname>晏</span>
           <button class="datum" data-avreset="him" style="color:var(--dim)">恢复默认</button>
           <button class="datum" data-avpick="him" style="color:var(--ink)">换一张</button>
         </div>
+        <hr class="grouprule">
+        <!-- 2026-10-10 所有者:「想要一个可以给他改名的选项」。**只改网页上显示的名字**(顶栏、Chats、他那一页),
+             不碰他的人设、不告诉他。存 /api/prefs(换设备也在);清空 = 回到「晏」。 -->
+        <label class="srow">
+          <span class="grow t">他的名字</span>
+          <input id="himName" class="nameinput" maxlength="16" placeholder="晏" enterkeyhint="done" autocomplete="off" spellcheck="false">
+        </label>
         <input type="file" id="avFile" accept="image/*" hidden>
         <p class="hint" id="avHint">图会先在手机上裁成正方形、压小再传,存在服务器上,换设备也在</p>
       </section>
@@ -1283,6 +1293,7 @@
   if (typeof state.meBubble !== "string") state.meBubble = "";      // "" = 跟皮肤走
   if (typeof state.himBubble !== "string") state.himBubble = "";
   if (typeof state.chatFont !== "string" || !state.chatFont) state.chatFont = "14.5";   // TG 版聊天字号,标准档
+  if (typeof state.himName !== "string") state.himName = "";                              // 他的显示名,"" = 晏
   /* ⚠️ 默认从 85 改成 100(2026-09-19)。85% 半透明 + 毛玻璃会让卡片和渐变页底混在一起,
      整页发灰发闷 —— 并排比参考图,这是最刺眼的一条,比字号的影响大得多。
      参考图的卡是**实心近白**。滑杆还在,她想要半透明随时拉回去。 */
@@ -1328,6 +1339,19 @@
   wireSeg("avatarMode", "avatarMode");
   wireSeg("appearance", "appearance");
   wireSeg("chatFont", "chatFont");
+  /* 改名:失焦或按「完成」时存;一样就不存 */
+  (function () {
+    var inp = document.getElementById("himName");
+    if (!inp) return;
+    function commit() {
+      var v = inp.value.replace(/\s+/g, " ").trim().slice(0, 16);
+      if (v === (state.himName || "")) return;
+      state.himName = v; save(state); apply(); pushPrefs();
+    }
+    inp.addEventListener("change", commit);
+    inp.addEventListener("blur", commit);
+    inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); inp.blur(); } });
+  })();
 
   /* ---------- 透明度 ---------- */
   var op = document.getElementById("opacity");
@@ -1364,6 +1388,7 @@
         if (d.prefs.avatarMode) state.avatarMode = d.prefs.avatarMode;
         state.meBubble = d.prefs.meBubble || ""; state.himBubble = d.prefs.himBubble || "";
         if (d.prefs.chatFont) state.chatFont = d.prefs.chatFont;
+        if (typeof d.prefs.himName === "string") state.himName = d.prefs.himName;
         state.avatars = d.avatars || { me: null, him: null };
         save(state); apply();
       })
@@ -1373,7 +1398,7 @@
     fetch("api/prefs", { method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify({ prefs: { chatStyle: state.chatStyle, avatarMode: state.avatarMode,
                                       meBubble: state.meBubble || "", himBubble: state.himBubble || "",
-                                      chatFont: state.chatFont || "14.5" } }) })
+                                      chatFont: state.chatFont || "14.5", himName: state.himName || "" } }) })
       .catch(function () {});
   }
   /* 聊天页同源:换了样式 / 头像就当场告诉它,不用重进 */
@@ -1382,7 +1407,7 @@
       var f = document.getElementById("chatframe");
       if (f && f.contentWindow) f.contentWindow.postMessage({ type: "dwell-prefs",
         chatStyle: state.chatStyle, avatarMode: state.avatarMode, avatars: state.avatars,
-        palette: state.palette, meBubble: state.meBubble, himBubble: state.himBubble, chatFont: state.chatFont }, location.origin);
+        palette: state.palette, meBubble: state.meBubble, himBubble: state.himBubble, chatFont: state.chatFont, himName: state.himName }, location.origin);
     } catch (e) {}
   }
 
@@ -1513,7 +1538,16 @@
   })();
 
   /* ---------- 应用 ---------- */
+  function himName() { return (state.himName || "").trim() || "晏"; }
+  function paintName() {
+    var n = himName();
+    Array.prototype.forEach.call(document.querySelectorAll("[data-himname]"), function (el) { if (el.textContent !== n) el.textContent = n; });
+    var row = document.querySelector('.crow[data-chat="chat.html"]'); if (row) row.dataset.who = n;
+    var inp = document.getElementById("himName");
+    if (inp && document.activeElement !== inp) inp.value = state.himName || "";
+  }
   function apply() {
+    paintName();
     var root = document.documentElement;
     root.setAttribute("data-skin", state.skin);
     if (state.appearance === "system") root.removeAttribute("data-theme");

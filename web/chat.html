@@ -4534,7 +4534,8 @@ box.focus();
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     margin: 0; cursor: default;
   }
-  .tgname b { font-size: 16px; font-weight: 600; line-height: 19px; color: var(--text); }
+  .tgname b { font-size: 16px; font-weight: 600; line-height: 19px; color: var(--text);
+    max-width: 56vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* 改了长名字(最多 16 字)也不撑出顶栏 */
   .tgname small { font-size: 12px; line-height: 15px; color: var(--dim); white-space: nowrap; max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
   .tgav { width: 44px; height: 44px; border-radius: 50%; margin-left: auto; padding: 0; flex: none; overflow: hidden; }
   html[data-chatstyle="tg"][data-avmode="each"] .tgav { display: none; }
@@ -4847,7 +4848,13 @@ box.focus();
   html[data-chatstyle="tg"] .gu, html[data-chatstyle="tg"] .tgset .tgb:last-child { border-bottom-left-radius: 7px; }
   html[data-chatstyle="tg"] .tgset { gap: 3px; }
   html[data-chatstyle="tg"] #log { gap: 10px; }
-  html[data-chatstyle="tg"] [data-tgt]::after { font-size: 10.5px; letter-spacing: .01em; }
+  html[data-chatstyle="tg"] [data-tgt]::after { font-size: 9.5px; letter-spacing: .01em; }   /* 10-10 她:「时间缩小一点」(~~10.5~~) */
+  /* 她的泡:时间后面带对勾(2026-10-10,照 TG):✓ = 送到了(服务器回声过才会有这颗泡),✓✓ = 他开始看了(后面有他的动静) */
+  html[data-chatstyle="tg"] .row.me .bubble[data-tgck="1"]::after { content: attr(data-tgt) "\2009\2713"; }
+  html[data-chatstyle="tg"] .row.me .bubble[data-tgck="2"]::after { content: attr(data-tgt) "\2009\2713\FE0E\2713\FE0E"; }
+  /* 名字下那行:online / typing… / offline */
+  html[data-chatstyle="tg"] .tgname .tgst { font-size: 11px; line-height: 13px; color: var(--dim); font-weight: 400; margin-top: 1px; min-height: 13px; }
+  html[data-chatstyle="tg"] .tgname.typing .tgst { color: color-mix(in srgb, var(--text) 72%, transparent); }
   /* 贴纸那几颗不要卡片底和描边 */
   html[data-chatstyle="tg"] .bubble.stkonly, html[data-chatstyle="tg"] .gu.stkonly, html[data-chatstyle="tg"] .tgb.stkonly {
     background: none !important; box-shadow: none !important; }
@@ -4942,7 +4949,7 @@ box.focus();
   if (!log || !header) return;
 
   /* ── 设置:先用外壳在本机留的副本(打开时不闪),再问服务器,外壳改了会 postMessage ── */
-  var prefs = { chatStyle: "official", avatarMode: "top", avatars: { me: null, him: null }, palette: null, meBubble: "", himBubble: "", chatFont: "" };
+  var prefs = { chatStyle: "official", avatarMode: "top", avatars: { me: null, him: null }, palette: null, meBubble: "", himBubble: "", chatFont: "", himName: "" };
   try {
     var cached = JSON.parse(localStorage.getItem("dwell-shell-v1") || "{}") || {};
     if (cached.chatStyle) prefs.chatStyle = cached.chatStyle;
@@ -4951,6 +4958,7 @@ box.focus();
     if (cached.palette) prefs.palette = cached.palette;        // 外壳算好的皮肤配色(同源,读得到)
     prefs.meBubble = cached.meBubble || ""; prefs.himBubble = cached.himBubble || "";
     prefs.chatFont = cached.chatFont || "";
+    prefs.himName = cached.himName || "";
   } catch (e) {}
   function lum(hex) {
     var m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(hex || "").trim());
@@ -4990,6 +4998,7 @@ box.focus();
     });
     schedule();
     if (typeof syncComposer === "function") syncComposer();
+    if (typeof paintName === "function") paintName();
   }
   applyPrefs();
   fetch("api/prefs", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
@@ -4999,6 +5008,7 @@ box.focus();
     prefs.avatars = d.avatars || prefs.avatars;
     prefs.meBubble = d.prefs.meBubble || ""; prefs.himBubble = d.prefs.himBubble || "";
     prefs.chatFont = d.prefs.chatFont || "";
+    prefs.himName = d.prefs.himName || "";
     applyPrefs();
   }).catch(function () {});
   window.addEventListener("message", function (e) {
@@ -5007,6 +5017,7 @@ box.focus();
     if (e.data.palette) prefs.palette = e.data.palette;
     prefs.meBubble = e.data.meBubble || ""; prefs.himBubble = e.data.himBubble || "";
     prefs.chatFont = e.data.chatFont || "";
+    prefs.himName = e.data.himName || "";
     applyPrefs();
   });
 
@@ -5032,13 +5043,40 @@ box.focus();
   /* ── 顶栏:名字胶囊 + 他的头像;点哪个都打开「他」那一页 ──
      ~~名字下面那行型号~~ 2026-10-09 所有者说不用显示,撤了;型号在「他」那一页里看、在那里换。 */
   var nameEl = document.createElement("button");
-  nameEl.type = "button"; nameEl.className = "tgname headpill"; nameEl.innerHTML = "<b>晏</b>";
+  nameEl.type = "button"; nameEl.className = "tgname headpill"; nameEl.innerHTML = '<b class="tgnm"></b><small class="tgst"></small>';
+  /* 名字:她在设置里改的显示名(2026-10-10),没改 = 晏。只是网页上显示,不碰他的人设。一律 textContent。 */
+  function himName() { return (prefs.himName || "").trim() || "晏"; }
+  function paintName() {
+    var n = himName();
+    Array.prototype.forEach.call(document.querySelectorAll(".tgnm, .tgprof .hero b"), function (el) { if (el.textContent !== n) el.textContent = n; });
+  }
+  /* 名字下那行小字(2026-10-10,照 TG):他在忙 = typing…;shim 答得上 = online;答不上 = offline。
+     「在线」只认 /api/model 的 up(dwell-bridge 真去敲了 shim 的 /health),不编。一分钟问一次,切回前台再问。 */
+  var up = null;
+  function paintStatus() {
+    var st = nameEl.querySelector(".tgst"); if (!st) return;
+    var busy = root.hasAttribute("data-tgbusy");
+    var t = busy ? "typing…" : up === true ? "online" : up === false ? "offline" : "";
+    if (st.textContent !== t) st.textContent = t;
+    nameEl.classList.toggle("typing", busy);
+    nameEl.classList.toggle("off", !busy && up === false);
+  }
+  function pollUp() {
+    if (document.hidden) return;
+    fetch("api/model", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { up = !!(d && d.up); paintStatus(); }).catch(function () { up = false; paintStatus(); });
+  }
+  new MutationObserver(paintStatus).observe(root, { attributes: true, attributeFilter: ["data-tgbusy"] });
+  setInterval(pollUp, 60000);
+  document.addEventListener("visibilitychange", pollUp);
+  pollUp();
   var avEl = document.createElement("button");
   avEl.className = "tgav"; avEl.type = "button"; avEl.title = "他"; avEl.setAttribute("aria-label", "打开他的页面");
   nameEl.addEventListener("click", function () { openProf(); });
   avEl.addEventListener("click", function () { openProf(); });
   header.appendChild(nameEl);
   header.appendChild(avEl);
+  paintName(); paintStatus();
 
   /* ── 「他」那一页(2026-10-09 所有者要的):换模型 / 当前窗口用量 / 5 小时额度 / 周额度 ──
      换模型走 dwell-bridge 的 /api/model/switch:**只记下来,随她下一句话带过去一次**(不改 shim、不重启)。
@@ -5061,7 +5099,7 @@ box.focus();
   prof.innerHTML =
     '<div class="poster"></div><div class="scroll">' +
     '<button class="pback glass" type="button" aria-label="返回"><svg viewBox="0 0 9 15" width="8" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7.8 1.2 1.6 7.5l6.2 6.3"/></svg></button>' +
-    '<div class="hero"><div class="big"></div><b>晏</b><div class="who pnow">…</div></div>' +
+    '<div class="hero"><div class="big"></div><b class="tgnm"></b><div class="who pnow">…</div></div>' +
     '<div class="sect">Usage</div>' +
     '<div class="card glass uA"><div class="lead"><div><div class="k">Context window</div><div class="n ctxN">—</div></div><div class="r ctxR"></div></div>' +
       '<div class="bar ctxBar"><i></i></div>' + rowHTML("q5", "5-hour limit") + rowHTML("q7", "Weekly limit") + '</div>' +
@@ -5071,6 +5109,7 @@ box.focus();
     '<div class="card glass"><button class="it pmore" type="button"><span class="grow"><span class="t">More settings</span></span><span class="chev">' + CHEV + '</span></button></div>' +
     '</div>';
   document.body.appendChild(prof);
+  paintName();
   Array.prototype.forEach.call(prof.querySelectorAll(".uA, .uB"), function (c) {
     c.addEventListener("click", function () {
       var v = prof.getAttribute("data-v") === "A" ? "B" : "A";
@@ -5347,10 +5386,17 @@ box.focus();
 
   /* ── 拆泡(照 telegram-bridge 的 bubblesFor + 线上 BUBBLE_MAX=99999:一行一泡;有代码块不拆) ── */
   var TG_SPLIT_MAX = 99999;
+  /* 2026-10-10 所有者:「表情包和发的消息分气泡发」—— 贴纸单独一颗泡,不和字挤在一起(照 TG / telegram-bridge 本来就是分开发的)。
+     所以同一行里的「〔贴纸：x〕」也切出来;原来只有多行才拆,现在「一行字 + 一张贴纸」也拆成两颗。 */
+  var STK_SPLIT = /(〔贴纸：[^〕]+〕)/;
   function linesOf(raw) {
     var t = (raw || "").trim();
-    if (!t || t.length > TG_SPLIT_MAX || t.indexOf("```") >= 0 || t.indexOf("\n") < 0) return null;
-    var out = t.split("\n").map(function (x) { return x.trim(); }).filter(Boolean);
+    if (!t || t.indexOf("```") >= 0) return null;
+    var lines = t.length > TG_SPLIT_MAX ? [t] : t.split("\n").map(function (x) { return x.trim(); }).filter(Boolean);
+    var out = [];
+    lines.forEach(function (l) {
+      l.split(STK_SPLIT).forEach(function (p) { p = p.trim(); if (p) out.push(p); });
+    });
     return out.length > 1 ? out : null;
   }
   /* ⚠️ 2026-10-10 改成「只处理变了的那几行」:原来每次变动(逐字流式时每一帧)都把整页所有气泡扫一遍、
@@ -5388,7 +5434,25 @@ box.focus();
       Array.prototype.forEach.call(sc.querySelectorAll(".gu"), guPass);
       stickerPass(sc);                     // 刚拆出来的泡里也可能有贴纸
     });
+    if (tg) checks(scopes[0] === log);
     typing();
+  }
+  /* 她的泡上的对勾(2026-10-10,照 TG):✓ = 送到了 —— 这颗泡本来就是服务器回声(echo)之后才画的;
+     ✓✓ = 他开始看了 —— 后面出现了他的任何动静(思考 / 工具 / 回话)。
+     整页过时从末尾往前扫一遍;平时只看末尾那一串她连发的泡(更早的早就定了)。 */
+  function checks(all) {
+    var seen = false, passedMe = false;
+    for (var r = log.lastElementChild; r; r = r.previousElementSibling) {
+      if (r === dots || !r.classList.contains("row")) continue;
+      if (r.classList.contains("me")) {
+        passedMe = true;
+        var b = r.querySelector(":scope > .bubble"), v = seen ? "2" : "1";
+        if (b && b.getAttribute("data-tgck") !== v) b.setAttribute("data-tgck", v);
+      } else {
+        if (passedMe && !all) break;
+        seen = true;
+      }
+    }
   }
   function guPass(el) {
     var raw = el._raw != null ? el._raw : el.textContent;
