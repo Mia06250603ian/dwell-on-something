@@ -4795,6 +4795,111 @@ box.focus();
   .tgprof .hero .phint { position: absolute; left: 0; right: 0; bottom: -19px; font-size: 11.5px; color: var(--p3); }   /* 浮在下面,出现 / 消失不把整页往下推 */
   .tgprof .hero .phint:empty { display: none; }
 
+  /* ── 第六版(2026-10-10 晚):照她给的参考图 P2 的位置 + iOS 的做法 ──
+     顶上一张背景(默认 = 他的头像放大虚化,和原来的海报同一个东西;她换过就是她那张),
+     下面一张 30 圆角的底板压上去(iOS 联系人 / Apple 账户页那种),头像骑在交界线上、带一圈底色描边。
+     ⚠️ 状态栏那条(iOS 26):系统拿外壳顶上那块固定元素的颜色涂成**纯色**,页面画不进去(dwell 手册《iOS 26 状态栏那条的规矩》)。
+        所以背景图最上面一截从「同一个实色」化开 —— 那个色从背景图可见区域的最上沿取(sampleTop),
+        同时请外壳把那块固定元素也涂成它(window.__dwTopTint),两边是同一个色就看不出分层。没换背景时照旧用聊天页底色。 */
+  .tgprof::before, .tgprof .poster { display: none; }
+  .tgprof .scroll { padding-top: 0; }
+  .tgprof .pcover { position: relative; margin: 0 -20px; height: calc(236px + var(--dw-sat, env(safe-area-inset-top))); overflow: hidden; }
+  .tgprof .pcimg { position: absolute; inset: -60px; background: var(--tg-av-him, var(--tg-av-him-def));
+                   filter: blur(46px) saturate(1.2); opacity: .9; }
+  .tgprof[data-cover] .pcimg { inset: 0; filter: none; opacity: 1; background: var(--pc-img) center / cover no-repeat; }
+  .tgprof .pcover::after { content: ""; position: absolute; left: 0; right: 0; top: 0; pointer-events: none;
+                           height: calc(64px + var(--dw-sat, env(safe-area-inset-top)));
+                           background: linear-gradient(to bottom, var(--pc-tint, var(--tg-page, var(--bg))) 0%,
+                                       var(--pc-tint, var(--tg-page, var(--bg))) calc(var(--dw-sat, env(safe-area-inset-top)) * .55),
+                                       color-mix(in srgb, var(--pc-tint, var(--tg-page, var(--bg))) 45%, transparent) 62%, transparent 100%); }
+  .tgprof .pcover .pback, .tgprof .pcover .pcbtn { position: absolute; z-index: 2; top: calc(8px + var(--dw-sat, env(safe-area-inset-top))); }
+  .tgprof .pcover .pback { left: 16px; }
+  .tgprof .pcover .pcbtn { right: 16px; width: 36px; height: 36px; border-radius: 50%; border: 0; display: grid; place-items: center; color: var(--p1); }
+  .tgprof .pcover .pcbtn:active { transform: scale(.92); }
+  .tgprof .psheet { position: relative; z-index: 1; margin: -34px -20px 0; padding: 0 20px 1px; background: var(--bg);
+                    border-radius: 30px 30px 0 0; min-height: 70vh; box-shadow: 0 -.5px 0 var(--hair); }
+  .tgprof .hero { margin: 0 0 24px; padding-top: 1px; }
+  .tgprof .hero .big { width: 96px; height: 96px; margin: -50px auto 10px;
+                       box-shadow: 0 0 0 4px var(--bg), 0 10px 28px rgba(0,0,0,.14); }
+  .tgprof .hero .cam { right: -2px; bottom: -2px; box-shadow: 0 0 0 2.5px var(--bg), 0 2px 6px rgba(0,0,0,.18); }
+  .tgprof .hero b { font-size: 22px; font-weight: 600; }
+  .tgprof .hero .who { margin-top: 2px; font-size: 13px; }
+
+  /* 思考档位:iOS UISegmentedControl —— 灰槽 32 高 / 圆角 9,白滑块会滑(深色是亮一档的灰),字 13 中粗 */
+  .tgprof .hero:has(+ .peff:not([hidden])) { margin-bottom: 16px; }   /* 有档位那排时:名字 → 档位近一点,档位 → USAGE 留出组间距 */
+  .tgprof .peff { margin: 0 auto 26px; max-width: 300px; }
+  .tgprof .peff[hidden] { display: none; }
+  .tgprof .pseg { position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); height: 32px; padding: 2px;
+                  border-radius: 9px; background: color-mix(in srgb, var(--text) 7.5%, transparent); }
+  .tgprof .pseg button { position: relative; z-index: 1; border: 0; background: none; padding: 0; border-radius: 7px; color: var(--p1);
+                         font: 500 13px/1 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; letter-spacing: -.01em;
+                         -webkit-tap-highlight-color: transparent; transition: opacity .2s; }
+  .tgprof .pseg button[aria-checked="true"] { font-weight: 600; }
+  .tgprof .pseg button:active { opacity: .55; }
+  .tgprof .pthumb { position: absolute; top: 2px; bottom: 2px; left: 2px; width: calc((100% - 4px) / var(--n, 4)); border-radius: 7px;
+                    background: #fff; box-shadow: 0 3px 8px rgba(0,0,0,.12), 0 3px 1px rgba(0,0,0,.04), 0 0 0 .5px rgba(0,0,0,.04);
+                    transform: translateX(calc(100% * var(--i, 0))); transition: transform .34s cubic-bezier(.32,.72,0,1); }
+  html[data-tgdark] .tgprof .pthumb { background: #636366; box-shadow: 0 3px 8px rgba(0,0,0,.3); }
+  .tgprof .pseg:not([data-on]) .pthumb { opacity: 0; }
+  .tgprof .peffnote { font-size: 11.5px; line-height: 1.4; color: var(--p3); margin: 7px 0 0; text-align: center; }
+  .tgprof .peffnote:empty { display: none; }
+
+  /* iOS 操作表:底部两组圆角块,上组标题 + 选项、下组「取消」;零彩色(她定的),取消加粗 */
+  .tgprof .psheetbg { position: fixed; inset: 0; z-index: 5; background: rgba(0,0,0,.28); animation: tgfade .2s ease; }
+  .tgprof .psheetbg[hidden], .tgprof .pact[hidden] { display: none; }
+  .tgprof .pact { position: fixed; left: 8px; right: 8px; z-index: 6; bottom: calc(8px + var(--dw-sab, env(safe-area-inset-bottom)));
+                  animation: pactin .38s cubic-bezier(.32,.72,0,1); }
+  @keyframes pactin { from { transform: translateY(110%); } to { transform: none; } }
+  .tgprof .pactg { border-radius: 14px; overflow: hidden; margin-top: 8px; --gl: rgba(250,250,250,.86); }
+  html[data-tgdark] .tgprof .pactg { --gl: rgba(44,44,46,.86); }
+  .tgprof .pactg:first-child { margin-top: 0; }
+  .tgprof .pacttl { padding: 13px 16px 12px; text-align: center; font-size: 13px; color: var(--p2); }
+  .tgprof .pactg button { display: block; width: 100%; min-height: 56px; border: 0; background: none; color: var(--p1);
+                          font: 400 19px/1.2 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; border-top: .5px solid var(--hair); }
+  .tgprof .pactg button:active { background: var(--hair); }
+  .tgprof .pactg .pa-cancel { font-weight: 600; border-top: 0; }
+  .tgprof .pactg .pa-del[hidden] { display: none; }
+
+  /* ── 第七版(2026-10-10 晚,所有者「整体风格有点尖锐扁平安卓化」「上面的虚化会不会有点生硬」)──
+     对照 iOS 26 改三件,数不是目测的,照系统控件的形状:
+     ①**不尖**:卡片圆角 18 → 26(iOS 26 分组卡的圆角);分段控件从方角 9 改成**胶囊**(iOS 26 的分段控件就是胶囊);
+     ②**不扁**:卡片不再靠描边线撑形,改成「极淡描边 + 一层很散的影」,底板顶上加一道玻璃高光;
+     ③**虚化不硬**:原来是头像糊成一团、到底板一刀切断。现在 —— 默认背景糊得更开、更淡;背景图下沿用**缓动遮罩**化进底色
+        (不是两段直线渐变,那会看出一条带);底板最上面一截是毛玻璃,压在背景上的那一圈是透的;
+        状态栏那截的渐隐也换成同一种缓动曲线。 */
+  .tgprof { --ease-mask: linear-gradient(to bottom, #000 0%, rgba(0,0,0,.987) 8.1%, rgba(0,0,0,.951) 15.5%, rgba(0,0,0,.896) 22.5%,
+            rgba(0,0,0,.825) 29%, rgba(0,0,0,.741) 35.3%, rgba(0,0,0,.648) 41.2%, rgba(0,0,0,.55) 47.1%, rgba(0,0,0,.45) 52.9%,
+            rgba(0,0,0,.352) 58.8%, rgba(0,0,0,.259) 64.7%, rgba(0,0,0,.175) 71%, rgba(0,0,0,.104) 77.5%, rgba(0,0,0,.049) 84.5%,
+            rgba(0,0,0,.013) 91.9%, transparent 100%); }
+  .tgprof .pcover { height: calc(270px + var(--dw-sat, env(safe-area-inset-top))); }
+  .tgprof .pcimg { -webkit-mask: linear-gradient(#000, #000) top / 100% 53% no-repeat, var(--ease-mask) bottom / 100% 48% no-repeat;
+                           mask: linear-gradient(#000, #000) top / 100% 53% no-repeat, var(--ease-mask) bottom / 100% 48% no-repeat; }
+  .tgprof:not([data-cover]) .pcimg { inset: -120px -120px 0; filter: blur(80px) saturate(1.05); opacity: .5; transform: scale(1.15); }
+  .tgprof .pcover::after { height: calc(90px + var(--dw-sat, env(safe-area-inset-top)));
+                           background: var(--pc-tint, var(--tg-page, var(--bg)));
+                           -webkit-mask: linear-gradient(#000, #000) top / 100% calc(var(--dw-sat, env(safe-area-inset-top)) * .6 + 1px) no-repeat,
+                                         var(--ease-mask) 0 calc(var(--dw-sat, env(safe-area-inset-top)) * .6) / 100% 100% no-repeat;
+                                   mask: linear-gradient(#000, #000) top / 100% calc(var(--dw-sat, env(safe-area-inset-top)) * .6 + 1px) no-repeat,
+                                         var(--ease-mask) 0 calc(var(--dw-sat, env(safe-area-inset-top)) * .6) / 100% 100% no-repeat; }
+  .tgprof .psheet { margin-top: -64px; background: none; box-shadow: none; border-radius: 34px 34px 0 0; }
+  .tgprof .psheet::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit;
+                            background: linear-gradient(to bottom, color-mix(in srgb, var(--bg) 62%, transparent) 0, var(--bg) 96px);
+                            -webkit-backdrop-filter: blur(24px) saturate(1.3); backdrop-filter: blur(24px) saturate(1.3);
+                            box-shadow: inset 0 .5px 0 rgba(255,255,255,.55), 0 -10px 30px rgba(0,0,0,.035); }
+  html[data-tgdark] .tgprof .psheet::before { box-shadow: inset 0 .5px 0 rgba(255,255,255,.08), 0 -10px 30px rgba(0,0,0,.25); }
+  .tgprof .card { border-radius: 26px; }
+  .tgprof .glass { box-shadow: inset 0 .5px 0 var(--gl-hi), inset 0 0 0 .5px color-mix(in srgb, var(--text) 5%, transparent),
+                               0 1px 2px rgba(0,0,0,.025), 0 12px 32px rgba(0,0,0,.05); }
+  html[data-tgdark] .tgprof .glass { box-shadow: inset 0 .5px 0 var(--gl-hi), inset 0 0 0 .5px rgba(255,255,255,.06), 0 12px 32px rgba(0,0,0,.3); }
+  .tgprof .uA { padding: 15px 18px 2px; } .tgprof .uB { padding: 18px 8px 15px; }
+  .tgprof .it { padding: 9px 18px; min-height: 48px; } .tgprof .it + .it::before, .tgprof .pmodels > .it:first-child::before { left: 18px; }
+  .tgprof .pseg { height: 36px; padding: 3px; border-radius: 999px; }
+  .tgprof .pseg button { border-radius: 999px; font-size: 13.5px; }
+  .tgprof .pthumb { top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / var(--n, 4)); border-radius: 999px;
+                    box-shadow: 0 2px 6px rgba(0,0,0,.1), 0 .5px 1px rgba(0,0,0,.06); }
+  .tgprof .pactg { border-radius: 26px; }
+  .tgprof .pact { left: 10px; right: 10px; }
+
   /* ── 贴纸(两套样式都显示成图;2026-10-09) ── */
   img.stk { display: block; width: 132px; height: 132px; object-fit: contain; margin: 2px 0; }
   .bubble.stkonly, .gu.stkonly, .tgb.stkonly { background: none !important; box-shadow: none !important; padding: 0 !important; }
@@ -5323,6 +5428,7 @@ box.focus();
     schedule();
     if (typeof syncComposer === "function") syncComposer();
     if (typeof paintName === "function") paintName();
+    if (typeof paintCover === "function") paintCover();   // 「他」页背景(外壳那边换了 / 去掉了也跟着变)
   }
   applyPrefs();
   fetch("api/prefs", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
@@ -5411,6 +5517,7 @@ box.focus();
   var CHEV = '<svg viewBox="0 0 8 13" width="8" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m1.5 1.5 5 5-5 5"/></svg>';
   /* 头像角上的相机 / 名字旁的笔(2026-10-10,照她给的参考图 P2:头像右下一颗深色小圆 + 相机) */
   var CAM = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.4-2h6.2l1.4 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.8" r="3.3"/></svg>';
+  var PHOTO = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4 17 4.5-4.5 3.5 3.5 2.5-2.5L20 18"/></svg>';
   var PEN = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5l4 4M4 20l1-4.5L16 4.5a1.4 1.4 0 0 1 2 0l1.5 1.5a1.4 1.4 0 0 1 0 2L8.5 19z"/></svg>';
   function ringHTML(cls, name) {
     return '<div class="g ' + cls + '"><div class="ring"><svg viewBox="0 0 78 78"><circle class="trk" cx="39" cy="39" r="34" fill="none" stroke-width="4.5"/>' +
@@ -5425,12 +5532,18 @@ box.focus();
   prof.setAttribute("data-v", uv);
   prof.innerHTML =
     '<div class="poster"></div><div class="scroll">' +
-    '<button class="pback glass" type="button" aria-label="返回"><svg viewBox="0 0 9 15" width="8" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7.8 1.2 1.6 7.5l6.2 6.3"/></svg></button>' +
+    /* 2026-10-10 第六版:照她给的参考图 P2 的位置 —— 顶上一张背景(能换),下面一张圆角底板压上去,头像骑在交界线上 */
+    '<div class="pcover"><div class="pcimg"></div>' +
+      '<button class="pback glass" type="button" aria-label="返回"><svg viewBox="0 0 9 15" width="8" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7.8 1.2 1.6 7.5l6.2 6.3"/></svg></button>' +
+      '<button class="pcbtn glass" type="button" aria-label="换背景">' + PHOTO + '</button></div>' +
+    '<div class="psheet">' +
     '<div class="hero"><button class="big pav" type="button" aria-label="换他的头像"><span class="cam" aria-hidden="true">' + CAM + '</span></button>' +
       '<button class="pname" type="button" aria-label="改他的名字"><b class="tgnm"></b><span class="pen" aria-hidden="true">' + PEN + '</span></button>' +
       '<input class="pnameIn" maxlength="16" enterkeyhint="done" autocomplete="off" spellcheck="false" hidden>' +
       '<div class="who pnow">…</div><div class="phint" aria-live="polite"></div>' +
-      '<input class="pavFile" type="file" accept="image/*" hidden></div>' +
+      '<input class="pavFile" type="file" accept="image/*" hidden><input class="pcFile" type="file" accept="image/*" hidden></div>' +
+    /* 思考档位:iOS 分段控件。shim 认运行时换档(/api/model 带 efforts)才出现 —— 不放假按钮 */
+    '<div class="peff" hidden><div class="pseg" role="radiogroup" aria-label="思考程度"><i class="pthumb"></i></div><p class="peffnote"></p></div>' +
     '<div class="sect">Usage</div>' +
     '<div class="card glass uA"><div class="lead"><div><div class="k">Context window</div><div class="n ctxN">—</div></div><div class="r ctxR"></div></div>' +
       '<div class="bar ctxBar"><i></i></div>' + rowHTML("q5", "5-hour limit") + rowHTML("q7", "Weekly limit") + '</div>' +
@@ -5441,7 +5554,11 @@ box.focus();
       '<span class="tr pmsum"></span><span class="chev pmchev">' + CHEV + '</span></button>' +
       '<div class="pmfold"><div class="pmodels"></div></div></div><p class="foot pmnote"></p>' +
     '<div class="card glass"><button class="it pmore" type="button"><span class="grow"><span class="t">More settings</span></span><span class="chev">' + CHEV + '</span></button></div>' +
-    '</div>';
+    '</div></div>' +
+    /* iOS 操作表(换背景 / 去掉背景 / 取消) */
+    '<div class="psheetbg" hidden></div><div class="pact" role="dialog" aria-label="背景" hidden><div class="pactg glass">' +
+      '<div class="pacttl">Background</div><button type="button" class="pa-pick">Choose Photo</button><button type="button" class="pa-del">Remove Background</button></div>' +
+      '<div class="pactg glass"><button type="button" class="pa-cancel">Cancel</button></div></div>';
   document.body.appendChild(prof);
   paintName();
   Array.prototype.forEach.call(prof.querySelectorAll(".uA, .uB"), function (c) {
@@ -5456,8 +5573,132 @@ box.focus();
   prof.querySelector(".pmore").addEventListener("click", function () {
     closeProf(); var d = document.getElementById("dotsBtn"); if (d) setTimeout(function () { d.click(); }, 280);
   });
-  function closeProf() { if (nameIn && !nameIn.hidden) nameIn.blur(); prof.classList.remove("open"); }
-  function openProf() { prof.classList.add("open"); foldModels(false); loadProf(); }
+  function closeProf() { if (nameIn && !nameIn.hidden) nameIn.blur(); closeAct(); prof.classList.remove("open"); topTint(null); }
+  function openProf() { prof.classList.add("open"); foldModels(false); paintCover(); loadProf(); }
+
+  /* ── 背景(2026-10-10 第六版,所有者「我也想要这种能换背景的」)──
+     存法同聊天壁纸:长边压到 1600px 的 JPEG → POST api/avatar/cover(本层上限 1.5MB,和壁纸同一档)。
+     去掉要确认,只有她点才删。没换过 = 他的头像放大虚化(原来的海报)。 */
+  var pcImg = prof.querySelector(".pcimg"), pcFile = prof.querySelector(".pcFile");
+  var tintNow = null;
+  function coverUrl() { var v = prefs.avatars && prefs.avatars.cover; return v ? "api/avatar/cover?v=" + v : ""; }
+  /* 状态栏那条的颜色(iOS 26 只能是纯色):取背景图「可见区域」最上沿那一窄条的平均色。
+     background-size: cover + 居中 —— 可见区域不是原图的最上沿,要按同样的裁法算(竖图会上下各裁掉一截)。 */
+  function sampleTop(url, cb) {
+    var img = new Image();
+    img.onload = function () {
+      try {
+        var box = prof.querySelector(".pcover").getBoundingClientRect(), W = box.width || 402, H = box.height || 290;
+        var k = Math.max(W / img.naturalWidth, H / img.naturalHeight), sw = W / k, sh = H / k;
+        var sx = (img.naturalWidth - sw) / 2, sy = (img.naturalHeight - sh) / 2;
+        var c = document.createElement("canvas"); c.width = 12; c.height = 2;
+        var g = c.getContext("2d"); g.drawImage(img, sx, sy, sw, Math.max(1, sh * 0.04), 0, 0, 12, 2);
+        var d = g.getImageData(0, 0, 12, 2).data, r = 0, gg = 0, b = 0, n = d.length / 4;
+        for (var i = 0; i < d.length; i += 4) { r += d[i]; gg += d[i + 1]; b += d[i + 2]; }
+        cb("rgb(" + Math.round(r / n) + "," + Math.round(gg / n) + "," + Math.round(b / n) + ")");
+      } catch (e) { cb(null); }
+    };
+    img.onerror = function () { cb(null); };
+    img.src = url;
+  }
+  function topTint(c) {   // 请外壳把顶上那块固定元素涂成同一个色;null = 还给它(聊天页底色)
+    try { if (window.parent !== window && typeof window.parent.__dwTopTint === "function") window.parent.__dwTopTint(c); } catch (e) {}
+  }
+  function paintCover() {
+    if (!prof) return;
+    var u = coverUrl();
+    prof.toggleAttribute("data-cover", !!u);
+    prof.querySelector(".pa-del").hidden = !u;
+    if (!u) { prof.style.removeProperty("--pc-img"); prof.style.removeProperty("--pc-tint"); tintNow = null; if (prof.classList.contains("open")) topTint(null); return; }
+    prof.style.setProperty("--pc-img", 'url("' + u + '")');
+    sampleTop(u, function (c) {
+      if (coverUrl() !== u) return;              // 等的时候又换了一张
+      tintNow = c;
+      if (c) prof.style.setProperty("--pc-tint", c); else prof.style.removeProperty("--pc-tint");
+      if (prof.classList.contains("open")) topTint(c);
+    });
+    if (prof.classList.contains("open") && tintNow) topTint(tintNow);
+  }
+  var actBg = prof.querySelector(".psheetbg"), act = prof.querySelector(".pact");
+  function openAct() { actBg.hidden = false; act.hidden = false; }
+  function closeAct() { if (actBg) { actBg.hidden = true; act.hidden = true; } }
+  prof.querySelector(".pcbtn").addEventListener("click", openAct);
+  actBg.addEventListener("click", closeAct);
+  prof.querySelector(".pa-cancel").addEventListener("click", closeAct);
+  prof.querySelector(".pa-pick").addEventListener("click", function () { closeAct(); pcFile.value = ""; pcFile.click(); });
+  prof.querySelector(".pa-del").addEventListener("click", function () {
+    closeAct();
+    if (!confirm("去掉背景?换上去的那张会删掉。")) return;
+    fetch("api/avatar/cover", { method: "DELETE" }).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d.ok) { say("没去掉:服务器没收"); return; }
+      prefs.avatars.cover = null; paintCover();
+      if (!tellShell()) cacheShell({ avatars: prefs.avatars });
+    }).catch(function () { say("没去掉:连不上服务器"); });
+  });
+  pcFile.addEventListener("change", function () {
+    var f = pcFile.files && pcFile.files[0]; if (!f) return;
+    var url = URL.createObjectURL(f), img = new Image();
+    say("Updating…");
+    img.onload = function () {
+      try {
+        var k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+        var c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        var data = c.toDataURL("image/jpeg", 0.82); URL.revokeObjectURL(url);
+        fetch("api/avatar/cover", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ dataUrl: data }) })
+          .then(function (r) { return r.json().catch(function () { return { ok: false, why: "HTTP " + r.status }; }); })
+          .then(function (d) {
+            if (!d.ok) { say("没换成:" + (d.why || "服务器没收")); return; }
+            prefs.avatars = prefs.avatars || {}; prefs.avatars.cover = d.ver; paintCover();
+            if (!tellShell()) cacheShell({ avatars: prefs.avatars });
+            say(d.persisted ? "Background updated" : "换好了 —— 但服务器这会儿没开落盘,重启会丢");
+          }).catch(function () { say("没换成:连不上服务器"); });
+      } catch (e) { say("没换成:这张图读不了"); }
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); say("没换成:这张图读不了(试试 JPG / PNG)"); };
+    img.src = url;
+  });
+
+  /* ── 思考档位(2026-10-10,所有者选了 A:原地换、不丢窗口)──
+     POST api/effort → dwell-bridge → shim 的 /effort;shim 在她下一句话之前对活着的进程原地换(apply_flag_settings),
+     再读回实际生效的档位。所以这里:选中 = 她要的(effort);下面那行小字 = 还没生效 / 这个模型到不了。
+     /api/model 不带 efforts(shim 还是旧版)= 整排不出现。 */
+  var EFF_LABEL = { low: "Low", medium: "Medium", high: "High", xhigh: "Extra" };
+  var effBox = prof.querySelector(".peff"), seg = prof.querySelector(".pseg"), effNote = prof.querySelector(".peffnote");
+  function paintEffort(d) {
+    var list = d && d.efforts;
+    if (!list || !list.length) { effBox.hidden = true; return; }
+    effBox.hidden = false;
+    if (seg.dataset.list !== list.join(",")) {
+      Array.prototype.forEach.call(seg.querySelectorAll("button"), function (b) { b.remove(); });
+      list.forEach(function (lv) {
+        var b = document.createElement("button");
+        b.type = "button"; b.setAttribute("role", "radio"); b.dataset.lv = lv; b.textContent = EFF_LABEL[lv] || lv;
+        b.addEventListener("click", function () { pickEffort(lv); });
+        seg.appendChild(b);
+      });
+      seg.dataset.list = list.join(",");
+      seg.style.setProperty("--n", list.length);
+    }
+    var i = list.indexOf(d.effort);
+    seg.toggleAttribute("data-on", i >= 0);
+    seg.style.setProperty("--i", Math.max(0, i));
+    Array.prototype.forEach.call(seg.querySelectorAll("button"), function (b) { b.setAttribute("aria-checked", String(b.dataset.lv === d.effort)); });
+    var ap = d.effortApplied;
+    effNote.textContent = !ap || ap === d.effort ? ""
+      : d.effort === "xhigh" && ap === "high" ? "This model tops out at High."
+      : "Switches with your next message.";
+  }
+  function pickEffort(lv) {
+    var cur = seg.querySelector('button[aria-checked="true"]');
+    if (cur && cur.dataset.lv === lv) return;
+    var list = (seg.dataset.list || "").split(",");
+    seg.setAttribute("data-on", ""); seg.style.setProperty("--i", Math.max(0, list.indexOf(lv)));   // 滑块先走,不等网络
+    fetch("api/effort", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ effort: lv }) })
+      .then(function (r) { return r.json().catch(function () { return { ok: false }; }); })
+      .then(function (x) { if (!x.ok) say("没换成:" + (x.why || "服务器没收")); loadProf(true); })
+      .catch(function () { say("没换成:连不上服务器"); loadProf(true); });
+  }
 
   /* ── 模型那张卡折起来(2026-10-10 所有者「模型可选的部分折叠起来」)──
      平时只一行:当前型号 + 引擎,右边写「几个可选」或「下一句换成谁」;点了往下展开整张清单,再点收起。
@@ -5581,9 +5822,10 @@ box.focus();
     return "Resets " + day + hm;
   }
   var CHECK = '<svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.5 6.2 2.3 2.3 4.7-5"/></svg>';
-  function loadProf() {
+  function loadProf(onlyModel) {
     fetch("api/model", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
       prof.querySelector(".pnow").textContent = prettyModel(d.model).replace("(新版)", "");
+      paintEffort(d);
       /* 折起来时那一行:当前那个(菜单里打了对勾的)+ 引擎;右边 = 下一句要换成谁,没有就写几个可选 */
       var menu = d.menu || [], cur = null;
       menu.forEach(function (m) { if (m.current) cur = m; });
@@ -5609,6 +5851,7 @@ box.focus();
         ? "Switches to " + prettyModel(d.pending).replace("(新版)", "") + " with your next message. Tap the ✓ one to cancel."
         : "Switches with your next message.";
     }).catch(function () { prof.querySelector(".pmnote").textContent = "Couldn't load models — server unreachable."; });
+    if (onlyModel === true) return;          // 只换了档位 / 模型:用量那几条别再从 0 长一遍
     fetch("api/context", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
       var f = d.max ? d.used / d.max : null;
       setMeter("ctx", f, null, d.used ? Math.round(d.used / 1000) + "k / " + Math.round(d.max / 1000) + "k" : "");
@@ -5639,7 +5882,7 @@ box.focus();
       body: JSON.stringify({ model: m.current ? "" : m.model }) })
       .then(function (r) { return r.json(); }).then(function (x) {
         if (!x.ok && typeof note === "function") note("（没记上:" + (x.why || "服务器没收") + "）", "err");
-        loadProf();
+        loadProf(true);
       }).catch(function () { if (typeof note === "function") note("（连不上服务器）", "err"); });
   }
 
