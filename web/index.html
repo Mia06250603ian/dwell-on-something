@@ -901,7 +901,9 @@
     </div>
 
     <h1 class="greet"><span id="greetWord">Good evening,</span> <span class="cn">佳佳</span></h1>
-    <p class="weather sub">阴 27° <span class="soft">28~34°</span> · 降雨 76%,带伞</p>
+    <!-- 2026-10-10 接上真天气:~~「阴 27° 28~34° · 降雨 76%,带伞」写死的~~。和晏的注入同一个数据源(dwell-bridge 的 /api/weather,
+         同一个 wttr.in + 同一个城市,规则照抄 shim 的 senses.mjs)。读不到就空着(留着行高,卡片不跳),不编。 -->
+    <p class="weather sub" id="homeWeather">&nbsp;</p>
     </div>
 
     <div class="stack homefeed">
@@ -1962,6 +1964,26 @@
     return (m.kind === "me" ? "我: " : "") + t;
   }
   var lastBusy = false;
+  /* ---------- 首页天气(2026-10-10):读 dwell-bridge 的 /api/weather,样式同原来那行「阴 27° 28~34° · 降雨 76%,带伞」 ----------
+     打开页面、切回前台、之后每 15 分钟问一次(服务器那边 30 分钟才真去拉一次,这里问得勤只是读缓存)。 */
+  function loadWeather() {
+    var el = document.getElementById("homeWeather");
+    if (!el) return;
+    fetch("api/weather", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      if (!d || !d.ok) { el.innerHTML = "&nbsp;"; return; }
+      el.textContent = "";
+      el.appendChild(document.createTextNode(d.desc + (d.temp != null ? " " + d.temp + "° " : " ")));
+      if (d.min != null && d.max != null) {
+        var soft = document.createElement("span"); soft.className = "soft"; soft.textContent = d.min + "~" + d.max + "°";
+        el.appendChild(soft);
+      }
+      el.appendChild(document.createTextNode(" · 降雨 " + d.rain + "%" + (d.umbrella ? ",带伞" : "")));
+    }).catch(function () {});
+  }
+  loadWeather();
+  setInterval(loadWeather, 15 * 60000);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) loadWeather(); });
+
   function loadLast() {
     if (lastBusy || !yanPrev) return;
     lastBusy = true;
