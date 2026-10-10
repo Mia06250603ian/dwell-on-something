@@ -16,6 +16,8 @@
      用 default + theme-color,iOS 15 起会拿 theme-color 填状态栏那一条并自动挑可读的字色;
      下面的 JS 还会让 theme-color 跟着当前皮肤走,所以那一条和页面底色永远是同一个色,看不出接缝。 -->
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- ⚠️ 2026-10-10:iOS 26 起 theme-color 不再被认,状态栏那条改由「顶边的固定元素」定色(见下面 .topcap)。
+     这几行 meta 和下面那段脚本留着给旧系统,别指望它们在 iOS 26 上起作用。 -->
 <meta name="theme-color" content="#f3f2f1" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1c1b19" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="icons/favicon-64.png" sizes="64x64">
@@ -161,20 +163,26 @@
     /* ⚠️⚠️ 下面这一档 2026-10-09 整体重定:两张都是 iPhone 真机截图(同为 New York),
        所以直接拿**同一串字**的墨宽/墨高比乘当前字号,不再经过任何字体度量换算。
        此前那几轮偏小,根因是把参考图(Pro Max 440pt)当成 402pt 宽来换算,每个数小了 9%。 */
-    --fs-display: clamp(37px, 11.52vw, 46.3px); /* Day N:墨高比 1.153、墨宽比 1.135(~~40.7~~) */
-    --fs-greet:   clamp(28px, 8.38vw, 33.7px); /* Good evening,:墨高比 1.074(~~31.5~~),字距另见 .greet */
-    --fs-metric:  clamp(28px, 8.56vw, 34.4px); /* 113 vs 114 墨高比 1.076(~~32~~) */
-    --fs-title:    24px;   /* 页标题 Chats / Settings / Diary */
-    --fs-metric-2: 20px;   /* 140 vs 164 墨高比 1.028(~~19.5~~) */
-    --fs-headline: 20.75px; /* Monthly Anniversary 同一串字:墨宽比 1.063、墨高比 1.085(~~19.5~~) */
-    --fs-ring:     20.5px; /* 环里的数:墨高比 1.105(~~18.5~~) */
-    --fs-whisper:  16.3px; /* 深色卡正文:汉字墨高比 1.05(~~15.5~~) */
-    --fs-label:    17.75px; /* Us / Steps / Heart Rate 同串墨宽比 1.059 / 1.078 / 1.080(~~16.5~~) */
-    --fs-tab:      16.5px; /* Home 墨高比 1.056(~~16~~) */
-    --fs-body:     15px;
-    --fs-sub:      14.5px; /* 天气、卡片副标题:参考 Aug 21 墨高 14.1 vs 真机 12.7 */
-    --fs-caption:  13.5px;
-    --fs-datum:    11px;   /* 图例、时间戳 */
+    /* ⚠️ 2026-10-10 所有者:「字体整体有点偏大」→ 整档乘一个系数,不逐个改上面量出来的数。
+       依据:10-09 那套是照 Pro Max(440pt 宽)的参考图按 pt 原样搬的,而她的手机是 402pt ——
+       同样的 pt 放在窄 9% 的屏上,相对就大了 9%。402/440 = 0.914,取 0.92。
+       **要回到 10-09 的样子把它改回 1;嫌还大 / 太小就只调这一个数。**
+       只管这一档 token(Home / Diary / 设置 / 底栏);Chats 列表那几个数是照她手机上的 Telegram 量的,不跟着缩。 */
+    --fs-k: .92;
+    --fs-display: calc(clamp(37px, 11.52vw, 46.3px) * var(--fs-k)); /* Day N:墨高比 1.153、墨宽比 1.135(~~40.7~~) */
+    --fs-greet:   calc(clamp(28px, 8.38vw, 33.7px) * var(--fs-k)); /* Good evening,:墨高比 1.074(~~31.5~~),字距另见 .greet */
+    --fs-metric:  calc(clamp(28px, 8.56vw, 34.4px) * var(--fs-k)); /* 113 vs 114 墨高比 1.076(~~32~~) */
+    --fs-title:    calc(24px * var(--fs-k));   /* 页标题 Chats / Settings / Diary */
+    --fs-metric-2: calc(20px * var(--fs-k));   /* 140 vs 164 墨高比 1.028(~~19.5~~) */
+    --fs-headline: calc(20.75px * var(--fs-k)); /* Monthly Anniversary 同一串字:墨宽比 1.063、墨高比 1.085(~~19.5~~) */
+    --fs-ring:     calc(20.5px * var(--fs-k)); /* 环里的数:墨高比 1.105(~~18.5~~) */
+    --fs-whisper:  calc(16.3px * var(--fs-k)); /* 深色卡正文:汉字墨高比 1.05(~~15.5~~) */
+    --fs-label:    calc(17.75px * var(--fs-k)); /* Us / Steps / Heart Rate 同串墨宽比 1.059 / 1.078 / 1.080(~~16.5~~) */
+    --fs-tab:      calc(16.5px * var(--fs-k)); /* Home 墨高比 1.056(~~16~~) */
+    --fs-body:     calc(15px * var(--fs-k));
+    --fs-sub:      calc(14.5px * var(--fs-k)); /* 天气、卡片副标题:参考 Aug 21 墨高 14.1 vs 真机 12.7 */
+    --fs-caption:  calc(13.5px * var(--fs-k));
+    --fs-datum:    calc(11px * var(--fs-k));   /* 图例、时间戳 */
 
     /* ---- 动画 ---- */
     /* 阻尼弹簧的真实采样(response .46 / dampingFraction .86 / 560ms,
@@ -292,6 +300,15 @@
   button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
   :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 6px; }
 
+  /* ---------- 状态栏那一条:钉一块纯色(2026-10-10,所有者报「最上边会被模糊化一部分」) ----------
+     iOS 26 起,主屏网页 App 的状态栏那块由系统画:页面顶边**没有**固定定位的元素时,系统盖一层
+     软模糊、还往下渗一截,把 Chats / 日期那一行也糊掉;顶边**有**固定元素时改用纯色(取那个元素的底色)。
+     所以这里钉一块和页面顶部同色的固定条,换来干净的硬边。theme-color 在 iOS 26 已不认,靠不住。
+     ⚠️ 高度就是 --sat:浏览器里(没有安全区)它高 0,什么都不挡。z-index 在底栏(50)之上、聊天页(80)/设置(90)之下。 */
+  .topcap {
+    position: fixed; top: 0; left: 0; right: 0; height: var(--sat); z-index: 60;
+    background: var(--paper-top); pointer-events: none;
+  }
   /* ---------- 壳 ---------- */
   .phone {
     width: 100%;
@@ -648,14 +665,16 @@
     position: fixed; inset: 0; z-index: 80;
     background: var(--paper-bot);
     display: flex; flex-direction: column;
-    padding-top: var(--sat);
+    /* ~~padding-top: var(--sat)~~ 2026-10-10 撤:那一截就是所有者截图里「顶部分层」的那条纯色带。
+       现在 iframe 铺满整屏,安全区由聊天页自己让(外壳量好递进去,见 chat.html 开头和下面的 pushSafe);
+       只有「这间屋还没部署」那条 .chatbar 自己让出顶部安全区。 */
     animation: slidein .28s cubic-bezier(.32,.72,0,1);
   }
   @keyframes slidein { from { transform: translateX(16px); opacity: 0 } to { transform: none; opacity: 1 } }
   @media (prefers-reduced-motion: reduce) { .chatview { animation: none } }
   .chatbar {
     display: flex; align-items: center; gap: 10px;
-    height: 44px; flex: none; padding: 0 var(--gutter);
+    height: calc(44px + var(--sat)); flex: none; padding: var(--sat) var(--gutter) 0;
     border-bottom: var(--hair) solid var(--line);
     background: color-mix(in srgb, var(--paper-top) 88%, transparent);
     -webkit-backdrop-filter: saturate(1.4) blur(20px);
@@ -751,6 +770,9 @@
   .wallthumb { width: 46px; height: 64px; border-radius: 10px; flex: none; background: var(--paper-bot) center / cover no-repeat;
                box-shadow: inset 0 0 0 .5px rgba(0,0,0,.14); }
   .seg { display: flex; gap: 8px; margin-top: 4px; }
+  .nameinput { flex: 0 1 50%; min-width: 0; text-align: right; border: 0; background: none; padding: 6px 0;
+    font: inherit; font-size: 16px; color: var(--ink); outline: none; }   /* 16px:iOS 低于 16 会在聚焦时自动放大页面 */
+  .nameinput::placeholder { color: var(--dim); }
   .seg button {
     flex: 1; height: 46px; border-radius: 20px;
     font-size: 15px; color: var(--dim);
@@ -776,6 +798,7 @@
   }
 </style>
 
+<div class="topcap" aria-hidden="true"></div>
 <main class="phone">
 
   <!-- ================= HOME ================= -->
@@ -909,10 +932,10 @@
       <button class="crow" data-chat="chat.html" data-who="晏">
         <span class="av" data-bloom aria-hidden="true"></span>
         <span class="grow">
-          <span class="name" style="display:block">晏</span>
-          <span class="prev" style="display:block">把你今天写的东西、动过的东西告诉我</span>
+          <span class="name" style="display:block" data-himname>晏</span>
+          <span class="prev" id="yanPrev" style="display:block">&nbsp;</span>
         </span>
-        <span class="right"><span class="datum">6:40 PM</span></span>
+        <span class="right"><span class="datum" id="yanWhen"></span></span>
       </button>
 
       <button class="crow" data-chat="" data-who="另一个 AI 的房间">
@@ -977,7 +1000,8 @@
     <span class="who" id="chatWho">晏</span>
     <span class="rail" aria-hidden="true"></span>
   </div>
-  <iframe id="chatframe" title="聊天" hidden></iframe>
+  <!-- allow:聊天页里录音(2026-10-10 语音)要麦克风;同源 iframe 按规范默认就有,写明是给 iOS 和以后的浏览器一个确定的答案 -->
+  <iframe id="chatframe" title="聊天" allow="microphone; autoplay" hidden></iframe>
   <p class="nothere" id="chatNone" hidden>这间屋的服务还没部署,所以还进不去。</p>
 </div>
 
@@ -1058,6 +1082,16 @@
           <button class="datum" id="wallPick" style="color:var(--ink)">换一张</button>
         </div>
         <input type="file" id="wallFile" accept="image/*" hidden>
+        <hr class="grouprule">
+        <!-- 2026-10-10 所有者:「聊天里的字有点偏大,我想要一个自己可以修改字号的功能」。存 /api/prefs(换设备也在) -->
+        <div class="t" style="font-size:15px">聊天字号</div>
+        <div class="seg" id="chatFont">
+          <button data-v="13.5" aria-pressed="false">小</button>
+          <button data-v="14.5" aria-pressed="false">标准</button>
+          <button data-v="15.5" aria-pressed="false">中</button>
+          <button data-v="16.5" aria-pressed="false">大</button>
+          <button data-v="17.5" aria-pressed="false">特大</button>
+        </div>
         <p class="hint">气泡上的字会按底色深浅自动选黑字或白字</p>
       </section>
 
@@ -1085,10 +1119,17 @@
         <hr class="grouprule">
         <div class="srow">
           <span class="av" data-avatar="him" data-bloom aria-hidden="true"></span>
-          <span class="grow t">晏</span>
+          <span class="grow t" data-himname>晏</span>
           <button class="datum" data-avreset="him" style="color:var(--dim)">恢复默认</button>
           <button class="datum" data-avpick="him" style="color:var(--ink)">换一张</button>
         </div>
+        <hr class="grouprule">
+        <!-- 2026-10-10 所有者:「想要一个可以给他改名的选项」。**只改网页上显示的名字**(顶栏、Chats、他那一页),
+             不碰他的人设、不告诉他。存 /api/prefs(换设备也在);清空 = 回到「晏」。 -->
+        <label class="srow">
+          <span class="grow t">他的名字</span>
+          <input id="himName" class="nameinput" maxlength="16" placeholder="晏" enterkeyhint="done" autocomplete="off" spellcheck="false">
+        </label>
         <input type="file" id="avFile" accept="image/*" hidden>
         <p class="hint" id="avHint">图会先在手机上裁成正方形、压小再传,存在服务器上,换设备也在</p>
       </section>
@@ -1252,6 +1293,8 @@
   if (!state.avatars) state.avatars = { me: null, him: null };
   if (typeof state.meBubble !== "string") state.meBubble = "";      // "" = 跟皮肤走
   if (typeof state.himBubble !== "string") state.himBubble = "";
+  if (typeof state.chatFont !== "string" || !state.chatFont) state.chatFont = "14.5";   // TG 版聊天字号,标准档
+  if (typeof state.himName !== "string") state.himName = "";                              // 他的显示名,"" = 晏
   /* ⚠️ 默认从 85 改成 100(2026-09-19)。85% 半透明 + 毛玻璃会让卡片和渐变页底混在一起,
      整页发灰发闷 —— 并排比参考图,这是最刺眼的一条,比字号的影响大得多。
      参考图的卡是**实心近白**。滑杆还在,她想要半透明随时拉回去。 */
@@ -1290,12 +1333,26 @@
       state[key] = b.dataset.v;
       apply();
       save(state);
-      if (key === "chatStyle" || key === "avatarMode") pushPrefs();
+      if (key === "chatStyle" || key === "avatarMode" || key === "chatFont") pushPrefs();
     });
   }
   wireSeg("chatStyle", "chatStyle");
   wireSeg("avatarMode", "avatarMode");
   wireSeg("appearance", "appearance");
+  wireSeg("chatFont", "chatFont");
+  /* 改名:失焦或按「完成」时存;一样就不存 */
+  (function () {
+    var inp = document.getElementById("himName");
+    if (!inp) return;
+    function commit() {
+      var v = inp.value.replace(/\s+/g, " ").trim().slice(0, 16);
+      if (v === (state.himName || "")) return;
+      state.himName = v; save(state); apply(); pushPrefs();
+    }
+    inp.addEventListener("change", commit);
+    inp.addEventListener("blur", commit);
+    inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); inp.blur(); } });
+  })();
 
   /* ---------- 透明度 ---------- */
   var op = document.getElementById("opacity");
@@ -1331,6 +1388,8 @@
         if (d.prefs.chatStyle) state.chatStyle = d.prefs.chatStyle;
         if (d.prefs.avatarMode) state.avatarMode = d.prefs.avatarMode;
         state.meBubble = d.prefs.meBubble || ""; state.himBubble = d.prefs.himBubble || "";
+        if (d.prefs.chatFont) state.chatFont = d.prefs.chatFont;
+        if (typeof d.prefs.himName === "string") state.himName = d.prefs.himName;
         state.avatars = d.avatars || { me: null, him: null };
         save(state); apply();
       })
@@ -1339,7 +1398,8 @@
   function pushPrefs() {
     fetch("api/prefs", { method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify({ prefs: { chatStyle: state.chatStyle, avatarMode: state.avatarMode,
-                                      meBubble: state.meBubble || "", himBubble: state.himBubble || "" } }) })
+                                      meBubble: state.meBubble || "", himBubble: state.himBubble || "",
+                                      chatFont: state.chatFont || "14.5", himName: state.himName || "" } }) })
       .catch(function () {});
   }
   /* 聊天页同源:换了样式 / 头像就当场告诉它,不用重进 */
@@ -1348,7 +1408,7 @@
       var f = document.getElementById("chatframe");
       if (f && f.contentWindow) f.contentWindow.postMessage({ type: "dwell-prefs",
         chatStyle: state.chatStyle, avatarMode: state.avatarMode, avatars: state.avatars,
-        palette: state.palette, meBubble: state.meBubble, himBubble: state.himBubble }, location.origin);
+        palette: state.palette, meBubble: state.meBubble, himBubble: state.himBubble, chatFont: state.chatFont, himName: state.himName }, location.origin);
     } catch (e) {}
   }
 
@@ -1479,7 +1539,16 @@
   })();
 
   /* ---------- 应用 ---------- */
+  function himName() { return (state.himName || "").trim() || "晏"; }
+  function paintName() {
+    var n = himName();
+    Array.prototype.forEach.call(document.querySelectorAll("[data-himname]"), function (el) { if (el.textContent !== n) el.textContent = n; });
+    var row = document.querySelector('.crow[data-chat="chat.html"]'); if (row) row.dataset.who = n;
+    var inp = document.getElementById("himName");
+    if (inp && document.activeElement !== inp) inp.value = state.himName || "";
+  }
   function apply() {
+    paintName();
     var root = document.documentElement;
     root.setAttribute("data-skin", state.skin);
     if (state.appearance === "system") root.removeAttribute("data-theme");
@@ -1495,7 +1564,7 @@
     Array.prototype.forEach.call(skinBox.children, function (b) {
       b.setAttribute("aria-pressed", String(b.dataset.skin === state.skin));
     });
-    ["chatStyle", "avatarMode", "appearance"].forEach(function (id) {
+    ["chatStyle", "avatarMode", "appearance", "chatFont"].forEach(function (id) {
       var key = id;
       Array.prototype.forEach.call(document.getElementById(id).children, function (b) {
         b.setAttribute("aria-pressed", String(b.dataset.v === state[key]));
@@ -1676,7 +1745,57 @@
   function goBack() {
     chatview.hidden = true;
     tabbar.hidden = false;
+    loadLast();
   }
+
+  /* ---------- Chats 里「晏」那一行:最后一句 + 时间,实时取(2026-10-10) ----------
+     ~~原来那句「把你今天写的东西…」和 6:40 PM 是写死在网页里的~~(所有者:「chat 这个界面的字不是实时的」)。
+     现在读 /api/messages 的最后几条,挑最后一句她或他说的话(思考 / 工具不算)。
+     ⚠️ 只记得经过 dwell 的话:Telegram / iMessage 那边说的、他主动发的,这里看不到(dwell 手册已知边界 1)。
+     什么时候刷新:打开页面、点到 Chats、从聊天页返回、切回前台。读不到就留空,不编一句假的。 */
+  var yanPrev = document.getElementById("yanPrev");
+  var yanWhen = document.getElementById("yanWhen");
+  function whenText(sec) {
+    var d = new Date(sec * 1000), now = new Date();
+    var day0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    var t = d.getTime();
+    if (t >= day0) {                      /* 今天:6:40 PM */
+      var h = d.getHours(), m = d.getMinutes();
+      return ((h % 12) || 12) + ":" + (m < 10 ? "0" : "") + m + " " + (h < 12 ? "AM" : "PM");
+    }
+    if (t >= day0 - 86400000) return "Yesterday";
+    if (t >= day0 - 6 * 86400000) return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getDay()];
+    return (d.getMonth() + 1) + "/" + d.getDate() + (d.getFullYear() === now.getFullYear() ? "" : "/" + String(d.getFullYear()).slice(2));
+  }
+  function prevText(m) {
+    var t = String(m.text || "")
+      .replace(/〔贴纸[：:][^〕]*〕/g, "[贴纸]").replace(/〔语音〕/g, "[语音]")
+      .replace(/\s+/g, " ").trim();
+    if (!t) t = "…";
+    return (m.kind === "me" ? "我: " : "") + t;
+  }
+  var lastBusy = false;
+  function loadLast() {
+    if (lastBusy || !yanPrev) return;
+    lastBusy = true;
+    fetch("api/messages?limit=30", { credentials: "same-origin" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        var ms = (d && d.msgs) || [], last = null;
+        for (var i = ms.length - 1; i >= 0; i--) {
+          if (ms[i].kind === "me" || ms[i].kind === "gu") { last = ms[i]; break; }
+        }
+        yanPrev.textContent = last ? prevText(last) : "还没有说过话";
+        yanWhen.textContent = last && last.at ? whenText(last.at) : "";
+      })
+      .catch(function () {})
+      .then(function () { lastBusy = false; });
+  }
+  loadLast();
+  Array.prototype.forEach.call(tabs, function (t) {
+    if (t.getAttribute("aria-controls") === "tab-chats") t.addEventListener("click", loadLast);
+  });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) loadLast(); });
   document.getElementById("chatBack").addEventListener("click", goBack);
 
   /* ---------- 只留一条顶栏(2026-10-09) ----------
@@ -1707,8 +1826,25 @@
       chatview.style.background = (c && c !== "rgba(0, 0, 0, 0)" && c !== "transparent") ? c : "";
     } catch (e) { chatview.style.background = ""; }
   }
+  /* 把外壳的安全区递进聊天页(2026-10-10)。iOS 不把刘海 / Home 条高度传进 iframe,
+     首次绘制前那次由 chat.html 开头自己量;这里管加载后与转屏 / 改尺寸时再递一次。 */
+  function pushSafe() {
+    try {
+      var d = chatframe.contentDocument;
+      if (!d || !d.documentElement) return;
+      var p = document.createElement("div");
+      p.style.cssText = "position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;pointer-events:none;" +
+        "padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)";
+      document.body.appendChild(p);
+      var c = getComputedStyle(p);
+      d.documentElement.style.setProperty("--dw-sat", c.paddingTop);
+      d.documentElement.style.setProperty("--dw-sab", c.paddingBottom);
+      p.remove();
+    } catch (e) {}
+  }
+  window.addEventListener("resize", pushSafe);
   chatframe.addEventListener("load", function () {
-    mountBack(); syncBg();
+    pushSafe(); mountBack(); syncBg();
     try {
       new MutationObserver(syncBg).observe(chatframe.contentDocument.documentElement, { attributes: true });
     } catch (e) {}
