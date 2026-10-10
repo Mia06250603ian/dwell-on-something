@@ -1078,6 +1078,16 @@
           <button class="datum" id="wallPick" style="color:var(--ink)">换一张</button>
         </div>
         <input type="file" id="wallFile" accept="image/*" hidden>
+        <hr class="grouprule">
+        <!-- 2026-10-10 所有者:「聊天里的字有点偏大,我想要一个自己可以修改字号的功能」。存 /api/prefs(换设备也在) -->
+        <div class="t" style="font-size:15px">聊天字号</div>
+        <div class="seg" id="chatFont">
+          <button data-v="13.5" aria-pressed="false">小</button>
+          <button data-v="14.5" aria-pressed="false">标准</button>
+          <button data-v="15.5" aria-pressed="false">中</button>
+          <button data-v="16.5" aria-pressed="false">大</button>
+          <button data-v="17.5" aria-pressed="false">特大</button>
+        </div>
         <p class="hint">气泡上的字会按底色深浅自动选黑字或白字</p>
       </section>
 
@@ -1272,6 +1282,7 @@
   if (!state.avatars) state.avatars = { me: null, him: null };
   if (typeof state.meBubble !== "string") state.meBubble = "";      // "" = 跟皮肤走
   if (typeof state.himBubble !== "string") state.himBubble = "";
+  if (typeof state.chatFont !== "string" || !state.chatFont) state.chatFont = "14.5";   // TG 版聊天字号,标准档
   /* ⚠️ 默认从 85 改成 100(2026-09-19)。85% 半透明 + 毛玻璃会让卡片和渐变页底混在一起,
      整页发灰发闷 —— 并排比参考图,这是最刺眼的一条,比字号的影响大得多。
      参考图的卡是**实心近白**。滑杆还在,她想要半透明随时拉回去。 */
@@ -1310,12 +1321,13 @@
       state[key] = b.dataset.v;
       apply();
       save(state);
-      if (key === "chatStyle" || key === "avatarMode") pushPrefs();
+      if (key === "chatStyle" || key === "avatarMode" || key === "chatFont") pushPrefs();
     });
   }
   wireSeg("chatStyle", "chatStyle");
   wireSeg("avatarMode", "avatarMode");
   wireSeg("appearance", "appearance");
+  wireSeg("chatFont", "chatFont");
 
   /* ---------- 透明度 ---------- */
   var op = document.getElementById("opacity");
@@ -1351,6 +1363,7 @@
         if (d.prefs.chatStyle) state.chatStyle = d.prefs.chatStyle;
         if (d.prefs.avatarMode) state.avatarMode = d.prefs.avatarMode;
         state.meBubble = d.prefs.meBubble || ""; state.himBubble = d.prefs.himBubble || "";
+        if (d.prefs.chatFont) state.chatFont = d.prefs.chatFont;
         state.avatars = d.avatars || { me: null, him: null };
         save(state); apply();
       })
@@ -1359,7 +1372,8 @@
   function pushPrefs() {
     fetch("api/prefs", { method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify({ prefs: { chatStyle: state.chatStyle, avatarMode: state.avatarMode,
-                                      meBubble: state.meBubble || "", himBubble: state.himBubble || "" } }) })
+                                      meBubble: state.meBubble || "", himBubble: state.himBubble || "",
+                                      chatFont: state.chatFont || "14.5" } }) })
       .catch(function () {});
   }
   /* 聊天页同源:换了样式 / 头像就当场告诉它,不用重进 */
@@ -1368,7 +1382,7 @@
       var f = document.getElementById("chatframe");
       if (f && f.contentWindow) f.contentWindow.postMessage({ type: "dwell-prefs",
         chatStyle: state.chatStyle, avatarMode: state.avatarMode, avatars: state.avatars,
-        palette: state.palette, meBubble: state.meBubble, himBubble: state.himBubble }, location.origin);
+        palette: state.palette, meBubble: state.meBubble, himBubble: state.himBubble, chatFont: state.chatFont }, location.origin);
     } catch (e) {}
   }
 
@@ -1515,7 +1529,7 @@
     Array.prototype.forEach.call(skinBox.children, function (b) {
       b.setAttribute("aria-pressed", String(b.dataset.skin === state.skin));
     });
-    ["chatStyle", "avatarMode", "appearance"].forEach(function (id) {
+    ["chatStyle", "avatarMode", "appearance", "chatFont"].forEach(function (id) {
       var key = id;
       Array.prototype.forEach.call(document.getElementById(id).children, function (b) {
         b.setAttribute("aria-pressed", String(b.dataset.v === state[key]));

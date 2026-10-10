@@ -4218,7 +4218,9 @@ box.focus();
   var _rs = window.renderSaid;
   if (typeof _rs === 'function') window.renderSaid = function (msgs) {
     var mark = logEl.children.length;
-    var out = _rs.apply(this, arguments);
+    window.__tgHist = (window.__tgHist || 0) + 1;      /* ③ 用:历史里画出来的泡不弹动画 */
+    var out;
+    try { out = _rs.apply(this, arguments); } finally { window.__tgHist--; }
     try {
       var me = msgs.filter(function (m) { return m.kind === 'me'; }), gu = msgs.filter(function (m) { return m.kind === 'gu'; });
       var i = 0, j = 0;
@@ -4234,6 +4236,65 @@ box.focus();
   if (typeof _atu === 'function') window.addToolUse = function () {
     var out = _atu.apply(this, arguments);
     try { if (curGroup && curGroup.lineEl) { curGroup.lineEl._ids = curGroup.ids; curGroup.lineEl.classList.add('tgtool'); } } catch (e) {}
+    return out;
+  };
+
+  /* ③ TG 版:不逐字吐字 + 气泡弹入 + 少做无用功(2026-10-10,所有者「要 App 的感觉,不要一卡一卡的网页」)
+     **只在 data-chatstyle="tg" 时改道**,官端那条路原样走原函数(官端本来就是流式,照官端)。
+     - sPush:TG 版不画,字照收进 _raw(被打断时 result 那次还会照库里补齐);整句定稿后由页尾那段一次弹出来。
+     - ensureGu / addMe / ensureThink / addToolUse 新建的行记一个 _tgLive(历史里画的不算),页尾那段只给它们弹动画。
+     - scroll:TG 版并到下一帧做一次。原来思考每来一小段就读一次 scrollHeight(强制重排),手机上就是一卡一卡的来源之一。
+     - setBusy:忙/闲交给页尾那段显示「正在输入」的三个点;闲下来时还没定稿的泡(被打断)把攒的字放出来。 */
+  var R = document.documentElement;
+  var isTg = function () { return R.getAttribute('data-chatstyle') === 'tg'; };
+  var live = function (el) { if (el && !window.__tgHist) el._tgLive = true; return el; };
+  var _sp = window.sPush;
+  if (typeof _sp === 'function') window.sPush = function (el, text) {
+    if (!isTg()) return _sp.apply(this, arguments);
+    if (sQ.el && sQ.el !== el) sFlush();
+    el._raw = (el._raw || '') + text;
+    el._tgLive = true;
+  };
+  var _eg = window.ensureGu;
+  if (typeof _eg === 'function') window.ensureGu = function () {
+    var had = guEl, el = _eg.apply(this, arguments);
+    if (el !== had) live(el);
+    return el;
+  };
+  var _am = window.addMe;
+  if (typeof _am === 'function') window.addMe = function () {
+    var out = _am.apply(this, arguments);
+    try { var r = logEl.lastElementChild; if (r && r.classList.contains('me')) live(r); } catch (e) {}
+    return out;
+  };
+  var _et = window.ensureThink;
+  if (typeof _et === 'function') window.ensureThink = function () {
+    var had = turnThink, out = _et.apply(this, arguments);
+    try { if (out !== had && out.lineEl) live(out.lineEl.parentNode); } catch (e) {}
+    return out;
+  };
+  var _atu2 = window.addToolUse;
+  window.addToolUse = function () {
+    var n = logEl.children.length, out = _atu2.apply(this, arguments);
+    try { if (logEl.children.length > n) live(logEl.lastElementChild); } catch (e) {}
+    return out;
+  };
+  var _sc = window.scroll, scRaf = 0, scForce = false;
+  if (typeof _sc === 'function') window.scroll = function (force) {
+    if (!isTg()) return _sc.apply(this, arguments);
+    if (force) scForce = true;
+    if (!scRaf) scRaf = requestAnimationFrame(function () { scRaf = 0; var f = scForce; scForce = false; _sc(f); });
+  };
+  var _sb = window.setBusy;
+  if (typeof _sb === 'function') window.setBusy = function (b) {
+    var out = _sb.apply(this, arguments);
+    try {
+      if (b) R.setAttribute('data-tgbusy', ''); else R.removeAttribute('data-tgbusy');
+      if (!b && isTg()) Array.prototype.forEach.call(logEl.querySelectorAll('.gu'), function (el) {
+        if (!el._final && el._raw && !el.textContent) { el.textContent = el._raw; el._tgForce = true; try { renderRich(el); } catch (e) {} }
+      });
+      if (window.__tgKick) window.__tgKick();
+    } catch (e) {}
     return out;
   };
 })();
@@ -4772,7 +4833,8 @@ box.focus();
 
   /* —— 气泡:他的白卡片浮在灰底上,她的深色带一点光泽 —— */
   html[data-chatstyle="tg"] .row.me .bubble, html[data-chatstyle="tg"] .gu, html[data-chatstyle="tg"] .tgb {
-    font-size: 15.5px; line-height: 21px; border-radius: 19px; padding: 7px 12px 7px;
+    /* 字号她自己在设置里挑(2026-10-10,外壳「聊天外观」→ 聊天字号),没挑过 = 14.5(原 15.5,她嫌大) */
+    font-size: var(--tg-fs, 14.5px); line-height: calc(var(--tg-fs, 14.5px) * 1.36); border-radius: 19px; padding: 7px 12px 7px;
   }
   html[data-chatstyle="tg"] .gu, html[data-chatstyle="tg"] .tgb {
     background: var(--tg-him); box-shadow: var(--bub-sh), inset 0 0 0 .5px color-mix(in srgb, var(--text) 5%, transparent);
@@ -4839,6 +4901,37 @@ box.focus();
   html[data-chatstyle="tg"] .tgfold .tn.err { text-decoration: line-through; opacity: .6; }
   html[data-chatstyle="tg"] .tgfold .td { display: block; font-size: 12px; color: color-mix(in srgb, var(--text) 50%, transparent);
     display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+  /* ── 2026-10-10:App 的手感(所有者「要 App 的感觉,不要一卡一卡的网页」)──
+     ① 不逐字吐:没说完的那颗泡藏着,说完整颗弹出来(TG 本来就是整条到);
+     ② 发出去的泡从输入栏那边弹上来,收到的泡从左下冒出来,一行一泡依次冒;
+     ③ 他在忙时末尾一颗「正在输入」的三个点,替掉官端那行「(12秒)」计时(那行每秒改一次字);
+     **只动 transform / opacity**,不动高度,不触发重排。 */
+  html[data-chatstyle="tg"] .gu.tgwait { display: none; }
+  html[data-chatstyle="tg"] #doingLine { display: none !important; }
+  @keyframes tgpopme { 0% { opacity: 0; transform: translate3d(0, 26px, 0) scale(.86); }
+                       60% { opacity: 1; } 100% { opacity: 1; transform: none; } }
+  @keyframes tgpopin { 0% { opacity: 0; transform: translate3d(-6px, 10px, 0) scale(.88); }
+                       55% { opacity: 1; } 100% { opacity: 1; transform: none; } }
+  @keyframes tgfadein { from { opacity: 0; transform: translate3d(0, 6px, 0); } to { opacity: 1; transform: none; } }
+  /* 弹簧:轻微过冲再落位(同外壳 Home 入场那条的手感) */
+  html[data-chatstyle="tg"] .tgpop-me { transform-origin: 100% 100%; animation: tgpopme .42s cubic-bezier(.2, 1.25, .35, 1) both; }
+  html[data-chatstyle="tg"] .tgpop-in { transform-origin: 0 100%; animation: tgpopin .4s cubic-bezier(.2, 1.2, .35, 1) both; }
+  html[data-chatstyle="tg"] .tgpop-fade { animation: tgfadein .3s cubic-bezier(.32, .72, 0, 1) both; }
+  .tgtyping { display: none; }
+  html[data-chatstyle="tg"] .tgtyping { display: flex; animation: tgpopin .34s cubic-bezier(.2, 1.2, .35, 1) both; transform-origin: 0 100%; }
+  html[data-chatstyle="tg"][data-avmode="each"] .tgtyping { padding-left: 36px; }
+  html[data-chatstyle="tg"] .tgdots { display: inline-flex; gap: 4px; align-items: center; padding: 11px 13px;
+    border-radius: 19px; border-bottom-left-radius: 7px; background: var(--tg-him);
+    box-shadow: var(--bub-sh), inset 0 0 0 .5px color-mix(in srgb, var(--text) 5%, transparent); }
+  html[data-chatstyle="tg"] .tgdots i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; color: var(--tg-him-ink, var(--text));
+    opacity: .35; animation: tgdot 1.2s ease-in-out infinite; }
+  html[data-chatstyle="tg"] .tgdots i:nth-child(2) { animation-delay: .16s; }
+  html[data-chatstyle="tg"] .tgdots i:nth-child(3) { animation-delay: .32s; }
+  @keyframes tgdot { 0%, 60%, 100% { opacity: .3; transform: none; } 30% { opacity: .85; transform: translateY(-3px); } }
+  @media (prefers-reduced-motion: reduce) {
+    html[data-chatstyle="tg"] .tgtyping, html[data-chatstyle="tg"] .tgdots i { animation: none; }
+  }
 </style>
 <script>
 (function () {
@@ -4849,7 +4942,7 @@ box.focus();
   if (!log || !header) return;
 
   /* ── 设置:先用外壳在本机留的副本(打开时不闪),再问服务器,外壳改了会 postMessage ── */
-  var prefs = { chatStyle: "official", avatarMode: "top", avatars: { me: null, him: null }, palette: null, meBubble: "", himBubble: "" };
+  var prefs = { chatStyle: "official", avatarMode: "top", avatars: { me: null, him: null }, palette: null, meBubble: "", himBubble: "", chatFont: "" };
   try {
     var cached = JSON.parse(localStorage.getItem("dwell-shell-v1") || "{}") || {};
     if (cached.chatStyle) prefs.chatStyle = cached.chatStyle;
@@ -4857,6 +4950,7 @@ box.focus();
     if (cached.avatars) prefs.avatars = cached.avatars;
     if (cached.palette) prefs.palette = cached.palette;        // 外壳算好的皮肤配色(同源,读得到)
     prefs.meBubble = cached.meBubble || ""; prefs.himBubble = cached.himBubble || "";
+    prefs.chatFont = cached.chatFont || "";
   } catch (e) {}
   function lum(hex) {
     var m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(hex || "").trim());
@@ -4864,7 +4958,7 @@ box.focus();
     var c = [m[1], m[2], m[3]].map(function (x) { x = parseInt(x, 16) / 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); });
     return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
   }
-  var LOOK_VARS = ["--tg-page", "--tg-page2", "--tg-him", "--tg-him-ink", "--tg-me", "--tg-me-ink", "--text", "--bg", "--dim", "--card", "--line", "--tg-wall"];
+  var LOOK_VARS = ["--tg-fs", "--tg-page", "--tg-page2", "--tg-him", "--tg-him-ink", "--tg-me", "--tg-me-ink", "--text", "--bg", "--dim", "--card", "--line", "--tg-wall"];
   /* TG 版的颜色:底 / 卡片 / 字跟皮肤;气泡色她自己挑的优先;字的黑白按气泡亮度配。官端时全部撤掉。 */
   function applyLook() {
     var tg = prefs.chatStyle === "tg", P = prefs.palette;
@@ -4872,6 +4966,7 @@ box.focus();
     root.removeAttribute("data-tgdark"); root.removeAttribute("data-tgwall");
     if (!tg) return;
     var set = function (k, v) { if (v) root.style.setProperty(k, v); };
+    if (/^\d{2}(\.5)?$/.test(prefs.chatFont || "")) set("--tg-fs", prefs.chatFont + "px");
     if (P) {
       if (P.dark) root.setAttribute("data-tgdark", "");
       set("--tg-page", P.top); set("--tg-page2", P.bot); set("--text", P.ink); set("--bg", P.top);
@@ -4903,6 +4998,7 @@ box.focus();
     prefs.avatarMode = d.prefs.avatarMode || "top";
     prefs.avatars = d.avatars || prefs.avatars;
     prefs.meBubble = d.prefs.meBubble || ""; prefs.himBubble = d.prefs.himBubble || "";
+    prefs.chatFont = d.prefs.chatFont || "";
     applyPrefs();
   }).catch(function () {});
   window.addEventListener("message", function (e) {
@@ -4910,6 +5006,7 @@ box.focus();
     prefs.chatStyle = e.data.chatStyle; prefs.avatarMode = e.data.avatarMode; prefs.avatars = e.data.avatars || prefs.avatars;
     if (e.data.palette) prefs.palette = e.data.palette;
     prefs.meBubble = e.data.meBubble || ""; prefs.himBubble = e.data.himBubble || "";
+    prefs.chatFont = e.data.chatFont || "";
     applyPrefs();
   });
 
@@ -5119,9 +5216,9 @@ box.focus();
     el.dataset.stk = "1";
   }
   /* 原 .gu 定稿后会被重画(textContent 重设、data-rich 摘掉)—— 那时 data-stk 也得跟着作废 */
-  function stickerPass() {
+  function stickerPass(sc) {
     if (!STK) return;
-    Array.prototype.forEach.call(log.querySelectorAll(".row.me > .bubble, .gu, .tgb"), function (el) {
+    Array.prototype.forEach.call((sc || log).querySelectorAll(".row.me > .bubble, .gu, .tgb"), function (el) {
       if (el.classList.contains("gu") && !el._final) return;
       if (el.dataset.stk === "1" && el._stkSig !== el.textContent) el.dataset.stk = "";
       stickerize(el);
@@ -5215,8 +5312,8 @@ box.focus();
     fold = document.createElement("div"); fold.className = "tgfold";
     line.after(fold); line.classList.add("open"); fillFold(line, fold);
   }, true);
-  function foldPass() {
-    Array.prototype.forEach.call(log.querySelectorAll(".row > .toolline"), function (line) {
+  function foldPass(sc) {
+    Array.prototype.forEach.call((sc || log).querySelectorAll(".row > .toolline"), function (line) {
       var live = !!line.querySelector(".spin") && getComputedStyle(line.querySelector(".spin")).display !== "none";
       line.classList.toggle("tglive", live && root.getAttribute("data-chatstyle") === "tg");
       if (line._ids) {
@@ -5256,46 +5353,112 @@ box.focus();
     var out = t.split("\n").map(function (x) { return x.trim(); }).filter(Boolean);
     return out.length > 1 ? out : null;
   }
+  /* ⚠️ 2026-10-10 改成「只处理变了的那几行」:原来每次变动(逐字流式时每一帧)都把整页所有气泡扫一遍、
+     还逐个 getComputedStyle,聊天记录越长越卡 —— 所有者报「一卡一卡」的主要来源。
+     现在 MutationObserver 记下哪几行变了,下一帧只处理那几行;换样式 / 换设置(applyPrefs)时才整页过一遍。 */
+  var dirty = new Set(), full = true;
+  function rowOf(n) {
+    var el = n && (n.nodeType === 1 ? n : n.parentElement);
+    while (el && el.parentElement !== log) el = el.parentElement;
+    return el && el.parentElement === log ? el : null;
+  }
   function pass() {
     queued = false;
-    stickerPass();                       // 贴纸两套样式都要
-    try { foldPass(); } catch (e) {}
-    if (root.getAttribute("data-chatstyle") !== "tg") return;
-    Array.prototype.forEach.call(log.querySelectorAll(".row.me > .bubble"), function (b) {
-      var t = stamp(b); if (b.getAttribute("data-tgt") !== t) b.setAttribute("data-tgt", t);
-    });
-    Array.prototype.forEach.call(log.querySelectorAll(".gu"), function (el) {
-      var raw = el._raw != null ? el._raw : el.textContent;
-      var t = stamp(el);
-      var set = el.nextElementSibling && el.nextElementSibling.classList.contains("tgset") ? el.nextElementSibling : null;
-      var lines = el._final ? linesOf(raw) : null;
-      if (!lines) {                       // 吐字中 / 长文 / 单行:就用它自己当一个泡
-        if (set) set.remove();
-        el.classList.remove("tg-split");
-        if (el.getAttribute("data-tgt") !== t) el.setAttribute("data-tgt", t);
+    var scopes;
+    if (full) { full = false; dirty.clear(); scopes = [log]; }
+    else { scopes = Array.from(dirty).filter(function (r) { return r.isConnected; }); dirty.clear(); }
+    if (!scopes.length) return;
+    var tg = root.getAttribute("data-chatstyle") === "tg";
+    scopes.forEach(function (sc) {
+      stickerPass(sc);                     // 贴纸两套样式都要
+      try { foldPass(sc); } catch (e) {}
+      if (!tg) {
+        if (sc === log) Array.prototype.forEach.call(log.querySelectorAll(".gu.tgwait"), function (el) { el.classList.remove("tgwait"); });
         return;
       }
-      if (set && el._tgRaw === raw) return;
-      if (set) set.remove();
-      set = document.createElement("div");
-      set.className = "tgset";
-      lines.forEach(function (line) {
-        var b = document.createElement("div");
-        b.className = "tgb";
-        b.textContent = line;
-        try { if (typeof renderPlainInto === "function") renderPlainInto(b, line, true); } catch (e) { b.textContent = line; }
-        b.setAttribute("data-tgt", t);
-        set.appendChild(b);
+      Array.prototype.forEach.call(sc.querySelectorAll(".row.me > .bubble"), function (b) {
+        var t = stamp(b); if (b.getAttribute("data-tgt") !== t) b.setAttribute("data-tgt", t);
+        var r = b.parentNode;
+        if (r._tgLive && !r._tgPopped) { r._tgPopped = true; pop(b, "tgpop-me", 0); }
       });
-      el.after(set);
-      el.classList.add("tg-split");
-      el._tgRaw = raw;
+      Array.prototype.forEach.call(sc.querySelectorAll(".row > .toolline"), function (line) {
+        var r = line.parentNode;
+        if (r._tgLive && !r._tgPopped) { r._tgPopped = true; pop(line, "tgpop-fade", 0); }
+      });
+      Array.prototype.forEach.call(sc.querySelectorAll(".gu"), guPass);
+      stickerPass(sc);                     // 刚拆出来的泡里也可能有贴纸
     });
-    stickerPass();                       // 刚拆出来的泡里也可能有贴纸
+    typing();
   }
+  function guPass(el) {
+    var raw = el._raw != null ? el._raw : el.textContent;
+    var t = stamp(el);
+    /* 不逐字吐:没定稿的泡先藏着(被打断的那种 setBusy 收尾时会放出来) */
+    var wait = !el._final && !el._tgForce;
+    el.classList.toggle("tgwait", wait);
+    if (wait) return;
+    var set = el.nextElementSibling && el.nextElementSibling.classList.contains("tgset") ? el.nextElementSibling : null;
+    var lines = el._final ? linesOf(raw) : null;
+    var popNow = el._tgLive && !el._tgPopped;
+    if (!lines) {                       // 长文 / 单行:就用它自己当一个泡
+      if (set) set.remove();
+      el.classList.remove("tg-split");
+      if (el.getAttribute("data-tgt") !== t) el.setAttribute("data-tgt", t);
+      if (popNow) { el._tgPopped = true; pop(el, "tgpop-in", 0); }
+      return;
+    }
+    if (set && el._tgRaw === raw) return;
+    if (set) set.remove();
+    set = document.createElement("div");
+    set.className = "tgset";
+    lines.forEach(function (line, i) {
+      var b = document.createElement("div");
+      b.className = "tgb";
+      b.textContent = line;
+      try { if (typeof renderPlainInto === "function") renderPlainInto(b, line, true); } catch (e) { b.textContent = line; }
+      b.setAttribute("data-tgt", t);
+      set.appendChild(b);
+      if (popNow) pop(b, "tgpop-in", Math.min(i, 6) * 70);   /* 一行一泡,一颗接一颗冒出来 */
+    });
+    if (popNow) el._tgPopped = true;
+    el.after(set);
+    el.classList.add("tg-split");
+    el._tgRaw = raw;
+  }
+  /* 弹动画:只动 transform / opacity;放完把类摘掉,不留合成层。系统开了「减弱动态效果」就不弹。 */
+  var calm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function pop(el, cls, delay) {
+    if (calm) return;
+    if (delay) el.style.animationDelay = delay + "ms";
+    el.classList.add(cls);
+    el.addEventListener("animationend", function done() {
+      el.removeEventListener("animationend", done);
+      el.classList.remove(cls); el.style.animationDelay = "";
+    });
+  }
+  /* 「正在输入」那三个点:他在忙、而且最后一样东西不是一颗已经显示出来的泡时才出现,永远排在最后 */
+  var dots = document.createElement("div");
+  dots.className = "row tgtyping"; dots.setAttribute("aria-label", "正在输入");
+  dots.innerHTML = '<span class="tgdots"><i></i><i></i><i></i></span>';
+  function typing() {
+    var on = root.getAttribute("data-chatstyle") === "tg" && root.hasAttribute("data-tgbusy");
+    if (!on) { if (dots.isConnected) dots.remove(); return; }
+    /* ⚠️ 菊花那行(.brandline)也要「永远最后」,两边抢会无限互换。所以三个点让它:排在菊花前面就算到位 */
+    var last = log.lastElementChild, bl = last && last.classList.contains("brandline") ? last : null;
+    var want = bl ? bl.previousElementSibling === dots : last === dots;
+    if (!want) { if (bl) log.insertBefore(dots, bl); else log.appendChild(dots); try { scroll(); } catch (e) {} }
+  }
+  window.__tgKick = function () { full = true; schedule(); };
   var queued = false;
-  function schedule() { if (!queued) { queued = true; requestAnimationFrame(pass); } }
-  new MutationObserver(schedule).observe(log, { childList: true, subtree: true, characterData: true });
+  function schedule(recs) {
+    if (recs && recs.length) recs.forEach(function (rec) {
+      if (rec.target === log) Array.prototype.forEach.call(rec.addedNodes, function (n) { if (n.nodeType === 1 && n !== dots) dirty.add(n); });
+      else { var r = rowOf(rec.target); if (r && r !== dots) dirty.add(r); }
+    });
+    else if (!recs) full = true;
+    if (!queued) { queued = true; requestAnimationFrame(pass); }
+  }
+  new MutationObserver(function (recs) { schedule(recs); }).observe(log, { childList: true, subtree: true, characterData: true });
 })();
 </script>
 </body>
