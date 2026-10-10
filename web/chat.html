@@ -4752,9 +4752,15 @@ box.focus();
   .bubble.stkonly, .gu.stkonly, .tgb.stkonly { background: none !important; box-shadow: none !important; padding: 0 !important; }
   html[data-chatstyle="tg"] .tgb.stkonly[data-tgt]::after, html[data-chatstyle="tg"] .gu.stkonly[data-tgt]::after,
   html[data-chatstyle="tg"] .bubble.stkonly[data-tgt]::after {
-    float: none; display: inline-block; margin: 0; padding: 1px 7px; border-radius: 9px;
-    background: color-mix(in srgb, var(--text) 10%, var(--bg)); color: var(--dim);
+    /* 2026-10-10 所有者:「表情包的日期错位了」—— 原来掉在贴纸下面、靠左单独一块。
+       照 TG 改成叠在贴纸右下角的一颗半透明深色小胶囊(白字),泡本身收窄到贴纸那么宽。 */
+    float: none; display: block; position: absolute; right: 4px; bottom: 6px; margin: 0;
+    padding: 1px 6px; border-radius: 9px; line-height: 15px;
+    background: rgba(0, 0, 0, .38); color: #fff;
   }
+  html[data-chatstyle="tg"] .tgb.stkonly[data-tgt], html[data-chatstyle="tg"] .gu.stkonly[data-tgt],
+  html[data-chatstyle="tg"] .bubble.stkonly[data-tgt] { position: relative; width: fit-content; }
+  /* 对勾跟着时间一起进胶囊,白字上照样看得清 */
   .tgpick { position: fixed; left: 0; right: 0; bottom: 0; z-index: 55; max-height: 46vh; overflow-y: auto;
             background: var(--card); border-radius: 18px 18px 0 0; box-shadow: 0 -6px 30px rgba(0,0,0,.12);
             padding: 10px 12px calc(14px + var(--dw-sab, env(safe-area-inset-bottom)));
