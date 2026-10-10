@@ -4691,6 +4691,11 @@ box.focus();
                     filter: blur(60px) saturate(1.15); opacity: .85; }
   .tgprof .poster::after { content: ""; position: absolute; inset: 0;
                     background: linear-gradient(to bottom, var(--fog) 0%, color-mix(in srgb, var(--bg) 70%, transparent) 55%, var(--bg) 100%); }
+  /* 2026-10-10 所有者:「这个页面也有分层」—— iOS 26 把状态栏那截涂成外壳的底色(= 聊天页的 --tg-page),
+     海报是头像虚化、颜色对不上就成了两层。顶上盖一道从同一个实色起步的渐隐,和那截连成一片(同聊天顶栏的做法)。 */
+  .tgprof::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 120px; z-index: 1; pointer-events: none;
+                    background: linear-gradient(to bottom, var(--tg-page, var(--bg)) 0%, color-mix(in srgb, var(--tg-page, var(--bg)) 55%, transparent) 45%, transparent 100%); }
+  .tgprof .scroll { z-index: 2; }
   .tgprof .scroll { position: absolute; inset: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
                     padding: calc(6px + var(--dw-sat, env(safe-area-inset-top))) 20px calc(40px + var(--dw-sab, env(safe-area-inset-bottom))); }
   .tgprof .glass { background: var(--gl); -webkit-backdrop-filter: blur(30px) saturate(1.6); backdrop-filter: blur(30px) saturate(1.6);
@@ -4818,7 +4823,9 @@ box.focus();
   html[data-chatstyle="tg"] { background: var(--tg-page); }
   html[data-chatstyle="tg"] body { background: linear-gradient(to bottom, var(--tg-page), var(--tg-page2, var(--tg-page))); }
   html[data-chatstyle="tg"][data-tgwall] body { background: var(--tg-page) var(--tg-wall) center / cover no-repeat; }
-  html[data-chatstyle="tg"][data-tgwall] header::before { background: linear-gradient(to bottom, color-mix(in srgb, var(--tg-page) 45%, transparent), transparent); }
+  /* 2026-10-10:有壁纸时渐隐从**实心的 --tg-page** 起步(~~45%~~)。iOS 26 把状态栏那条涂成外壳的底色(= --tg-page),
+     渐隐从半透明起步就和那条接不上,她看到的就是「分层」;从同一个实色起步,那条就和顶栏连成一片往下化开。 */
+  html[data-chatstyle="tg"][data-tgwall] header::before { background: linear-gradient(to bottom, var(--tg-page) 0%, color-mix(in srgb, var(--tg-page) 70%, transparent) 40%, transparent 100%); }
   html[data-chatstyle="tg"][data-tgwall] footer { background: none !important; }
   /* 她自己挑的气泡色:底色由脚本设,字的黑白也由脚本按亮度配(--tg-me-ink / --tg-him-ink) */
   html[data-chatstyle="tg"] .gu, html[data-chatstyle="tg"] .tgb { color: var(--tg-him-ink, var(--text)); }
@@ -4873,8 +4880,15 @@ box.focus();
   html[data-chatstyle="tg"] #log { gap: 10px; }
   html[data-chatstyle="tg"] [data-tgt]::after { font-size: 9.5px; letter-spacing: .01em; }   /* 10-10 她:「时间缩小一点」(~~10.5~~) */
   /* 她的泡:时间后面带对勾(2026-10-10,照 TG):✓ = 送到了(服务器回声过才会有这颗泡),✓✓ = 他开始看了(后面有他的动静) */
-  html[data-chatstyle="tg"] .row.me .bubble[data-tgck="1"]::after { content: attr(data-tgt) "\2009\2713"; }
-  html[data-chatstyle="tg"] .row.me .bubble[data-tgck="2"]::after { content: attr(data-tgt) "\2009\2713\FE0E\2713\FE0E"; }
+  /* 对勾(2026-10-10 第二版,所有者:「和 tg 不一样,做不好就删掉」):~~两个文字「✓」~~ 字形随字体走、不像 TG。
+     改成照 TG 画的细斜双勾(第二个勾的短边藏在第一个下面),画在时间右边的留白里;颜色和时间同一个透明度,
+     她的泡是深色就用浅勾、浅色就用深勾(applyLook 按气泡亮度设 data-tgmeink)。贴纸的时间胶囊是深底白字,一律浅勾。 */
+  html[data-chatstyle="tg"] .row.me .bubble[data-tgck]::after { padding-right: 19px; background-repeat: no-repeat; background-position: right 0 center; background-size: 16px 10.4px; }
+  html[data-chatstyle="tg"] .row.me .bubble[data-tgck="1"]::after { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 17 11' fill='none' stroke='rgba%28255%2C255%2C255%2C.62%29' stroke-width='1.35' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.6 5.9 4.9 9.1 11.2 1.9'/%3E%3C/svg%3E"); }
+  html[data-chatstyle="tg"] .row.me .bubble[data-tgck="2"]::after { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 17 11' fill='none' stroke='rgba%28255%2C255%2C255%2C.62%29' stroke-width='1.35' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.2 5.9 4.5 9.1 10.8 1.9'/%3E%3Cpath d='M8.2 8.1 9.2 9.1 15.5 1.9'/%3E%3C/svg%3E"); }
+  html[data-chatstyle="tg"][data-tgmeink="dark"] .row.me .bubble:not(.stkonly)[data-tgck="1"]::after { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 17 11' fill='none' stroke='rgba%2823%2C22%2C26%2C.5%29' stroke-width='1.35' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.6 5.9 4.9 9.1 11.2 1.9'/%3E%3C/svg%3E"); }
+  html[data-chatstyle="tg"][data-tgmeink="dark"] .row.me .bubble:not(.stkonly)[data-tgck="2"]::after { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 17 11' fill='none' stroke='rgba%2823%2C22%2C26%2C.5%29' stroke-width='1.35' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.2 5.9 4.5 9.1 10.8 1.9'/%3E%3Cpath d='M8.2 8.1 9.2 9.1 15.5 1.9'/%3E%3C/svg%3E"); }
+  html[data-chatstyle="tg"] .row.me .bubble.stkonly[data-tgck]::after { padding-right: 22px; background-position: right 5px center; }
   /* 名字下那行:online / typing… / offline */
   html[data-chatstyle="tg"] .tgname .tgst { font-size: 11px; line-height: 13px; color: var(--dim); font-weight: 400; margin-top: 1px; min-height: 13px; }
   html[data-chatstyle="tg"] .tgname.typing .tgst { color: color-mix(in srgb, var(--text) 72%, transparent); }
@@ -4890,7 +4904,7 @@ box.focus();
      不弹官端那个底部面板(官端照旧弹)。数据:思考取 thinkStore、工具取 toolInfo(行上记了 _ids,见脚本)。 */
   html[data-chatstyle="tg"] .row > .toolline {
     width: auto; max-width: 100%; margin: 0; padding: 2px 0; min-height: 0; gap: 6px;
-    font-family: ui-serif, "New York", Georgia, "PingFang SC", serif; font-size: 14px; letter-spacing: .005em;
+    font-family: ui-serif, "New York", Georgia, "PingFang SC", serif; font-size: 12.5px; letter-spacing: .005em;   /* 10-10 她:「thinking 那部分字体改小」(~~14px~~) */
     color: color-mix(in srgb, var(--text) 52%, transparent); background: none; box-shadow: none;
   }
   html[data-chatstyle="tg"] .row > .toolline .lbl { flex: 0 1 auto; }
@@ -4899,11 +4913,11 @@ box.focus();
   /* 思考那颗 = **Claude 的标志(官端那朵「小烟花」)**,路径就是本页 brandline 那段脚本里的同一条 D(所有者 10-09 指出参考图用的是它);
      工具那颗是照 iOS 细线符号自己画的扳手加螺丝刀。他正在想的时候那朵慢慢转(同官端那朵的意思)。 */
   html[data-chatstyle="tg"] .row > .toolline::before {
-    content: ""; width: 14px; height: 14px; flex: none; background: currentColor; opacity: .9;
+    content: ""; width: 12.5px; height: 12.5px; flex: none; background: currentColor; opacity: .9;
     -webkit-mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z'/%3E%3C/svg%3E"); mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z'/%3E%3C/svg%3E");
   }
   html[data-chatstyle="tg"] .row > .toolline.tgtool::before {
-    width: 15px; height: 15px; -webkit-mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.6 6.4a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.1-3.1a5.2 5.2 0 0 1-6.9 6.9l-6.2 6.2a1.9 1.9 0 0 1-2.7-2.7l6.2-6.2a5.2 5.2 0 0 1 6.9-6.9z'/%3E%3Cpath d='M4 4l6.3 6.3M13.7 13.7l1.3 1.3'/%3E%3Cpath d='M14.2 16.6l2.4-2.4 4.6 4.6a1.7 1.7 0 0 1-2.4 2.4z'/%3E%3C/svg%3E"); mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.6 6.4a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.1-3.1a5.2 5.2 0 0 1-6.9 6.9l-6.2 6.2a1.9 1.9 0 0 1-2.7-2.7l6.2-6.2a5.2 5.2 0 0 1 6.9-6.9z'/%3E%3Cpath d='M4 4l6.3 6.3M13.7 13.7l1.3 1.3'/%3E%3Cpath d='M14.2 16.6l2.4-2.4 4.6 4.6a1.7 1.7 0 0 1-2.4 2.4z'/%3E%3C/svg%3E");
+    width: 13.5px; height: 13.5px; -webkit-mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.6 6.4a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.1-3.1a5.2 5.2 0 0 1-6.9 6.9l-6.2 6.2a1.9 1.9 0 0 1-2.7-2.7l6.2-6.2a5.2 5.2 0 0 1 6.9-6.9z'/%3E%3Cpath d='M4 4l6.3 6.3M13.7 13.7l1.3 1.3'/%3E%3Cpath d='M14.2 16.6l2.4-2.4 4.6 4.6a1.7 1.7 0 0 1-2.4 2.4z'/%3E%3C/svg%3E"); mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.6 6.4a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.1-3.1a5.2 5.2 0 0 1-6.9 6.9l-6.2 6.2a1.9 1.9 0 0 1-2.7-2.7l6.2-6.2a5.2 5.2 0 0 1 6.9-6.9z'/%3E%3Cpath d='M4 4l6.3 6.3M13.7 13.7l1.3 1.3'/%3E%3Cpath d='M14.2 16.6l2.4-2.4 4.6 4.6a1.7 1.7 0 0 1-2.4 2.4z'/%3E%3C/svg%3E");
   }
   html[data-chatstyle="tg"] .row > .toolline.tglive::before { animation: tgspin 2.4s linear infinite; }
   html[data-chatstyle="tg"] .row > .toolline.tgtool.tglive::before { animation: tgpulse 1.2s ease-in-out infinite; }
@@ -5177,6 +5191,7 @@ box.focus();
     var him = prefs.himBubble || (P && P.card) || "", me = prefs.meBubble || (P && P.ink) || "";
     if (him) { set("--tg-him", him); set("--tg-him-ink", lum(him) > 0.45 ? "#17161a" : "#f4f3f1"); }
     if (me) { set("--tg-me", me); set("--tg-me-ink", lum(me) > 0.45 ? "#17161a" : "#ffffff"); }
+    root.setAttribute("data-tgmeink", me && lum(me) > 0.45 ? "dark" : "light");   /* 对勾用深还是浅(2026-10-10) */
     var w = prefs.avatars && prefs.avatars.wall;
     if (w) { root.setAttribute("data-tgwall", ""); set("--tg-wall", 'url("api/avatar/wall?v=' + w + '")'); }
   }
