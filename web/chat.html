@@ -4818,7 +4818,9 @@ box.focus();
   html[data-chatstyle="tg"] { background: var(--tg-page); }
   html[data-chatstyle="tg"] body { background: linear-gradient(to bottom, var(--tg-page), var(--tg-page2, var(--tg-page))); }
   html[data-chatstyle="tg"][data-tgwall] body { background: var(--tg-page) var(--tg-wall) center / cover no-repeat; }
-  html[data-chatstyle="tg"][data-tgwall] header::before { background: linear-gradient(to bottom, color-mix(in srgb, var(--tg-page) 45%, transparent), transparent); }
+  /* 2026-10-10:有壁纸时渐隐从**实心的 --tg-page** 起步(~~45%~~)。iOS 26 把状态栏那条涂成外壳的底色(= --tg-page),
+     渐隐从半透明起步就和那条接不上,她看到的就是「分层」;从同一个实色起步,那条就和顶栏连成一片往下化开。 */
+  html[data-chatstyle="tg"][data-tgwall] header::before { background: linear-gradient(to bottom, var(--tg-page) 0%, color-mix(in srgb, var(--tg-page) 70%, transparent) 40%, transparent 100%); }
   html[data-chatstyle="tg"][data-tgwall] footer { background: none !important; }
   /* 她自己挑的气泡色:底色由脚本设,字的黑白也由脚本按亮度配(--tg-me-ink / --tg-him-ink) */
   html[data-chatstyle="tg"] .gu, html[data-chatstyle="tg"] .tgb { color: var(--tg-him-ink, var(--text)); }

@@ -306,7 +306,10 @@
      所以这里钉一块和页面顶部同色的固定条,换来干净的硬边。theme-color 在 iOS 26 已不认,靠不住。
      ⚠️ 高度就是 --sat:浏览器里(没有安全区)它高 0,什么都不挡。z-index 在底栏(50)之上、聊天页(80)/设置(90)之下。 */
   .topcap {
-    position: fixed; top: 0; left: 0; right: 0; height: var(--sat); z-index: 60;
+    /* ⚠️ 2026-10-10 第二轮(她真机:「还是分层 顶部模糊」):WebKit 只在顶边那块**不透明、满宽、高过约 10px** 时才跳过模糊
+       (多个项目实测,见 dwell 手册)。她手机上状态栏那条在网页外面、--sat 是 0,这块原来高 0 = 不算数。所以至少 12px;
+       它盖住的是页面顶上本来就空着的留白。~~height: var(--sat)~~ */
+    position: fixed; top: 0; left: 0; right: 0; height: max(var(--sat), 12px); z-index: 60;
     background: var(--paper-top); pointer-events: none;
   }
   /* ---------- 壳 ---------- */
