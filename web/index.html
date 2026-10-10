@@ -2158,6 +2158,9 @@
 
   apply();
   pullPrefs();
+  /* 「他」那一页(聊天页里)直接换了他的头像 / 名字(2026-10-10)—— 存服务器之后叫一声,这里重新拉一遍,
+     首页 / Chats / 设置跟着变(pullPrefs → apply → tellChat 再递回聊天页,两边一致)。同 __dwSwipe 的接法。 */
+  window.__dwPrefsChanged = function () { pullPrefs(); };
 
   /* ── 部署完自己刷新 ──
      这条契约是从旧 index.html 继承来的(它叫 tryReload):读后端 /api/health 的 ver,

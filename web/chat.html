@@ -4769,6 +4769,32 @@ box.focus();
   .tgprof .it .chk { color: var(--p1); display: grid; place-items: center; }
   .tgprof .it .chev { color: var(--p3); display: grid; place-items: center; }
 
+  /* ── 2026-10-10:模型折叠 / 头像角上的相机 / 名字点了就改(所有者要的;相机那颗照她给的参考图 P2)── */
+  .tgprof .pmfold { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .42s cubic-bezier(.32,.72,0,1); }
+  .tgprof.pmopen .pmfold { grid-template-rows: 1fr; }
+  .tgprof .pmodels { min-height: 0; overflow: hidden; }
+  .tgprof .pmodels > .it:first-child::before { content: ""; position: absolute; top: 0; left: 15px; right: 0; height: .5px; background: var(--hair); }
+  .tgprof .pmchev svg { transition: transform .32s cubic-bezier(.32,.72,0,1); }
+  .tgprof.pmopen .pmchev svg { transform: rotate(90deg); }
+  .tgprof .pmsum { margin-right: -4px; }
+
+  .tgprof .hero .pav { display: block; position: relative; border: 0; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .tgprof .hero .pav:active { transform: scale(.96); }
+  .tgprof .hero .cam { position: absolute; right: -3px; bottom: -3px; width: 26px; height: 26px; border-radius: 50%;
+                       display: grid; place-items: center; background: var(--p1); color: var(--bg);
+                       box-shadow: 0 0 0 2px var(--bg), 0 2px 6px rgba(0,0,0,.18); }
+  .tgprof .hero .pname { display: inline-flex; align-items: center; gap: 5px; border: 0; background: none; padding: 2px 4px 2px 21px;
+                         font: inherit; color: var(--p1); cursor: text; -webkit-tap-highlight-color: transparent; }
+  .tgprof .hero .pname:active { opacity: .6; }
+  .tgprof .hero .pname .pen { color: var(--p3); display: grid; place-items: center; width: 16px; }
+  .tgprof .hero .pnameIn { display: block; width: 62%; max-width: 240px; margin: 0 auto; padding: 2px 0 3px; border: 0; border-radius: 0;
+                           border-bottom: .5px solid var(--p3); background: none; outline: none; color: var(--p1); text-align: center;
+                           font: 500 21px/1.2 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; letter-spacing: -.01em; }
+  .tgprof .hero .pnameIn[hidden], .tgprof .hero .pname[hidden] { display: none; }
+  .tgprof .hero { position: relative; }
+  .tgprof .hero .phint { position: absolute; left: 0; right: 0; bottom: -19px; font-size: 11.5px; color: var(--p3); }   /* 浮在下面,出现 / 消失不把整页往下推 */
+  .tgprof .hero .phint:empty { display: none; }
+
   /* ── 贴纸(两套样式都显示成图;2026-10-09) ── */
   img.stk { display: block; width: 132px; height: 132px; object-fit: contain; margin: 2px 0; }
   .bubble.stkonly, .gu.stkonly, .tgb.stkonly { background: none !important; box-shadow: none !important; padding: 0 !important; }
@@ -5383,6 +5409,9 @@ box.focus();
   var prof = document.createElement("div");
   prof.className = "tgprof"; prof.setAttribute("role", "dialog"); prof.setAttribute("aria-label", "他");
   var CHEV = '<svg viewBox="0 0 8 13" width="8" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m1.5 1.5 5 5-5 5"/></svg>';
+  /* 头像角上的相机 / 名字旁的笔(2026-10-10,照她给的参考图 P2:头像右下一颗深色小圆 + 相机) */
+  var CAM = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.4-2h6.2l1.4 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.8" r="3.3"/></svg>';
+  var PEN = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5l4 4M4 20l1-4.5L16 4.5a1.4 1.4 0 0 1 2 0l1.5 1.5a1.4 1.4 0 0 1 0 2L8.5 19z"/></svg>';
   function ringHTML(cls, name) {
     return '<div class="g ' + cls + '"><div class="ring"><svg viewBox="0 0 78 78"><circle class="trk" cx="39" cy="39" r="34" fill="none" stroke-width="4.5"/>' +
       '<circle class="val" cx="39" cy="39" r="34" fill="none" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="213.6" stroke-dashoffset="213.6"/></svg>' +
@@ -5397,13 +5426,20 @@ box.focus();
   prof.innerHTML =
     '<div class="poster"></div><div class="scroll">' +
     '<button class="pback glass" type="button" aria-label="返回"><svg viewBox="0 0 9 15" width="8" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7.8 1.2 1.6 7.5l6.2 6.3"/></svg></button>' +
-    '<div class="hero"><div class="big"></div><b class="tgnm"></b><div class="who pnow">…</div></div>' +
+    '<div class="hero"><button class="big pav" type="button" aria-label="换他的头像"><span class="cam" aria-hidden="true">' + CAM + '</span></button>' +
+      '<button class="pname" type="button" aria-label="改他的名字"><b class="tgnm"></b><span class="pen" aria-hidden="true">' + PEN + '</span></button>' +
+      '<input class="pnameIn" maxlength="16" enterkeyhint="done" autocomplete="off" spellcheck="false" hidden>' +
+      '<div class="who pnow">…</div><div class="phint" aria-live="polite"></div>' +
+      '<input class="pavFile" type="file" accept="image/*" hidden></div>' +
     '<div class="sect">Usage</div>' +
     '<div class="card glass uA"><div class="lead"><div><div class="k">Context window</div><div class="n ctxN">—</div></div><div class="r ctxR"></div></div>' +
       '<div class="bar ctxBar"><i></i></div>' + rowHTML("q5", "5-hour limit") + rowHTML("q7", "Weekly limit") + '</div>' +
     '<div class="card glass uB">' + ringHTML("pctx", "Context") + ringHTML("p5h", "5-hour") + ringHTML("p7d", "Weekly") + '</div>' +
     '<div class="udots" aria-hidden="true"><i></i><i></i></div><p class="foot ugnote"></p>' +
-    '<div class="sect">Model</div><div class="card glass pmodels"></div><p class="foot pmnote"></p>' +
+    '<div class="sect">Model</div><div class="card glass pmcard">' +
+      '<button class="it pmhead" type="button" aria-expanded="false"><span class="grow"><span class="t pmcur">…</span><small class="pmeng"></small></span>' +
+      '<span class="tr pmsum"></span><span class="chev pmchev">' + CHEV + '</span></button>' +
+      '<div class="pmfold"><div class="pmodels"></div></div></div><p class="foot pmnote"></p>' +
     '<div class="card glass"><button class="it pmore" type="button"><span class="grow"><span class="t">More settings</span></span><span class="chev">' + CHEV + '</span></button></div>' +
     '</div>';
   document.body.appendChild(prof);
@@ -5420,8 +5456,89 @@ box.focus();
   prof.querySelector(".pmore").addEventListener("click", function () {
     closeProf(); var d = document.getElementById("dotsBtn"); if (d) setTimeout(function () { d.click(); }, 280);
   });
-  function closeProf() { prof.classList.remove("open"); }
-  function openProf() { prof.classList.add("open"); loadProf(); }
+  function closeProf() { if (nameIn && !nameIn.hidden) nameIn.blur(); prof.classList.remove("open"); }
+  function openProf() { prof.classList.add("open"); foldModels(false); loadProf(); }
+
+  /* ── 模型那张卡折起来(2026-10-10 所有者「模型可选的部分折叠起来」)──
+     平时只一行:当前型号 + 引擎,右边写「几个可选」或「下一句换成谁」;点了往下展开整张清单,再点收起。
+     每次打开这页都是收着的。清单本身(对勾 / Keeps window / 确认框)和原来一行不差。 */
+  var pmHead = prof.querySelector(".pmhead"), pmFold = prof.querySelector(".pmfold");
+  function foldModels(open) {
+    prof.classList.toggle("pmopen", !!open);
+    pmHead.setAttribute("aria-expanded", String(!!open));
+  }
+  pmHead.addEventListener("click", function () { foldModels(!prof.classList.contains("pmopen")); });
+
+  /* ── 在这页直接换他的头像 / 改他的名字(2026-10-10 所有者要的;原来只能去外壳的设置里)──
+     存法和设置里那份一模一样:头像裁正方、压 256px JPEG → POST api/avatar/him;名字 → POST api/prefs { himName }
+     (服务器那头是合并写,只动这一个键)。存好后叫外壳重新拉一遍(window.__dwPrefsChanged),
+     首页 / Chats / 设置一起变;单独打开聊天页时没有外壳,就只改这页。
+     「恢复默认头像」仍只在设置里(删东西要确认,别放在一点就中的地方)。 */
+  var hint = prof.querySelector(".phint"), hintT = 0;
+  function say(t) { hint.textContent = t; clearTimeout(hintT); if (t) hintT = setTimeout(function () { hint.textContent = ""; }, 3200); }
+  function cacheShell(patch) {          // 外壳不在时,也把本机副本对上,下次打开不闪回旧的
+    try { var c = JSON.parse(localStorage.getItem("dwell-shell-v1") || "{}") || {};
+      Object.keys(patch).forEach(function (k) { c[k] = patch[k]; });
+      localStorage.setItem("dwell-shell-v1", JSON.stringify(c)); } catch (e) {}
+  }
+  function tellShell() {
+    try { if (window.parent !== window && typeof window.parent.__dwPrefsChanged === "function") { window.parent.__dwPrefsChanged(); return true; } } catch (e) {}
+    return false;
+  }
+  var avFile = prof.querySelector(".pavFile");
+  prof.querySelector(".pav").addEventListener("click", function () { avFile.value = ""; avFile.click(); });
+  avFile.addEventListener("change", function () {
+    var f = avFile.files && avFile.files[0];
+    if (!f) return;
+    var url = URL.createObjectURL(f), img = new Image();
+    say("Updating…");
+    img.onload = function () {
+      try {
+        var S = 256, side = Math.min(img.naturalWidth, img.naturalHeight);
+        var c = document.createElement("canvas"); c.width = S; c.height = S;
+        c.getContext("2d").drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, S, S);
+        var data = c.toDataURL("image/jpeg", 0.86);
+        URL.revokeObjectURL(url);
+        fetch("api/avatar/him", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ dataUrl: data }) })
+          .then(function (r) { return r.json().catch(function () { return { ok: false, why: "HTTP " + r.status }; }); })
+          .then(function (d) {
+            if (!d.ok) { say("没换成:" + (d.why || "服务器没收")); return; }
+            prefs.avatars = prefs.avatars || {}; prefs.avatars.him = d.ver; applyPrefs();
+            if (!tellShell()) cacheShell({ avatars: prefs.avatars });
+            say(d.persisted ? "Photo updated" : "换好了 —— 但服务器这会儿没开落盘,重启会丢");
+          })
+          .catch(function () { say("没换成:连不上服务器"); });
+      } catch (e) { say("没换成:这张图读不了"); }
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); say("没换成:这张图读不了(试试 JPG / PNG)"); };
+    img.src = url;
+  });
+  var nameBtn = prof.querySelector(".pname"), nameIn = prof.querySelector(".pnameIn");
+  nameBtn.addEventListener("click", function () {
+    nameIn.value = (prefs.himName || "").trim(); nameIn.placeholder = "晏";
+    nameBtn.hidden = true; nameIn.hidden = false; nameIn.focus(); nameIn.select();
+  });
+  function commitName() {
+    if (nameIn.hidden) return;
+    nameIn.hidden = true; nameBtn.hidden = false;
+    var v = nameIn.value.replace(/\s+/g, " ").trim().slice(0, 16);
+    if (v === (prefs.himName || "").trim()) return;
+    fetch("api/prefs", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prefs: { himName: v } }) })
+      .then(function (r) { return r.json().catch(function () { return { ok: false, why: "HTTP " + r.status }; }); })
+      .then(function (d) {
+        if (!d.ok) { say("没改成:" + (d.why || "服务器没收")); return; }
+        prefs.himName = (d.prefs && typeof d.prefs.himName === "string") ? d.prefs.himName : v;   // 以服务器洗过的为准
+        paintName();
+        if (!tellShell()) cacheShell({ himName: prefs.himName });
+        say(d.persisted ? "" : "改好了 —— 但服务器这会儿没开落盘,重启会丢");
+      })
+      .catch(function () { say("没改成:连不上服务器"); });
+  }
+  nameIn.addEventListener("blur", commitName);
+  nameIn.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); nameIn.blur(); }
+    else if (e.key === "Escape") { nameIn.value = (prefs.himName || "").trim(); nameIn.blur(); }
+  });
   function prettyModel(m) {
     var t = String(m || "").replace(/^claude-/, "");
     var next = /-next$/.test(t); t = t.replace(/-next$/, "").replace(/-\d{8}$/, "");
@@ -5467,6 +5584,14 @@ box.focus();
   function loadProf() {
     fetch("api/model", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
       prof.querySelector(".pnow").textContent = prettyModel(d.model).replace("(新版)", "");
+      /* 折起来时那一行:当前那个(菜单里打了对勾的)+ 引擎;右边 = 下一句要换成谁,没有就写几个可选 */
+      var menu = d.menu || [], cur = null;
+      menu.forEach(function (m) { if (m.current) cur = m; });
+      prof.querySelector(".pmcur").textContent = prettyModel(cur ? cur.model : d.model).replace("(新版)", "");
+      prof.querySelector(".pmeng").textContent = cur ? (cur.engine === "next" ? "New CLI" : "Legacy CLI") : "";
+      var sum = prof.querySelector(".pmsum");
+      sum.classList.toggle("pend", !!d.pending);
+      sum.textContent = d.pending ? "→ " + prettyModel(d.pending).replace("(新版)", "") : menu.length > 1 ? menu.length + " models" : "";
       var box = prof.querySelector(".pmodels"); box.innerHTML = "";
       (d.menu || []).forEach(function (m) {
         var b = document.createElement("button");
