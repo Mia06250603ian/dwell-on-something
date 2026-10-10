@@ -16,6 +16,8 @@
      用 default + theme-color,iOS 15 起会拿 theme-color 填状态栏那一条并自动挑可读的字色;
      下面的 JS 还会让 theme-color 跟着当前皮肤走,所以那一条和页面底色永远是同一个色,看不出接缝。 -->
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- ⚠️ 2026-10-10:iOS 26 起 theme-color 不再被认,状态栏那条改由「顶边的固定元素」定色(见下面 .topcap)。
+     这几行 meta 和下面那段脚本留着给旧系统,别指望它们在 iOS 26 上起作用。 -->
 <meta name="theme-color" content="#f3f2f1" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1c1b19" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="icons/favicon-64.png" sizes="64x64">
@@ -161,20 +163,26 @@
     /* ⚠️⚠️ 下面这一档 2026-10-09 整体重定:两张都是 iPhone 真机截图(同为 New York),
        所以直接拿**同一串字**的墨宽/墨高比乘当前字号,不再经过任何字体度量换算。
        此前那几轮偏小,根因是把参考图(Pro Max 440pt)当成 402pt 宽来换算,每个数小了 9%。 */
-    --fs-display: clamp(37px, 11.52vw, 46.3px); /* Day N:墨高比 1.153、墨宽比 1.135(~~40.7~~) */
-    --fs-greet:   clamp(28px, 8.38vw, 33.7px); /* Good evening,:墨高比 1.074(~~31.5~~),字距另见 .greet */
-    --fs-metric:  clamp(28px, 8.56vw, 34.4px); /* 113 vs 114 墨高比 1.076(~~32~~) */
-    --fs-title:    24px;   /* 页标题 Chats / Settings / Diary */
-    --fs-metric-2: 20px;   /* 140 vs 164 墨高比 1.028(~~19.5~~) */
-    --fs-headline: 20.75px; /* Monthly Anniversary 同一串字:墨宽比 1.063、墨高比 1.085(~~19.5~~) */
-    --fs-ring:     20.5px; /* 环里的数:墨高比 1.105(~~18.5~~) */
-    --fs-whisper:  16.3px; /* 深色卡正文:汉字墨高比 1.05(~~15.5~~) */
-    --fs-label:    17.75px; /* Us / Steps / Heart Rate 同串墨宽比 1.059 / 1.078 / 1.080(~~16.5~~) */
-    --fs-tab:      16.5px; /* Home 墨高比 1.056(~~16~~) */
-    --fs-body:     15px;
-    --fs-sub:      14.5px; /* 天气、卡片副标题:参考 Aug 21 墨高 14.1 vs 真机 12.7 */
-    --fs-caption:  13.5px;
-    --fs-datum:    11px;   /* 图例、时间戳 */
+    /* ⚠️ 2026-10-10 所有者:「字体整体有点偏大」→ 整档乘一个系数,不逐个改上面量出来的数。
+       依据:10-09 那套是照 Pro Max(440pt 宽)的参考图按 pt 原样搬的,而她的手机是 402pt ——
+       同样的 pt 放在窄 9% 的屏上,相对就大了 9%。402/440 = 0.914,取 0.92。
+       **要回到 10-09 的样子把它改回 1;嫌还大 / 太小就只调这一个数。**
+       只管这一档 token(Home / Diary / 设置 / 底栏);Chats 列表那几个数是照她手机上的 Telegram 量的,不跟着缩。 */
+    --fs-k: .92;
+    --fs-display: calc(clamp(37px, 11.52vw, 46.3px) * var(--fs-k)); /* Day N:墨高比 1.153、墨宽比 1.135(~~40.7~~) */
+    --fs-greet:   calc(clamp(28px, 8.38vw, 33.7px) * var(--fs-k)); /* Good evening,:墨高比 1.074(~~31.5~~),字距另见 .greet */
+    --fs-metric:  calc(clamp(28px, 8.56vw, 34.4px) * var(--fs-k)); /* 113 vs 114 墨高比 1.076(~~32~~) */
+    --fs-title:    calc(24px * var(--fs-k));   /* 页标题 Chats / Settings / Diary */
+    --fs-metric-2: calc(20px * var(--fs-k));   /* 140 vs 164 墨高比 1.028(~~19.5~~) */
+    --fs-headline: calc(20.75px * var(--fs-k)); /* Monthly Anniversary 同一串字:墨宽比 1.063、墨高比 1.085(~~19.5~~) */
+    --fs-ring:     calc(20.5px * var(--fs-k)); /* 环里的数:墨高比 1.105(~~18.5~~) */
+    --fs-whisper:  calc(16.3px * var(--fs-k)); /* 深色卡正文:汉字墨高比 1.05(~~15.5~~) */
+    --fs-label:    calc(17.75px * var(--fs-k)); /* Us / Steps / Heart Rate 同串墨宽比 1.059 / 1.078 / 1.080(~~16.5~~) */
+    --fs-tab:      calc(16.5px * var(--fs-k)); /* Home 墨高比 1.056(~~16~~) */
+    --fs-body:     calc(15px * var(--fs-k));
+    --fs-sub:      calc(14.5px * var(--fs-k)); /* 天气、卡片副标题:参考 Aug 21 墨高 14.1 vs 真机 12.7 */
+    --fs-caption:  calc(13.5px * var(--fs-k));
+    --fs-datum:    calc(11px * var(--fs-k));   /* 图例、时间戳 */
 
     /* ---- 动画 ---- */
     /* 阻尼弹簧的真实采样(response .46 / dampingFraction .86 / 560ms,
@@ -292,6 +300,15 @@
   button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
   :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 6px; }
 
+  /* ---------- 状态栏那一条:钉一块纯色(2026-10-10,所有者报「最上边会被模糊化一部分」) ----------
+     iOS 26 起,主屏网页 App 的状态栏那块由系统画:页面顶边**没有**固定定位的元素时,系统盖一层
+     软模糊、还往下渗一截,把 Chats / 日期那一行也糊掉;顶边**有**固定元素时改用纯色(取那个元素的底色)。
+     所以这里钉一块和页面顶部同色的固定条,换来干净的硬边。theme-color 在 iOS 26 已不认,靠不住。
+     ⚠️ 高度就是 --sat:浏览器里(没有安全区)它高 0,什么都不挡。z-index 在底栏(50)之上、聊天页(80)/设置(90)之下。 */
+  .topcap {
+    position: fixed; top: 0; left: 0; right: 0; height: var(--sat); z-index: 60;
+    background: var(--paper-top); pointer-events: none;
+  }
   /* ---------- 壳 ---------- */
   .phone {
     width: 100%;
@@ -778,6 +795,7 @@
   }
 </style>
 
+<div class="topcap" aria-hidden="true"></div>
 <main class="phone">
 
   <!-- ================= HOME ================= -->
@@ -912,9 +930,9 @@
         <span class="av" data-bloom aria-hidden="true"></span>
         <span class="grow">
           <span class="name" style="display:block">晏</span>
-          <span class="prev" style="display:block">把你今天写的东西、动过的东西告诉我</span>
+          <span class="prev" id="yanPrev" style="display:block">&nbsp;</span>
         </span>
-        <span class="right"><span class="datum">6:40 PM</span></span>
+        <span class="right"><span class="datum" id="yanWhen"></span></span>
       </button>
 
       <button class="crow" data-chat="" data-who="另一个 AI 的房间">
@@ -1678,7 +1696,57 @@
   function goBack() {
     chatview.hidden = true;
     tabbar.hidden = false;
+    loadLast();
   }
+
+  /* ---------- Chats 里「晏」那一行:最后一句 + 时间,实时取(2026-10-10) ----------
+     ~~原来那句「把你今天写的东西…」和 6:40 PM 是写死在网页里的~~(所有者:「chat 这个界面的字不是实时的」)。
+     现在读 /api/messages 的最后几条,挑最后一句她或他说的话(思考 / 工具不算)。
+     ⚠️ 只记得经过 dwell 的话:Telegram / iMessage 那边说的、他主动发的,这里看不到(dwell 手册已知边界 1)。
+     什么时候刷新:打开页面、点到 Chats、从聊天页返回、切回前台。读不到就留空,不编一句假的。 */
+  var yanPrev = document.getElementById("yanPrev");
+  var yanWhen = document.getElementById("yanWhen");
+  function whenText(sec) {
+    var d = new Date(sec * 1000), now = new Date();
+    var day0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    var t = d.getTime();
+    if (t >= day0) {                      /* 今天:6:40 PM */
+      var h = d.getHours(), m = d.getMinutes();
+      return ((h % 12) || 12) + ":" + (m < 10 ? "0" : "") + m + " " + (h < 12 ? "AM" : "PM");
+    }
+    if (t >= day0 - 86400000) return "Yesterday";
+    if (t >= day0 - 6 * 86400000) return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getDay()];
+    return (d.getMonth() + 1) + "/" + d.getDate() + (d.getFullYear() === now.getFullYear() ? "" : "/" + String(d.getFullYear()).slice(2));
+  }
+  function prevText(m) {
+    var t = String(m.text || "")
+      .replace(/〔贴纸[：:][^〕]*〕/g, "[贴纸]").replace(/〔语音〕/g, "[语音]")
+      .replace(/\s+/g, " ").trim();
+    if (!t) t = "…";
+    return (m.kind === "me" ? "我: " : "") + t;
+  }
+  var lastBusy = false;
+  function loadLast() {
+    if (lastBusy || !yanPrev) return;
+    lastBusy = true;
+    fetch("api/messages?limit=30", { credentials: "same-origin" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        var ms = (d && d.msgs) || [], last = null;
+        for (var i = ms.length - 1; i >= 0; i--) {
+          if (ms[i].kind === "me" || ms[i].kind === "gu") { last = ms[i]; break; }
+        }
+        yanPrev.textContent = last ? prevText(last) : "还没有说过话";
+        yanWhen.textContent = last && last.at ? whenText(last.at) : "";
+      })
+      .catch(function () {})
+      .then(function () { lastBusy = false; });
+  }
+  loadLast();
+  Array.prototype.forEach.call(tabs, function (t) {
+    if (t.getAttribute("aria-controls") === "tab-chats") t.addEventListener("click", loadLast);
+  });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) loadLast(); });
   document.getElementById("chatBack").addEventListener("click", goBack);
 
   /* ---------- 只留一条顶栏(2026-10-09) ----------
