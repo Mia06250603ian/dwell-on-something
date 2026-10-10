@@ -4991,12 +4991,13 @@ box.focus();
   html[data-chatstyle="tg"] .gu:not(.tg-split):not(.stkonly)::before,
   html[data-chatstyle="tg"] .tgset .tgb:last-child:not(.stkonly)::before,
   html[data-chatstyle="tg"] .row.me:not(:has(+ .row.me)) > .bubble:not(.stkonly)::before {
-    content: ""; position: absolute; bottom: 0; width: 11px; height: 18px; pointer-events: none;
+    /* 10-10 她:「尾巴不用放大」—— 收小一号(~~11×18、外伸 6~~),只露一点尖,和 TG 那张图一样含蓄 */
+    content: ""; position: absolute; bottom: 0; width: 8px; height: 13px; pointer-events: none;
     -webkit-mask: var(--tg-tail-l) no-repeat center / 100% 100%; mask: var(--tg-tail-l) no-repeat center / 100% 100%;
-    left: -6px; background: var(--tg-him);
+    left: -4px; background: var(--tg-him);
   }
   html[data-chatstyle="tg"] .row.me:not(:has(+ .row.me)) > .bubble:not(.stkonly)::before {
-    left: auto; right: -6px; background: var(--tg-me);
+    left: auto; right: -4px; background: var(--tg-me);
     -webkit-mask-image: var(--tg-tail-r); mask-image: var(--tg-tail-r);
   }
 </style>
