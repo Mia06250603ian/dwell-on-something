@@ -23,6 +23,28 @@
      于是误判成"键盘开着"，把输入卡往上顶。
      深色模式下顶上那条白边是这个值造成的，但它只是难看；输入框跑位是不能用。 -->
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- 装在外壳 iframe 里时,把外壳量到的安全区递进来(2026-10-10,所有者报「顶部分层」)。
+     ⚠️ iOS 不把刘海 / Home 条的高度传进 iframe:框里 env(safe-area-inset-*) 恒为 0。
+     原来外壳只好在框上面空出一截纯色带当状态栏,内容滑不过去,看着就是上下两层。
+     现在外壳让框铺满整屏,这里从外壳(同源)量出真实安全区,写成 --dw-sat / --dw-sab;
+     下面凡用安全区的地方都写成 var(--dw-sat, env(...)) —— **单独打开本页时没有这两个变量,
+     退回 env(),和改之前逐像素相同**(官端那套不动)。外壳转屏 / 改尺寸时会再递一次。
+     ⚠️ 写在 <style> 之前:首次绘制前就要有值,不然顶栏先画在刘海底下再跳下来。 -->
+<script>
+(function () {
+  try {
+    if (window.parent === window) return;
+    var pd = parent.document, probe = pd.createElement("div");
+    probe.style.cssText = "position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;pointer-events:none;" +
+      "padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)";
+    (pd.body || pd.documentElement).appendChild(probe);
+    var c = parent.getComputedStyle(probe), r = document.documentElement.style;
+    r.setProperty("--dw-sat", c.paddingTop);
+    r.setProperty("--dw-sab", c.paddingBottom);
+    probe.remove();
+  } catch (e) {}
+})();
+</script>
 <script>
 /* 夜间模式：跟随系统 / 常亮 / 常暗，三态轮换，记在本地。
    写在 <style> 前面执行，页面还没画就把皮穿好，不会闪一下白的。
@@ -128,7 +150,7 @@ html[data-theme="dark"] {
 
   #toastLane {
     position: fixed; z-index: 400; left: 10px; right: 10px;
-    top: calc(env(safe-area-inset-top) + 8px);
+    top: calc(var(--dw-sat, env(safe-area-inset-top)) + 8px);
     display: flex; flex-direction: column; gap: 8px; pointer-events: none;
   }
   
@@ -229,7 +251,7 @@ html[data-theme="dark"] .glass,
   /* ============ 顶栏（悬浮玻璃，消息从底下滑过去） ============ */
   header {
     position: fixed; top: 0; left: 0; right: 0; z-index: 20;
-    padding: 8px 12px 20px; padding-top: calc(8px + env(safe-area-inset-top));
+    padding: 8px 12px 20px; padding-top: calc(8px + var(--dw-sat, env(safe-area-inset-top)));
     display: flex; align-items: center; gap: 8px;
     background: transparent;
     pointer-events: none;
@@ -308,7 +330,7 @@ html[data-theme="dark"] .glass,
   
   #log {
     flex: 1; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
-    padding: calc(76px + env(safe-area-inset-top)) 18px 150px;
+    padding: calc(76px + var(--dw-sat, env(safe-area-inset-top))) 18px 150px;
     display: flex; flex-direction: column; gap: 16px;   /* 2026-09-10 校准尺定：消息间距 18 → 16 */
   }
   /* 顶上那颗「看更早的」——老账都在，按一下捞 400 行 */
@@ -379,7 +401,7 @@ html[data-theme="dark"] .glass,
   /* 点右边那个展开：整段代码摊到全屏看，长命令不用左右拖 */
   .cbk-full { position: fixed; inset: 0; z-index: 300; display: flex;
     flex-direction: column; background: var(--bg);
-    padding: calc(env(safe-area-inset-top) + 12px) 0 calc(env(safe-area-inset-bottom) + 12px); }
+    padding: calc(var(--dw-sat, env(safe-area-inset-top)) + 12px) 0 calc(var(--dw-sab, env(safe-area-inset-bottom)) + 12px); }
   .cbk-full .cbk-h { box-shadow: inset 0 -1px 0 var(--line); }
   .cbk-full pre { flex: 1; overflow: auto; }
   .cbk-full code { white-space: pre-wrap; word-break: break-all; }
@@ -449,7 +471,7 @@ html[data-theme="dark"] .glass,
   }
 
   #pet {
-    position: fixed; right: 8px; bottom: calc(118px + env(safe-area-inset-bottom));
+    position: fixed; right: 8px; bottom: calc(118px + var(--dw-sab, env(safe-area-inset-bottom)));
     width: 128px; height: 128px; z-index: 30; cursor: grab;
     -webkit-user-select: none; user-select: none; touch-action: none;
   }
@@ -459,7 +481,7 @@ html[data-theme="dark"] .glass,
   /* ============ 输入区 ============ */
   footer {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
-    padding: 6px 12px calc(10px + env(safe-area-inset-bottom));
+    padding: 6px 12px calc(10px + var(--dw-sab, env(safe-area-inset-bottom)));
     background: transparent; pointer-events: none;
   }
   /* padding-bottom 由 JS 跟着输入卡实际高度走，字永远不许被玻璃压住 */
@@ -565,7 +587,7 @@ html[data-theme="dark"] .composer {
     /* 开屏（2026-08-16）：上下内边距改成对称，块才是真居中。
        原来下边留 15vh 是给滑杆让位的，滑杆藏了之后那块空白会把内容顶上去
        （实测偏上 69~76px，屏越大偏越多，因为它跟屏高成比例）。 */
-    padding: env(safe-area-inset-top) 24px env(safe-area-inset-bottom);
+    padding: var(--dw-sat, env(safe-area-inset-top)) 24px var(--dw-sab, env(safe-area-inset-bottom));
     transition: opacity .55s ease, transform .55s cubic-bezier(.4,0,.2,1);
     touch-action: none; user-select: none; -webkit-user-select: none;
     overflow: hidden;
@@ -628,7 +650,7 @@ html[data-theme="dark"] .composer {
   #drawer {
     position: absolute; top: 0; bottom: 0; left: 0; width: min(84vw, 330px);
     background: var(--bg); display: flex; flex-direction: column;
-    padding: calc(16px + env(safe-area-inset-top)) 0 calc(14px + env(safe-area-inset-bottom));
+    padding: calc(16px + var(--dw-sat, env(safe-area-inset-top))) 0 calc(14px + var(--dw-sab, env(safe-area-inset-bottom)));
     transform: translateX(-102%); transition: transform .24s ease;
     box-shadow: 4px 0 24px rgba(0,0,0,.12);
   }
@@ -673,7 +695,7 @@ html[data-theme="dark"] .composer {
   #gongBody .gu, #gongBody .bubble { font-size: 15.5px; line-height: 1.75; }
   #gongFoot {
     flex: none; display: flex; align-items: flex-end; gap: 9px;
-    padding: 10px 14px calc(12px + env(safe-area-inset-bottom));
+    padding: 10px 14px calc(12px + var(--dw-sab, env(safe-area-inset-bottom)));
     border-top: 1px solid var(--line);
   }
   #gongInput {
@@ -749,13 +771,13 @@ html[data-theme="dark"] .composer {
   .sheetWrap.page .sheet {
     height: 100dvh; max-height: 100dvh; border-radius: 0;
   }
-  .sheetWrap.page .grabber { margin-top: calc(10px + env(safe-area-inset-top)); }
+  .sheetWrap.page .grabber { margin-top: calc(10px + var(--dw-sat, env(safe-area-inset-top))); }
 
   /* 上拉展开（2026-08-16）：官端的抽屉能往上拽满屏，我们原来只能往下拽着关，
      往上被限死在 34px。往上拖过阈值就加 .tall，高度过渡到满屏；
      再往下拖一次先收回半屏，第二次才关——和 iOS 抽屉的两段式一致。 */
   .sheet.tall { height: 100dvh; max-height: 100dvh; border-radius: 0; }
-  .sheet.tall .grabber { margin-top: calc(10px + env(safe-area-inset-top)); }
+  .sheet.tall .grabber { margin-top: calc(10px + var(--dw-sat, env(safe-area-inset-top))); }
   .sheet { transition: transform .34s cubic-bezier(.32,.72,0,1),
                        height .3s cubic-bezier(.32,.72,0,1),
                        max-height .3s cubic-bezier(.32,.72,0,1); }
@@ -774,7 +796,7 @@ html[data-theme="dark"] .composer {
   .sheet .head .hbtn .ic { width: 21px; height: 21px; }
   .sheet .head .ht { flex: 1; text-align: center; font-size: 18px; font-weight: 600; padding: 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sheet .head .hspace { width: 46px; flex: none; }
-  .sheet .body { flex: 1; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 6px 20px calc(20px + env(safe-area-inset-bottom)); }
+  .sheet .body { flex: 1; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 6px 20px calc(20px + var(--dw-sab, env(safe-area-inset-bottom))); }
 
   .group-label { font-size: 14.5px; color: var(--dim); padding: 14px 4px 8px; }
   .group { background: var(--panel); border-radius: 18px; overflow: hidden; }
@@ -1209,7 +1231,7 @@ html[data-theme="dark"] .composer {
   
   #nkPop { position: fixed; z-index: 90; display: none; gap: 8px; align-items: center;
     left: 50%; transform: translateX(-50%) translateY(140%);
-    bottom: calc(env(safe-area-inset-bottom) + 18px);
+    bottom: calc(var(--dw-sab, env(safe-area-inset-bottom)) + 18px);
     max-width: min(94vw, 460px);
     background: var(--glass);
     -webkit-backdrop-filter: blur(20px) saturate(1.7);
@@ -1388,7 +1410,7 @@ html[data-theme="dark"] .hl-row + .hl-row { border-top-color: rgba(255,255,255,.
   .board-bar .bnav:disabled { opacity: .25; }
   .board-sub { text-align: center; font-size: 12px; color: var(--dim); padding-bottom: 8px; }
   .board-toggle {
-    position: absolute; right: 14px; bottom: calc(16px + env(safe-area-inset-bottom));
+    position: absolute; right: 14px; bottom: calc(16px + var(--dw-sab, env(safe-area-inset-bottom)));
     z-index: 5; border-radius: 999px; padding: 9px 16px; font-size: 13.5px;
     background: var(--glass);
     -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
@@ -1729,7 +1751,7 @@ html[data-theme="dark"] .rc { --stamp: var(--accent-soft); --rc-foot-ink: rgba(2
   .addrow .ic { width: 20px; height: 20px; }
 
   .menuCard {   
-    position: fixed; z-index: 60; top: calc(58px + env(safe-area-inset-top)); right: 12px;
+    position: fixed; z-index: 60; top: calc(58px + var(--dw-sat, env(safe-area-inset-top))); right: 12px;
     border-radius: 20px; padding: 7px; min-width: 190px; display: none;
     background: var(--glass);
     -webkit-backdrop-filter: blur(30px) saturate(1.9);
@@ -1785,7 +1807,7 @@ html[data-theme="dark"] .crow { border-color: rgba(255,255,255,.1); box-shadow: 
   }
   .crow .ct { font-size: 12.5px; color: var(--dim); flex: none; align-self: flex-start; }
   #newSession {
-    position: absolute; right: 18px; bottom: calc(20px + env(safe-area-inset-bottom));
+    position: absolute; right: 18px; bottom: calc(20px + var(--dw-sab, env(safe-area-inset-bottom)));
     background: #2b2a27; color: #faf9f5; border-radius: 999px;
     padding: 12px 22px; font-size: 15px;
     display: flex; align-items: center; gap: 7px;
@@ -4589,7 +4611,7 @@ box.focus();
   .tgprof .poster::after { content: ""; position: absolute; inset: 0;
                     background: linear-gradient(to bottom, var(--fog) 0%, color-mix(in srgb, var(--bg) 70%, transparent) 55%, var(--bg) 100%); }
   .tgprof .scroll { position: absolute; inset: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
-                    padding: calc(6px + env(safe-area-inset-top)) 20px calc(40px + env(safe-area-inset-bottom)); }
+                    padding: calc(6px + var(--dw-sat, env(safe-area-inset-top))) 20px calc(40px + var(--dw-sab, env(safe-area-inset-bottom))); }
   .tgprof .glass { background: var(--gl); -webkit-backdrop-filter: blur(30px) saturate(1.6); backdrop-filter: blur(30px) saturate(1.6);
                    box-shadow: inset 0 .5px 0 var(--gl-hi), inset 0 0 0 .5px var(--hair), var(--gl-sh); }
   .tgprof .pback { width: 36px; height: 36px; border-radius: 50%; border: 0; display: grid; place-items: center; color: var(--p1); }
@@ -4671,7 +4693,7 @@ box.focus();
   }
   .tgpick { position: fixed; left: 0; right: 0; bottom: 0; z-index: 55; max-height: 46vh; overflow-y: auto;
             background: var(--card); border-radius: 18px 18px 0 0; box-shadow: 0 -6px 30px rgba(0,0,0,.12);
-            padding: 10px 12px calc(14px + env(safe-area-inset-bottom));
+            padding: 10px 12px calc(14px + var(--dw-sab, env(safe-area-inset-bottom)));
             transform: translateY(105%); transition: transform .32s cubic-bezier(.32,.72,0,1); visibility: hidden; }
   .tgpick.open { transform: none; visibility: visible; }
   html:not([data-chatstyle="tg"]) .tgpick, html:not([data-chatstyle="tg"]) .tgprof { display: none; }

@@ -648,14 +648,16 @@
     position: fixed; inset: 0; z-index: 80;
     background: var(--paper-bot);
     display: flex; flex-direction: column;
-    padding-top: var(--sat);
+    /* ~~padding-top: var(--sat)~~ 2026-10-10 撤:那一截就是所有者截图里「顶部分层」的那条纯色带。
+       现在 iframe 铺满整屏,安全区由聊天页自己让(外壳量好递进去,见 chat.html 开头和下面的 pushSafe);
+       只有「这间屋还没部署」那条 .chatbar 自己让出顶部安全区。 */
     animation: slidein .28s cubic-bezier(.32,.72,0,1);
   }
   @keyframes slidein { from { transform: translateX(16px); opacity: 0 } to { transform: none; opacity: 1 } }
   @media (prefers-reduced-motion: reduce) { .chatview { animation: none } }
   .chatbar {
     display: flex; align-items: center; gap: 10px;
-    height: 44px; flex: none; padding: 0 var(--gutter);
+    height: calc(44px + var(--sat)); flex: none; padding: var(--sat) var(--gutter) 0;
     border-bottom: var(--hair) solid var(--line);
     background: color-mix(in srgb, var(--paper-top) 88%, transparent);
     -webkit-backdrop-filter: saturate(1.4) blur(20px);
@@ -1707,8 +1709,25 @@
       chatview.style.background = (c && c !== "rgba(0, 0, 0, 0)" && c !== "transparent") ? c : "";
     } catch (e) { chatview.style.background = ""; }
   }
+  /* 把外壳的安全区递进聊天页(2026-10-10)。iOS 不把刘海 / Home 条高度传进 iframe,
+     首次绘制前那次由 chat.html 开头自己量;这里管加载后与转屏 / 改尺寸时再递一次。 */
+  function pushSafe() {
+    try {
+      var d = chatframe.contentDocument;
+      if (!d || !d.documentElement) return;
+      var p = document.createElement("div");
+      p.style.cssText = "position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;pointer-events:none;" +
+        "padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)";
+      document.body.appendChild(p);
+      var c = getComputedStyle(p);
+      d.documentElement.style.setProperty("--dw-sat", c.paddingTop);
+      d.documentElement.style.setProperty("--dw-sab", c.paddingBottom);
+      p.remove();
+    } catch (e) {}
+  }
+  window.addEventListener("resize", pushSafe);
   chatframe.addEventListener("load", function () {
-    mountBack(); syncBg();
+    pushSafe(); mountBack(); syncBg();
     try {
       new MutationObserver(syncBg).observe(chatframe.contentDocument.documentElement, { attributes: true });
     } catch (e) {}
