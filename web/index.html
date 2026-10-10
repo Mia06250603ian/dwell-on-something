@@ -1224,6 +1224,14 @@
             <button data-v="17.5" aria-pressed="false">特大</button>
           </div>
         </div>
+        <!-- 2026-10-10 所有者:「语音翻译我想自己选折叠或者显示,我的和他的都是」。这里定默认;每颗语音条上的「文」还能单独点开 / 收起 -->
+        <div class="gcell">
+          <div class="t">语音文字</div>
+          <div class="seg" id="voiceText">
+            <button data-v="show" aria-pressed="false">显示</button>
+            <button data-v="fold" aria-pressed="false">折叠</button>
+          </div>
+        </div>
       </section>
       <p class="hint">气泡上的字会按底色深浅自动选黑字或白字</p>
 
@@ -1435,7 +1443,8 @@
   if (!state.avatars) state.avatars = { me: null, him: null };
   if (typeof state.meBubble !== "string") state.meBubble = "";      // "" = 跟皮肤走
   if (typeof state.himBubble !== "string") state.himBubble = "";
-  if (typeof state.chatFont !== "string" || !state.chatFont) state.chatFont = "14.5";   // TG 版聊天字号,标准档
+  if (typeof state.chatFont !== "string" || !state.chatFont) state.chatFont = "14.5";
+  if (state.voiceText !== "fold") state.voiceText = "show";                                // 语音条下面的文字:默认显示(原来的样子)   // TG 版聊天字号,标准档
   if (typeof state.himName !== "string") state.himName = "";                              // 他的显示名,"" = 晏
   /* ⚠️ 默认从 85 改成 100(2026-09-19)。85% 半透明 + 毛玻璃会让卡片和渐变页底混在一起,
      整页发灰发闷 —— 并排比参考图,这是最刺眼的一条,比字号的影响大得多。
@@ -1475,13 +1484,14 @@
       state[key] = b.dataset.v;
       apply();
       save(state);
-      if (key === "chatStyle" || key === "avatarMode" || key === "chatFont") pushPrefs();
+      if (key === "chatStyle" || key === "avatarMode" || key === "chatFont" || key === "voiceText") pushPrefs();
     });
   }
   wireSeg("chatStyle", "chatStyle");
   wireSeg("avatarMode", "avatarMode");
   wireSeg("appearance", "appearance");
   wireSeg("chatFont", "chatFont");
+  wireSeg("voiceText", "voiceText");
   /* 改名:失焦或按「完成」时存;一样就不存 */
   (function () {
     var inp = document.getElementById("himName");
@@ -1531,6 +1541,7 @@
         if (d.prefs.avatarMode) state.avatarMode = d.prefs.avatarMode;
         state.meBubble = d.prefs.meBubble || ""; state.himBubble = d.prefs.himBubble || "";
         if (d.prefs.chatFont) state.chatFont = d.prefs.chatFont;
+        if (d.prefs.voiceText) state.voiceText = d.prefs.voiceText;
         if (typeof d.prefs.himName === "string") state.himName = d.prefs.himName;
         state.avatars = d.avatars || { me: null, him: null };
         save(state); apply();
@@ -1541,7 +1552,7 @@
     fetch("api/prefs", { method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify({ prefs: { chatStyle: state.chatStyle, avatarMode: state.avatarMode,
                                       meBubble: state.meBubble || "", himBubble: state.himBubble || "",
-                                      chatFont: state.chatFont || "14.5", himName: state.himName || "" } }) })
+                                      chatFont: state.chatFont || "14.5", himName: state.himName || "", voiceText: state.voiceText || "show" } }) })
       .catch(function () {});
   }
   /* 聊天页同源:换了样式 / 头像就当场告诉它,不用重进 */
@@ -1550,7 +1561,7 @@
       var f = document.getElementById("chatframe");
       if (f && f.contentWindow) f.contentWindow.postMessage({ type: "dwell-prefs",
         chatStyle: state.chatStyle, avatarMode: state.avatarMode, avatars: state.avatars,
-        palette: state.palette, meBubble: state.meBubble, himBubble: state.himBubble, chatFont: state.chatFont, himName: state.himName }, location.origin);
+        palette: state.palette, meBubble: state.meBubble, himBubble: state.himBubble, chatFont: state.chatFont, himName: state.himName, voiceText: state.voiceText }, location.origin);
     } catch (e) {}
   }
 
@@ -1706,7 +1717,7 @@
     Array.prototype.forEach.call(skinBox.children, function (b) {
       b.setAttribute("aria-pressed", String(b.dataset.skin === state.skin));
     });
-    ["chatStyle", "avatarMode", "appearance", "chatFont"].forEach(function (id) {
+    ["chatStyle", "avatarMode", "appearance", "chatFont", "voiceText"].forEach(function (id) {
       var key = id;
       Array.prototype.forEach.call(document.getElementById(id).children, function (b) {
         b.setAttribute("aria-pressed", String(b.dataset.v === state[key]));

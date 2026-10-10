@@ -4297,6 +4297,8 @@ box.focus();
       if (d && d.type === 'echo') {
         var rows = logEl.querySelectorAll('.row.me'), r = rows[rows.length - 1], b = r && r.querySelector(':scope > .bubble');
         if (b) { b._raw0 = d.text; if (d.voice) { b.dataset.voice = d.voice; b.dataset.dur = d.dur || ""; } }
+        /* 正式那条语音到了:撤掉先放出来的那颗「转写中…」,正式这颗不再飞一遍(看着就是原地换了字) */
+        if (d.voice && window.__tgVoicePend && window.__tgDropPend) { if (r) r._tgPopped = true; window.__tgDropPend(); }
       }
       if (d && d.type === 'react' && window.__tgReact) window.__tgReact(d);
     } catch (e) {}
@@ -4902,6 +4904,14 @@ box.focus();
 
   /* ── 贴纸(两套样式都显示成图;2026-10-09) ── */
   img.stk { display: block; width: 132px; height: 132px; object-fit: contain; margin: 2px 0; }
+  /* 她发给他的图(2026-10-10,两套样式都显示;点了全屏看) */
+  img.photo { display: block; max-width: min(240px, 100%); max-height: 320px; width: auto; height: auto; border-radius: 13px; margin: 3px 0;
+              cursor: zoom-in; background: color-mix(in srgb, currentColor 8%, transparent); }
+  .photoview { position: fixed; inset: 0; z-index: 120; background: rgba(0,0,0,.92); display: flex; align-items: center; justify-content: center;
+               animation: tgfadein .2s ease both; cursor: zoom-out; }
+  .photoview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  /* 语音刚发出去、还在转写:先把她的语音条放出来(能点开回放),下面写「转写中…」,转写回来换成正式那条 */
+  html[data-chatstyle="tg"] .row.me.tgvpend .vtext { opacity: .6; font-style: normal; }
   .bubble.stkonly, .gu.stkonly, .tgb.stkonly { background: none !important; box-shadow: none !important; padding: 0 !important; }
   html[data-chatstyle="tg"] .tgb.stkonly[data-tgt]::after, html[data-chatstyle="tg"] .gu.stkonly[data-tgt]::after,
   html[data-chatstyle="tg"] .bubble.stkonly[data-tgt]::after {
@@ -5156,6 +5166,10 @@ box.focus();
   .tgvoice .vwave i { flex: 1; max-width: 3px; min-width: 2px; border-radius: 2px;
     background: color-mix(in srgb, var(--tg-him-ink, var(--text)) 26%, transparent); transition: background .12s linear; }
   .tgvoice .vwave i.on { background: var(--tg-him-ink, var(--text)); }
+  /* 语音文字:折叠 / 显示(2026-10-10 她:「我可以自己选折叠或者显示,我的和他的都是」)。
+     设置里「语音文字」定默认(data-tgvfold = 默认折叠);单独一条在**长按菜单**里点「Show Text / Hide Text」(.vopen / .vshut,只在本页、不存)。
+     ~~每颗语音条右边一颗「文」按钮~~ —— 她:「那个文太丑了」,撤了,挪进长按菜单(照她发的 TG 截图)。 */
+  html[data-tgvfold] .tgvoice:not(.vopen) .vtext, html:not([data-tgvfold]) .tgvoice.vshut .vtext { display: none; }
   .tgvoice .vdur { flex: none; font-size: 11px; font-variant-numeric: tabular-nums; color: color-mix(in srgb, var(--tg-him-ink, var(--text)) 50%, transparent); }
   .tgvoice .vtext { display: block; margin-top: 5px; font-size: calc(var(--tg-fs, 14.5px) * .9); line-height: 1.35;
     color: color-mix(in srgb, var(--tg-him-ink, var(--text)) 62%, transparent); }
@@ -5202,15 +5216,31 @@ box.focus();
   html[data-chatstyle="tg"] .tgpop-react { animation: tgreactpop .42s cubic-bezier(.2, 1.3, .35, 1) both; transform-origin: 30% 60%; }
   html[data-chatstyle="tg"] .tgheld { transform: scale(.97); transition: transform .18s cubic-bezier(.32,.72,0,1); }
   .tgrmenu { display: none; }
-  .tgrmenu.open { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; position: fixed; z-index: 90;
-    animation: tgpopin .3s cubic-bezier(.2, 1.2, .35, 1) both; transform-origin: 50% 100%; }
-  .tgrmenu .bar { display: flex; gap: 2px; padding: 5px 7px; border-radius: 26px; background: var(--card, #fff);
-    box-shadow: 0 6px 24px rgba(0,0,0,.16), inset 0 0 0 .5px rgba(0,0,0,.06); }
-  .tgrmenu .bar button { width: 38px; height: 38px; border: 0; background: none; font-size: 24px; line-height: 1; border-radius: 50%; cursor: pointer;
-    transition: transform .15s ease; }
-  .tgrmenu .bar button:active { transform: scale(1.3); }
-  .tgrmenu .copy { border: 0; padding: 9px 16px; border-radius: 14px; font: inherit; font-size: 15px; color: var(--text); background: var(--card, #fff);
-    box-shadow: 0 6px 24px rgba(0,0,0,.14), inset 0 0 0 .5px rgba(0,0,0,.06); cursor: pointer; }
+  /* ── 长按菜单第二版(2026-10-10 晚,照她的 TG 截图)── 整屏模糊 + 浮起来的泡 + 玻璃表情条 + 玻璃菜单 */
+  .tgrmenu.open { display: block !important; position: fixed; inset: 0; z-index: 90; animation: none !important; }
+  .tgrmenu .rback { position: absolute; inset: 0; background: rgba(120,120,128,.16);
+                    -webkit-backdrop-filter: blur(18px) saturate(1.2); backdrop-filter: blur(18px) saturate(1.2); animation: tgfadein .22s ease both; }
+  html[data-tgdark] .tgrmenu .rback { background: rgba(0,0,0,.38); }
+  .tgrmenu .glass { position: absolute; background: rgba(250,250,252,.78); -webkit-backdrop-filter: blur(30px) saturate(1.8); backdrop-filter: blur(30px) saturate(1.8);
+                    box-shadow: inset 0 .5px 0 rgba(255,255,255,.9), 0 0 0 .5px rgba(0,0,0,.08), 0 10px 40px rgba(0,0,0,.12); }
+  html[data-tgdark] .tgrmenu .glass { background: rgba(44,44,46,.78); box-shadow: inset 0 .5px 0 rgba(255,255,255,.12), 0 0 0 .5px rgba(255,255,255,.08), 0 10px 40px rgba(0,0,0,.45); }
+  .tgrmenu .bar { display: flex !important; gap: 2px; padding: 5px 8px; border-radius: 999px; animation: rmenuin .42s var(--tg-spring-pop, cubic-bezier(.2,1.2,.35,1)) both; transform-origin: 50% 100%; }
+  .tgrmenu .bar button { width: 40px; height: 40px; border: 0; background: none; font-size: 27px; line-height: 1; border-radius: 50%; cursor: pointer; padding: 0; transition: transform .15s ease; }
+  .tgrmenu .bar button:active { transform: scale(1.25); }
+  .tgrmenu .rclone { position: absolute; pointer-events: none; animation: rclonein .42s var(--tg-spring-smooth, cubic-bezier(.32,.72,0,1)) both; }
+  .tgrmenu .rclone .row { margin: 0; padding: 0; display: flex; width: max-content; }   /* 保持横排:泡是横排里的一项才会把浮动的时间包住(块级会漏出去,10-10 撞过) */
+  .tgrmenu .rclone .row > *, .tgrmenu .rclone .tgset > * { flex: none; }
+  .tgrmenu .rclone .row::before, .tgrmenu .rclone .row::after { display: none !important; }
+  .tgrmenu .rclone .tgset { display: block; }
+  @keyframes rclonein { from { transform: translateY(var(--dy, 0)); } to { transform: none; } }
+  @keyframes rmenuin { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
+  .tgrmenu .list { min-width: 232px; border-radius: 22px; padding: 6px 0; animation: rmenuin .42s var(--tg-spring-pop, cubic-bezier(.2,1.2,.35,1)) both; transform-origin: 50% 0; }
+  .tgrmenu .list[hidden] { display: none; }
+  .tgrmenu .list .it { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 46px; padding: 0 20px; border: 0; background: none; cursor: pointer;
+                       font: 400 17px/1.2 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; color: var(--text); text-align: left; }
+  .tgrmenu .list .it:active { background: color-mix(in srgb, var(--text) 8%, transparent); }
+  .tgrmenu .list .ic { display: grid; place-items: center; width: 24px; }
+  .tgheld-hide { visibility: hidden; }
   /* 右上角:搜索替掉他的头像 / 那两颗官端按钮 */
   .tgsrch { display: none; }
   html[data-chatstyle="tg"] .tgav, html[data-chatstyle="tg"] .headpill:not(.tgname) { display: none !important; }
@@ -5468,6 +5498,7 @@ box.focus();
     if (cached.palette) prefs.palette = cached.palette;        // 外壳算好的皮肤配色(同源,读得到)
     prefs.meBubble = cached.meBubble || ""; prefs.himBubble = cached.himBubble || "";
     prefs.chatFont = cached.chatFont || "";
+    prefs.voiceText = cached.voiceText || "";
     prefs.himName = cached.himName || "";
   } catch (e) {}
   function lum(hex) {
@@ -5511,6 +5542,7 @@ box.focus();
     if (typeof syncComposer === "function") syncComposer();
     if (typeof paintName === "function") paintName();
     if (typeof paintCover === "function") paintCover();   // 「他」页背景(外壳那边换了 / 去掉了也跟着变)
+    if (prefs.voiceText === "fold") root.setAttribute("data-tgvfold", ""); else root.removeAttribute("data-tgvfold");   // 语音文字默认折叠还是显示
   }
   applyPrefs();
   fetch("api/prefs", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
@@ -5520,6 +5552,7 @@ box.focus();
     prefs.avatars = d.avatars || prefs.avatars;
     prefs.meBubble = d.prefs.meBubble || ""; prefs.himBubble = d.prefs.himBubble || "";
     prefs.chatFont = d.prefs.chatFont || "";
+    prefs.voiceText = d.prefs.voiceText || "";
     prefs.himName = d.prefs.himName || "";
     applyPrefs();
   }).catch(function () {});
@@ -5529,6 +5562,7 @@ box.focus();
     if (e.data.palette) prefs.palette = e.data.palette;
     prefs.meBubble = e.data.meBubble || ""; prefs.himBubble = e.data.himBubble || "";
     prefs.chatFont = e.data.chatFont || "";
+    prefs.voiceText = e.data.voiceText || "";
     prefs.himName = e.data.himName || "";
     applyPrefs();
   });
@@ -6005,6 +6039,37 @@ box.focus();
     if (el.querySelector("img.stk") && !el.textContent.trim()) el.classList.add("stkonly");
     el.dataset.stk = "1";
   }
+  /* ── 她发给他的图(2026-10-10):记录里是「〔图片：编号〕」,换成图(dwell-bridge 的 /api/photo/<编号>,过口令)。两套样式都换 ── */
+  var PH_RE = /〔图片：([0-9a-f]{16})〕\n?/g;
+  function photoPass(sc) {
+    Array.prototype.forEach.call(sc.querySelectorAll(".row.me > .bubble"), function (b) {
+      if (b.dataset.ph === "1" || (b.textContent || "").indexOf("〔图片：") < 0) return;
+      var walker = document.createTreeWalker(b, NodeFilter.SHOW_TEXT, null), nodes = [], n;
+      while ((n = walker.nextNode())) { PH_RE.lastIndex = 0; if (PH_RE.test(n.nodeValue)) nodes.push(n); }
+      nodes.forEach(function (tn) {
+        var frag = document.createDocumentFragment(), str = tn.nodeValue, last = 0, m;
+        PH_RE.lastIndex = 0;
+        while ((m = PH_RE.exec(str))) {
+          if (m.index > last) frag.appendChild(document.createTextNode(str.slice(last, m.index)));
+          var img = document.createElement("img");
+          img.className = "photo"; img.alt = "图片"; img.loading = "lazy"; img.src = "api/photo/" + m[1];
+          frag.appendChild(img);
+          last = m.index + m[0].length;
+        }
+        if (last < str.length) frag.appendChild(document.createTextNode(str.slice(last)));
+        tn.replaceWith(frag);
+      });
+      b.dataset.ph = "1";
+    });
+  }
+  log.addEventListener("click", function (e) {
+    var img = e.target.closest && e.target.closest("img.photo");
+    if (!img) return;
+    var v = document.createElement("div"); v.className = "photoview";
+    var big = document.createElement("img"); big.src = img.src; big.alt = "图片"; v.appendChild(big);
+    v.addEventListener("click", function () { v.remove(); });
+    document.body.appendChild(v);
+  });
   /* 原 .gu 定稿后会被重画(textContent 重设、data-rich 摘掉)—— 那时 data-stk 也得跟着作废 */
   function stickerPass(sc) {
     if (!STK) return;
@@ -6223,6 +6288,7 @@ box.focus();
     var tg = root.getAttribute("data-chatstyle") === "tg";
     scopes.forEach(function (sc) {
       stickerPass(sc);                     // 贴纸两套样式都要
+      photoPass(sc);                       // 她发的图也是两套样式都要
       try { foldPass(sc); } catch (e) {}
       if (!tg) {
         if (sc === log) Array.prototype.forEach.call(log.querySelectorAll(".gu.tgwait"), function (el) { el.classList.remove("tgwait"); });
@@ -6476,11 +6542,37 @@ box.focus();
     if (r.cancelled) return;
     if (Date.now() - r.t0 < 700) { note("（太短了,按一下麦克风开始说,说完再按一下）"); return; }
     var blob = new Blob(r.chunks, { type: (r.mr.mimeType || "audio/mp4").split(";")[0] });
+    var secs = Math.round((Date.now() - r.t0) / 1000);
     try { stickBottom = true; setBusy(true); } catch (e) {}
-    fetch("api/voice?dur=" + Math.round((Date.now() - r.t0) / 1000), { method: "POST", headers: { "Content-Type": blob.type || "application/octet-stream" }, body: blob })
+    /* 2026-10-10 她:「发语音要等他读完才显示我的语音」—— 原来要等转码 + ears 转写回来(几秒到十几秒)回声才到,这段时间页面上什么都没有。
+       现在点发送的那一刻就先放一颗她的语音条(本机录音直接能回放),下面写「转写中…」;回声到了就换成正式那条(带服务器上那份录音和转写),
+       失败就撤掉这颗、照旧提示。 */
+    var pend = pendVoice(blob, secs);
+    fetch("api/voice?dur=" + secs, { method: "POST", headers: { "Content-Type": blob.type || "application/octet-stream" }, body: blob })
       .then(function (res) { return res.json().catch(function () { return {}; }).then(function (d) { if (!res.ok || !d.ok) throw new Error(d.why || ""); }); })
-      .catch(function (e) { try { setBusy(false); } catch (x) {} note("（" + (e && e.message || "语音没传过去,打字告诉他吧") + "）", "err"); });
+      .catch(function (e) { dropPend(pend); try { setBusy(false); } catch (x) {} note("（" + (e && e.message || "语音没传过去,打字告诉他吧") + "）", "err"); });
   }
+  function pendVoice(blob, secs) {
+    try {
+      var rowEl = document.createElement("div"); rowEl.className = "row me tgvpend";
+      var b = document.createElement("div"); b.className = "bubble"; rowEl.appendChild(b);
+      voiceBubble(b, "转写中…", { src: URL.createObjectURL(blob), dur: secs });
+      var tail = log.querySelector(":scope > .brandline, :scope > .tgtyping");
+      log.insertBefore(rowEl, tail || null);
+      rowEl._tgPopped = true; pop(b, "tgpop-me", 0);
+      window.__tgVoicePend = rowEl;
+      schedule(); try { scroll(true); } catch (e) {}
+      return rowEl;
+    } catch (e) { return null; }
+  }
+  function dropPend(el) {
+    if (!el) return;
+    try { var pb = el.querySelector(".bubble"); if (pb && pb._src) URL.revokeObjectURL(pb._src); } catch (e) {}
+    if (cur && el.contains(cur.b)) stopCur();
+    el.remove();
+    if (window.__tgVoicePend === el) window.__tgVoicePend = null;
+  }
+  window.__tgDropPend = function () { dropPend(window.__tgVoicePend); };
   if (micBtn) micBtn.addEventListener("click", function (e) {
     if (root.getAttribute("data-chatstyle") !== "tg") return;      // 官端那颗照旧只做样子
     e.preventDefault(); e.stopPropagation();
@@ -6563,39 +6655,84 @@ box.focus();
     if (lastTap.b === b && now - lastTap.t < 300) { lastTap.b = null; e.preventDefault(); setMine(b, "❤️"); return; }
     lastTap = { b: b, t: now };
   });
-  /* 长按:一排表情 + 复制 */
+  /* 长按菜单(2026-10-10 晚第二版,照她发的 Telegram iOS 截图):整屏模糊 → 被按的那颗泡浮在最上面 →
+     上面一条玻璃胶囊放表情 → 下面一张玻璃菜单(左图标右字)。**只放真能用的**:Copy;语音条多一项 Show Text / Hide Text。
+     TG 那张里的 Reply / Forward / Pin / Delete 我们后台没有,放了点不动,不放(同「别编 online」)。
+     泡是**克隆**一份放到浮层里(原来那颗先藏起来):原地抬层级会被 #log 的层叠上下文困住。克隆外面包一层同样的 .row,样式(颜色 / 尾巴 / 时间)照旧生效。 */
+  var IC = {
+    copy: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2.6"/><path d="M15.5 8.5V6.6A2.6 2.6 0 0 0 12.9 4H6.6A2.6 2.6 0 0 0 4 6.6v6.3a2.6 2.6 0 0 0 2.6 2.6h1.9"/></svg>',
+    text: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 6.5h16M4 11.5h16M4 16.5h10"/></svg>',
+    hide: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 6.5h16M4 11.5h9"/><path d="m15.5 15 4 4m0-4-4 4"/></svg>'
+  };
   var menu = document.createElement("div");
   menu.className = "tgrmenu";
-  menu.innerHTML = '<div class="bar"></div><button type="button" class="copy">复制</button>';
+  menu.innerHTML = '<div class="rback"></div><div class="bar glass"></div><div class="rclone"></div><div class="list glass"></div>';
   document.body.appendChild(menu);
+  var mBar = menu.querySelector(".bar"), mClone = menu.querySelector(".rclone"), mList = menu.querySelector(".list");
   QUICK.forEach(function (q) {
     var x = document.createElement("button"); x.type = "button"; x.textContent = q;
     x.addEventListener("click", function () { if (menu._b) setMine(menu._b, q); closeMenu(); });
-    menu.querySelector(".bar").appendChild(x);
+    mBar.appendChild(x);
   });
-  menu.querySelector(".copy").addEventListener("click", function () {
-    var b = menu._b, t = "";
-    if (b) { var c = b.cloneNode(true); Array.prototype.forEach.call(c.querySelectorAll(".tgreact, .vrow"), function (x) { x.remove(); }); t = c.textContent.replace(/\u2063/g, "").trim(); }
-    try { navigator.clipboard.writeText(t).then(function () { note("（复制好了）"); }); } catch (x) {}
-    closeMenu();
-  });
+  menu.querySelector(".rback").addEventListener("click", function () { closeMenu(); });
+  function textOf(b) {
+    if (b.classList.contains("tgvoice")) return (b._voice || (b.querySelector(".vtext") || {}).textContent || "").trim();
+    var c = b.cloneNode(true); Array.prototype.forEach.call(c.querySelectorAll(".tgreact, .vrow"), function (x) { x.remove(); });
+    return c.textContent.replace(/\u2063/g, "").trim();
+  }
+  function item(icon, label, fn) {
+    var x = document.createElement("button"); x.type = "button"; x.className = "it";
+    x.innerHTML = '<span class="ic">' + icon + '</span><span class="lb"></span>'; x.querySelector(".lb").textContent = label;
+    x.addEventListener("click", function () { var b = menu._b; closeMenu(); if (b) fn(b); });
+    mList.appendChild(x);
+  }
   function openMenu(b) {
+    if (menu.classList.contains("open")) closeMenu();
     menu._b = b;
     var r = b.getBoundingClientRect(), mine = !!b.closest(".row.me");
+    /* 菜单项:语音条先给「显示 / 收起文字」(按现在这颗看得见没有来写),再给复制 */
+    mList.innerHTML = "";
+    if (b.classList.contains("tgvoice") && !b.closest(".tgvpend")) {
+      var vt = b.querySelector(".vtext"), shown = vt && getComputedStyle(vt).display !== "none";
+      item(shown ? IC.hide : IC.text, shown ? "Hide Text" : "Show Text", function (v) {
+        if (root.hasAttribute("data-tgvfold")) v.classList.toggle("vopen"); else v.classList.toggle("vshut");
+        try { scroll(); } catch (e) {}
+      });
+    }
+    if (textOf(b)) item(IC.copy, "Copy", function (v) {
+      try { navigator.clipboard.writeText(textOf(v)).then(function () { note("（复制好了）"); }); } catch (x) {}
+    });
+    /* 克隆那颗泡,包一层同样的行,放到原位置 */
+    var wrap = document.createElement("div");
+    wrap.className = mine ? "row me" : "row";
+    var c = b.cloneNode(true); c.style.width = r.width + "px"; c.style.maxWidth = "none"; c.style.margin = "0";
+    c.classList.remove("tgheld", "tgpop-me", "tgpop-in");
+    if (b.classList.contains("tgb")) { var set = document.createElement("div"); set.className = "tgset"; set.appendChild(c); wrap.appendChild(set); }
+    else wrap.appendChild(c);
+    mClone.innerHTML = ""; mClone.appendChild(wrap);
     menu.classList.add("open");
-    var w = menu.offsetWidth, h = menu.offsetHeight;
-    var left = mine ? Math.max(8, r.right - w) : Math.min(window.innerWidth - w - 8, r.left);
-    var top = r.top - h - 8; if (top < 70) top = r.bottom + 8;
-    menu.style.left = left + "px"; menu.style.top = top + "px";
-    b.classList.add("tgheld");
+    /* 摆位置:表情条在泡上面、菜单在泡下面;整组放不下就整体挪进屏幕(TG 也是把泡挪上去) */
+    var sat = parseFloat(getComputedStyle(root).getPropertyValue("--dw-sat")) || 0, sab = parseFloat(getComputedStyle(root).getPropertyValue("--dw-sab")) || 0;
+    var bh = mBar.offsetHeight, lh = mList.childElementCount ? mList.offsetHeight : 0, gap = 8;
+    var total = bh + gap + r.height + (lh ? gap + lh : 0);
+    var top = r.top - bh - gap, minTop = sat + 12, maxTop = window.innerHeight - sab - 12 - total;
+    top = Math.max(minTop, Math.min(top, maxTop));
+    var bw = mBar.offsetWidth, lw = mList.offsetWidth;
+    var side = function (w) { return mine ? Math.max(10, r.right - w) : Math.min(window.innerWidth - w - 10, r.left); };
+    mBar.style.left = side(bw) + "px"; mBar.style.top = top + "px";
+    mClone.style.left = r.left + "px"; mClone.style.top = (top + bh + gap) + "px";
+    mClone.style.setProperty("--dy", (r.top - (top + bh + gap)) + "px");
+    mList.style.left = side(lw) + "px"; mList.style.top = (top + bh + gap + r.height + gap) + "px";
+    mList.hidden = !mList.childElementCount;
+    b.classList.add("tgheld-hide");
     try { if (navigator.vibrate) navigator.vibrate(10); } catch (x) {}
   }
   function closeMenu() {
+    if (!menu.classList.contains("open")) return;
     menu.classList.remove("open");
-    if (menu._b) menu._b.classList.remove("tgheld");
-    menu._b = null;
+    if (menu._b) menu._b.classList.remove("tgheld-hide");
+    menu._b = null; mClone.innerHTML = "";
   }
-  document.addEventListener("click", function (e) { if (menu.classList.contains("open") && !menu.contains(e.target)) closeMenu(); }, true);
   log.addEventListener("scroll", closeMenu, { passive: true });
   var press = null;
   log.addEventListener("touchstart", function (e) {
