@@ -3272,6 +3272,11 @@ document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState !== 'visible') return;
   if (Date.now() - lastEventAt < 30000) return;
   try {
+    /* 2026-10-12:~~离开过 30 秒就整页清空重画~~ —— 400 条全拆一遍、闪一下,她往上翻着的位置也被拽回底部。
+       先问一句服务器事件游标(只取 1 条,很轻):和这边的 cursor 一样 = 离开这段时间什么都没发生,不重画。
+       不一样(有新的、或本层重启过游标重来)才照旧整页重摆。 */
+    const q = await fetch('api/messages?limit=1', { cache: 'no-store' }).then((r) => r.ok ? r.json() : null).catch(() => null);
+    if (q && q.upto === cursor) { lastEventAt = Date.now(); return; }
     const upto = await loadSaid();
     if (upto) cursor = upto;
     lastEventAt = Date.now();
@@ -3696,7 +3701,7 @@ function send() {
   const wasBusy = guBusy;
   if (wasBusy) { try { fetch('api/stop', { method: 'POST' }); } catch (e) {} }
   box.value = '';
-  box.style.height = 'auto';
+  fitBox();
   stickBottom = true;              // 刚发完话，总是想看最新的
   setBusy(true);
   const payload = { text };
@@ -3714,10 +3719,23 @@ box.addEventListener('input', refreshSend);
 box.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); }
 });
-box.addEventListener('input', () => {
+/* 输入框随字长高(2026-10-12 改):~~height = auto → 读 scrollHeight → 写回~~ 每个字都瞬间跳一下,TG 版也没法过渡
+   (auto 不能插值)。现在:先关掉过渡量出新高,把旧高写回去、强制一次布局,再交还过渡写新高 —— 旧 → 新是两个 px,
+   TG 版 CSS 里的 height 过渡(见 TG 样式末尾《交互流畅度》)就能接上;官端没有那条过渡,照旧一步到位,外观不变。
+   高度没变(绝大多数按键)直接返回,不多做一次布局。 */
+let boxH = 0;
+function fitBox() {
+  const was = box.style.height;
+  box.style.transition = 'none';
   box.style.height = 'auto';
-  box.style.height = Math.min(box.scrollHeight, 160) + 'px';
-});
+  const h = Math.min(box.scrollHeight, 160);
+  if (Math.abs(h - boxH) < 0.5 && was) { box.style.height = was; box.style.transition = ''; return; }
+  if (boxH && was) { box.style.height = was; void box.offsetHeight; }
+  box.style.transition = '';
+  box.style.height = h + 'px';
+  boxH = h;
+}
+box.addEventListener('input', fitBox);
 
 const footerEl = document.querySelector('footer');
 let kbShift = 0, kbGap = 0;
@@ -3736,7 +3754,8 @@ function fitKeyboard() {
   const seen = vv.offsetTop + vv.height;             // 眼睛能看到的最低那条线
   const rect = footerEl.getBoundingClientRect();
   const over = rect.bottom - seen;                   // 输入卡底边比它低多少
-  if (Math.abs(over) > 0.5) {
+  /* 2026-10-12:贴纸面板开着时输入栏是被面板(setPick)顶上去的,这里别把它当成「跑位」按回去 —— 原来两边会抢,面板一开输入栏就掉回原处 */
+  if (!dwUnder && Math.abs(over) > 0.5) {
     kbShift = Math.min(0, kbShift - over);           // 只往上顶，不往下坠
     footerEl.style.transform = kbShift ? 'translateY(' + kbShift + 'px)' : '';
   }
@@ -3744,7 +3763,7 @@ function fitKeyboard() {
     kbShift = 0;
     footerEl.style.transform = '';
   }
-  log.style.paddingBottom = (footerEl.offsetHeight + (on ? -kbShift + 16 : 48)) + 'px';
+  log.style.paddingBottom = (footerEl.offsetHeight + (on ? -kbShift + 16 : 48) + (typeof dwUnder === 'number' ? dwUnder : 0)) + 'px';
   if (on && window.scrollY !== 0) window.scrollTo(0, 0);
 }
 /* 键盘是动画上来的（约 0.3 秒），头尾各校一次会卡在半路——整段动画都盯着 */
@@ -3792,9 +3811,12 @@ if (location.search.includes('kb=1')) {
 }
 box.addEventListener('focus', trackKeyboard);
 box.addEventListener('blur', () => setTimeout(trackKeyboard, 50));
+/* dwUnder = 贴纸面板这类从底下顶上来的东西占掉的高度(2026-10-12):列表底部要多留这一截,不然最后几条被面板盖住 */
+var dwUnder = 0;
+function padLog() { log.style.paddingBottom = (footerEl.offsetHeight + (kbGap > 20 ? kbGap + 16 : 48) + dwUnder) + 'px'; }
 new ResizeObserver(() => {
   const wasBottom = atBottom();
-  log.style.paddingBottom = (footerEl.offsetHeight + (kbGap > 20 ? kbGap + 16 : 48)) + 'px';
+  padLog();
   if (wasBottom) scroll(true);
 }).observe(footerEl);
 
@@ -4801,8 +4823,8 @@ box.focus();
      顶上一张背景(默认 = 他的头像放大虚化,和原来的海报同一个东西;她换过就是她那张),
      下面一张 30 圆角的底板压上去(iOS 联系人 / Apple 账户页那种),头像骑在交界线上、带一圈底色描边。
      ⚠️ 状态栏那条(iOS 26):系统拿外壳顶上那块固定元素的颜色涂成**纯色**,页面画不进去(dwell 手册《iOS 26 状态栏那条的规矩》)。
-        所以背景图最上面一截从「同一个实色」化开 —— 那个色从背景图可见区域的最上沿取(sampleTop),
-        同时请外壳把那块固定元素也涂成它(window.__dwTopTint),两边是同一个色就看不出分层。没换背景时照旧用聊天页底色。 */
+        所以背景图最上面一截从「同一个实色」化开 = 聊天页底色(外壳那块固定元素打开时就是这个色)。
+        ~~那个色从背景图最上沿取(sampleTop)+ 请外壳也涂成它(__dwTopTint)~~ —— 2026-10-12 撤了:iOS 不跟着换色,见脚本里 paintCover 上面那段。 */
   .tgprof::before, .tgprof .poster { display: none; }
   .tgprof .scroll { padding-top: 0; }
   .tgprof .pcover { position: relative; margin: 0 -20px; height: calc(236px + var(--dw-sat, env(safe-area-inset-top))); overflow: hidden; }
@@ -4811,13 +4833,12 @@ box.focus();
   .tgprof[data-cover] .pcimg { inset: 0; filter: none; opacity: 1; background: var(--pc-img) center / cover no-repeat; }
   .tgprof .pcover::after { content: ""; position: absolute; left: 0; right: 0; top: 0; pointer-events: none;
                            height: calc(64px + var(--dw-sat, env(safe-area-inset-top)));
-                           background: linear-gradient(to bottom, var(--pc-tint, var(--tg-page, var(--bg))) 0%,
-                                       var(--pc-tint, var(--tg-page, var(--bg))) calc(var(--dw-sat, env(safe-area-inset-top)) * .55),
-                                       color-mix(in srgb, var(--pc-tint, var(--tg-page, var(--bg))) 45%, transparent) 62%, transparent 100%); }
-  .tgprof .pcover .pback, .tgprof .pcover .pcbtn { position: absolute; z-index: 2; top: calc(8px + var(--dw-sat, env(safe-area-inset-top))); }
+                           background: linear-gradient(to bottom, var(--tg-page, var(--bg)) 0%,
+                                       var(--tg-page, var(--bg)) calc(var(--dw-sat, env(safe-area-inset-top)) * .55),
+                                       color-mix(in srgb, var(--tg-page, var(--bg)) 45%, transparent) 62%, transparent 100%); }
+  .tgprof .pcover .pback { position: absolute; z-index: 2; top: calc(8px + var(--dw-sat, env(safe-area-inset-top))); }
   .tgprof .pcover .pback { left: 16px; }
-  .tgprof .pcover .pcbtn { right: 16px; width: 36px; height: 36px; border-radius: 50%; border: 0; display: grid; place-items: center; color: var(--p1); }
-  .tgprof .pcover .pcbtn:active { transform: scale(.92); }
+  .tgprof .pcover { cursor: pointer; -webkit-tap-highlight-color: transparent; }   /* 点背景 = 换背景(2026-10-12,原右上那颗 .pcbtn 已撤) */
   .tgprof .psheet { position: relative; z-index: 1; margin: -34px -20px 0; padding: 0 20px 1px; background: var(--bg);
                     border-radius: 30px 30px 0 0; min-height: 70vh; box-shadow: 0 -.5px 0 var(--hair); }
   .tgprof .hero { margin: 0 0 24px; padding-top: 1px; }
@@ -4877,8 +4898,8 @@ box.focus();
   .tgprof .pcimg { -webkit-mask: linear-gradient(#000, #000) top / 100% 53% no-repeat, var(--ease-mask) bottom / 100% 48% no-repeat;
                            mask: linear-gradient(#000, #000) top / 100% 53% no-repeat, var(--ease-mask) bottom / 100% 48% no-repeat; }
   .tgprof:not([data-cover]) .pcimg { inset: -120px -120px 0; filter: blur(80px) saturate(1.05); opacity: .5; transform: scale(1.15); }
-  .tgprof .pcover::after { height: calc(90px + var(--dw-sat, env(safe-area-inset-top)));
-                           background: var(--pc-tint, var(--tg-page, var(--bg)));
+  .tgprof .pcover::after { height: calc(90px + var(--dw-sat, env(safe-area-inset-top)));   /* 2026-10-12 起被 TG 样式末尾「顶部分层 第三轮」的渐进模糊盖过 */
+                           background: var(--tg-page, var(--bg));
                            -webkit-mask: linear-gradient(#000, #000) top / 100% calc(var(--dw-sat, env(safe-area-inset-top)) * .6 + 1px) no-repeat,
                                          var(--ease-mask) 0 calc(var(--dw-sat, env(safe-area-inset-top)) * .6) / 100% 100% no-repeat;
                                    mask: linear-gradient(#000, #000) top / 100% calc(var(--dw-sat, env(safe-area-inset-top)) * .6 + 1px) no-repeat,
@@ -5479,6 +5500,83 @@ box.focus();
     --edge: linear-gradient(to top, #000 0%, #000 38%, rgba(0,0,0,.82) 52%, rgba(0,0,0,.55) 66%, rgba(0,0,0,.28) 80%, rgba(0,0,0,.09) 91%, transparent 100%);
     -webkit-mask-image: var(--edge); mask-image: var(--edge);
   }
+  /* ══ 顶部分层 第三轮(2026-10-12,所有者两张真机截图:聊天页 +「他」页「最上方的分层优化一下」)══
+     **量出来的**(她截图 3px/pt):状态栏那条是网页外面的纯色 #f3f2f1,**高 62pt、下沿一刀齐**(她手机上 --dw-sat = 0,网页从它下面才开始)。
+     ① 聊天页:顶栏那层渐隐最上沿只有 72% 实(有壁纸时才是实的),消息在网页顶边就透出来 —— 她那颗深色泡在第 62pt 处已经灰到 230,
+        和纯色那条接不上 = 她看到的「分层」;中段又遮得太浅,深色泡在名字胶囊两边露出一大块。
+        改成:最上面一截**完全实心**的 --tg-page(= 外壳那块的色,接缝消失),再按缓动曲线化开,并往顶栏下面多伸 20px,
+        让消息在按钮那一带基本看不见、出了顶栏才慢慢浮上来(iOS 26 scroll edge 的样子)。有没有壁纸同一套。
+     ②「他」页:背景顶上改从聊天页底色化开,不再取样背景色(见 .tgprof 那段与脚本 paintCover 上面那段)。
+        她看了第一版说「这个虚化很不自然」:那版是拿底色往下盖 90~112px,照片顶上被盖成一层灰雾。
+        现在照 iOS 26 的 scroll edge 做**渐进模糊**:四层 backdrop-filter(2 / 5 / 10 / 20px)叠着,越靠顶边层数越多、糊得越狠,
+        每层下沿用缓动遮罩收掉(看不出台阶);**颜色只在最上面一小截**(状态栏下 60px 内)从底色化开,只为接上那条纯色,不再起雾。
+        四层左右各伸出 40px:模糊在元素边上会取到透明、两侧发暗,伸出去再被 .pcover 的 overflow 裁掉。 */
+  html[data-chatstyle="tg"] header::before, html[data-chatstyle="tg"][data-tgwall] header::before {
+    inset: 0 0 -20px; background: var(--tg-page);
+    --edge-ease: linear-gradient(to bottom, #000 0%, rgba(0,0,0,.987) 8.1%, rgba(0,0,0,.951) 15.5%, rgba(0,0,0,.896) 22.5%,
+      rgba(0,0,0,.825) 29%, rgba(0,0,0,.741) 35.3%, rgba(0,0,0,.648) 41.2%, rgba(0,0,0,.55) 47.1%, rgba(0,0,0,.45) 52.9%,
+      rgba(0,0,0,.352) 58.8%, rgba(0,0,0,.259) 64.7%, rgba(0,0,0,.175) 71%, rgba(0,0,0,.104) 77.5%, rgba(0,0,0,.049) 84.5%,
+      rgba(0,0,0,.013) 91.9%, transparent 100%);
+    --edge-solid: calc(10px + var(--dw-sat, env(safe-area-inset-top)));
+    -webkit-mask: linear-gradient(#000, #000) top / 100% calc(var(--edge-solid) + 1px) no-repeat,
+                  var(--edge-ease) 0 var(--edge-solid) / 100% calc(100% - var(--edge-solid)) no-repeat;
+            mask: linear-gradient(#000, #000) top / 100% calc(var(--edge-solid) + 1px) no-repeat,
+                  var(--edge-ease) 0 var(--edge-solid) / 100% calc(100% - var(--edge-solid)) no-repeat;
+  }
+  .tgprof .pcedge { position: absolute; left: -40px; right: -40px; top: 0; height: calc(150px + var(--dw-sat, env(safe-area-inset-top)));
+                   z-index: 1; pointer-events: none; }
+  .tgprof .pcedge i { position: absolute; left: 0; right: 0; top: 0; display: block;
+                      -webkit-mask: var(--ease-mask) 0 var(--dw-sat, env(safe-area-inset-top)) / 100% calc(100% - var(--dw-sat, env(safe-area-inset-top))) no-repeat,
+                                    linear-gradient(#000, #000) top / 100% calc(var(--dw-sat, env(safe-area-inset-top)) + 1px) no-repeat;
+                              mask: var(--ease-mask) 0 var(--dw-sat, env(safe-area-inset-top)) / 100% calc(100% - var(--dw-sat, env(safe-area-inset-top))) no-repeat,
+                                    linear-gradient(#000, #000) top / 100% calc(var(--dw-sat, env(safe-area-inset-top)) + 1px) no-repeat; }
+  .tgprof .pcedge i:nth-child(1) { height: 100%; -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }
+  .tgprof .pcedge i:nth-child(2) { height: 76%;  -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+  .tgprof .pcedge i:nth-child(3) { height: 54%;  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  .tgprof .pcedge i:nth-child(4) { height: 36%;  -webkit-backdrop-filter: blur(20px) saturate(1.1); backdrop-filter: blur(20px) saturate(1.1); }
+  .tgprof .pcover::after { z-index: 1; height: calc(60px + var(--dw-sat, env(safe-area-inset-top))); }
+  /* ══ 玻璃第四版:照 iOS 原生(2026-10-12,所有者:「目前的 UI 特别扁平卡片化」+ 一张 iOS 输入栏上方那条工具栏的截图,「所有的玻璃质感都改成这种」)══
+     **量出来的**(她截图 3px/pt,同一条竖线):我们的输入栏整块 253 的近纯白 + 外圈一道 203 的深描边 = 一张白卡片;
+     iOS 那条本体只比背后亮一点(背后 234,它 242~246)—— 立体感全靠**边上的光**:上沿一道 255 的亮线 → 往下约 16pt 处最暗(242,弧面的背光那侧)
+     → 中段 245 → 底边又亮回 253 → 外圈只在**下沿**有一道 215 的影。
+     我们发白的根:底叠 50% 白 + 背后再提亮 6%(brightness 1.06),浅底上就成了实心白。所以:去掉提亮,本体降到「只亮一点」,
+     亮边 / 背光带用两层 px 定位的渐变画(不用 %,卡片高 300 也不会在中间出一条带),影只落在下沿。
+     ⚠️ iOS 真正的「折射」(背后的东西被弯一下)Safari 做不了(SVG 位移滤镜只有 Chromium 认),这里只做光。
+     官端不动;要整体调透只动 --g4-bg 里那几个 alpha。 */
+  html[data-chatstyle="tg"] {
+    --g4-bg: linear-gradient(to top, rgba(255,255,255,.42) 0, rgba(255,255,255,.16) 5px, rgba(255,255,255,0) 14px),
+             linear-gradient(to bottom, rgba(255,255,255,.78) 0, rgba(255,255,255,.52) 5px, rgba(255,255,255,.34) 16px, rgba(255,255,255,.44) 30px, rgba(255,255,255,.48) 100%);
+    --g4-sh: inset 0 1px 0 #fff, inset 0 -1px 0 rgba(255,255,255,.8), inset 0 0 0 .5px rgba(255,255,255,.45),
+             0 0 0 .5px rgba(0,0,0,.05), 0 1px 1.5px rgba(0,0,0,.13), 0 6px 18px rgba(0,0,0,.05);
+    --g4-filter: blur(14px) saturate(1.6);
+  }
+  html[data-chatstyle="tg"][data-tgdark] {
+    --g4-bg: linear-gradient(to top, rgba(255,255,255,.07) 0, rgba(255,255,255,.02) 5px, rgba(255,255,255,0) 14px),
+             linear-gradient(to bottom, rgba(255,255,255,.14) 0, rgba(255,255,255,.07) 5px, rgba(255,255,255,.03) 16px, rgba(255,255,255,.05) 30px, rgba(255,255,255,.06) 100%),
+             linear-gradient(rgba(30,30,32,.42), rgba(30,30,32,.42));
+    --g4-sh: inset 0 1px 0 rgba(255,255,255,.22), inset 0 -1px 0 rgba(255,255,255,.07), inset 0 0 0 .5px rgba(255,255,255,.06),
+             0 1px 1.5px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.3);
+    --g4-filter: blur(14px) saturate(1.5);
+  }
+  html[data-chatstyle="tg"] :is(#menuBtn, .tgname, .tgsrch, .tgdown, #plusBtn, #box, #micBtn) {
+    background: var(--g4-bg) !important;
+    -webkit-backdrop-filter: var(--g4-filter); backdrop-filter: var(--g4-filter);
+    box-shadow: var(--g4-sh) !important;
+  }
+  .tgprof .glass { background: var(--g4-bg); -webkit-backdrop-filter: var(--g4-filter); backdrop-filter: var(--g4-filter); box-shadow: var(--g4-sh); }
+  /* 操作表 / 长按菜单是要读字的,底保持原来那么实,只换上同一套边光 */
+  .tgprof .pactg.glass { background: var(--g4-bg), var(--gl); }
+  .tgrmenu .glass { background: var(--g4-bg), rgba(250,250,252,.62); box-shadow: var(--g4-sh), 0 10px 40px rgba(0,0,0,.12); }
+  html[data-tgdark] .tgrmenu .glass { background: var(--g4-bg), rgba(44,44,46,.66); box-shadow: var(--g4-sh), 0 10px 40px rgba(0,0,0,.45); }
+  /* ══ 交互流畅度(2026-10-12)══ 只改动效,不改样子。脚本那半见 TG 脚本里同名一段与基础脚本的 fitBox / padLog。
+     ①「他」页 / 贴纸面板**关的时候是瞬间消失的**:visibility 没进过渡,一摘 .open 就藏了,滑出去那段根本看不到。
+       visibility 跟 transform 用同一个时长过渡 —— 关的时候整段都可见、到终点才藏;开的时候第一帧就可见。
+     ② 输入框长高 / 变矮:跟着 fitBox 写的 px 走一条短过渡(原来一步跳过去)。 */
+  .tgprof, .tgpick { transition-property: transform, visibility; }
+  html[data-chatstyle="tg"] #box { transition: padding-right var(--tg-dur) var(--tg-ease), height .2s cubic-bezier(.32,.72,0,1); }
+  @media (prefers-reduced-motion: reduce) {
+    .tgprof, .tgpick { transition-duration: .01s !important; }
+  }
 </style>
 <script>
 (function () {
@@ -5633,7 +5731,6 @@ box.focus();
   var CHEV = '<svg viewBox="0 0 8 13" width="8" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m1.5 1.5 5 5-5 5"/></svg>';
   /* 头像角上的相机 / 名字旁的笔(2026-10-10,照她给的参考图 P2:头像右下一颗深色小圆 + 相机) */
   var CAM = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.4-2h6.2l1.4 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.8" r="3.3"/></svg>';
-  var PHOTO = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4 17 4.5-4.5 3.5 3.5 2.5-2.5L20 18"/></svg>';
   var PEN = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5l4 4M4 20l1-4.5L16 4.5a1.4 1.4 0 0 1 2 0l1.5 1.5a1.4 1.4 0 0 1 0 2L8.5 19z"/></svg>';
   function ringHTML(cls, name) {
     return '<div class="g ' + cls + '"><div class="ring"><svg viewBox="0 0 78 78"><circle class="trk" cx="39" cy="39" r="34" fill="none" stroke-width="4.5"/>' +
@@ -5649,9 +5746,9 @@ box.focus();
   prof.innerHTML =
     '<div class="poster"></div><div class="scroll">' +
     /* 2026-10-10 第六版:照她给的参考图 P2 的位置 —— 顶上一张背景(能换),下面一张圆角底板压上去,头像骑在交界线上 */
-    '<div class="pcover"><div class="pcimg"></div>' +
+    '<div class="pcover"><div class="pcimg"></div><div class="pcedge" aria-hidden="true"><i></i><i></i><i></i><i></i></div>' +
       '<button class="pback glass" type="button" aria-label="返回"><svg viewBox="0 0 9 15" width="8" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7.8 1.2 1.6 7.5l6.2 6.3"/></svg></button>' +
-      '<button class="pcbtn glass" type="button" aria-label="换背景">' + PHOTO + '</button></div>' +
+      '</div>' +
     '<div class="psheet">' +
     '<div class="hero"><button class="big pav" type="button" aria-label="换他的头像"><span class="cam" aria-hidden="true">' + CAM + '</span></button>' +
       '<button class="pname" type="button" aria-label="改他的名字"><b class="tgnm"></b><span class="pen" aria-hidden="true">' + PEN + '</span></button>' +
@@ -5689,56 +5786,33 @@ box.focus();
   prof.querySelector(".pmore").addEventListener("click", function () {
     closeProf(); var d = document.getElementById("dotsBtn"); if (d) setTimeout(function () { d.click(); }, 280);
   });
-  function closeProf() { if (nameIn && !nameIn.hidden) nameIn.blur(); closeAct(); prof.classList.remove("open"); topTint(null); }
+  function closeProf() { if (nameIn && !nameIn.hidden) nameIn.blur(); closeAct(); prof.classList.remove("open"); }
   function openProf() { prof.classList.add("open"); foldModels(false); paintCover(); loadProf(); }
 
   /* ── 背景(2026-10-10 第六版,所有者「我也想要这种能换背景的」)──
      存法同聊天壁纸:长边压到 1600px 的 JPEG → POST api/avatar/cover(本层上限 1.5MB,和壁纸同一档)。
      去掉要确认,只有她点才删。没换过 = 他的头像放大虚化(原来的海报)。 */
   var pcImg = prof.querySelector(".pcimg"), pcFile = prof.querySelector(".pcFile");
-  var tintNow = null;
   function coverUrl() { var v = prefs.avatars && prefs.avatars.cover; return v ? "api/avatar/cover?v=" + v : ""; }
-  /* 状态栏那条的颜色(iOS 26 只能是纯色):取背景图「可见区域」最上沿那一窄条的平均色。
-     background-size: cover + 居中 —— 可见区域不是原图的最上沿,要按同样的裁法算(竖图会上下各裁掉一截)。 */
-  function sampleTop(url, cb) {
-    var img = new Image();
-    img.onload = function () {
-      try {
-        var box = prof.querySelector(".pcover").getBoundingClientRect(), W = box.width || 402, H = box.height || 290;
-        var k = Math.max(W / img.naturalWidth, H / img.naturalHeight), sw = W / k, sh = H / k;
-        var sx = (img.naturalWidth - sw) / 2, sy = (img.naturalHeight - sh) / 2;
-        var c = document.createElement("canvas"); c.width = 12; c.height = 2;
-        var g = c.getContext("2d"); g.drawImage(img, sx, sy, sw, Math.max(1, sh * 0.04), 0, 0, 12, 2);
-        var d = g.getImageData(0, 0, 12, 2).data, r = 0, gg = 0, b = 0, n = d.length / 4;
-        for (var i = 0; i < d.length; i += 4) { r += d[i]; gg += d[i + 1]; b += d[i + 2]; }
-        cb("rgb(" + Math.round(r / n) + "," + Math.round(gg / n) + "," + Math.round(b / n) + ")");
-      } catch (e) { cb(null); }
-    };
-    img.onerror = function () { cb(null); };
-    img.src = url;
-  }
-  function topTint(c) {   // 请外壳把顶上那块固定元素涂成同一个色;null = 还给它(聊天页底色)
-    try { if (window.parent !== window && typeof window.parent.__dwTopTint === "function") window.parent.__dwTopTint(c); } catch (e) {}
-  }
+  /* ~~状态栏那条跟背景同色:sampleTop 取背景可见区最上沿的平均色 → --pc-tint + window.__dwTopTint 请外壳涂成它~~
+     2026-10-12 撤了:她真机截图里状态栏那条**停在打开那一刻的颜色**(#f3f2f1),iOS 不跟着页面里的改动换色,
+     背景顶上却从取样的深色起步,62pt 处一刀切 —— 正是手册预言的「不跟」那种情形。现在背景顶上一律从聊天页底色化开。 */
   function paintCover() {
     if (!prof) return;
     var u = coverUrl();
     prof.toggleAttribute("data-cover", !!u);
     prof.querySelector(".pa-del").hidden = !u;
-    if (!u) { prof.style.removeProperty("--pc-img"); prof.style.removeProperty("--pc-tint"); tintNow = null; if (prof.classList.contains("open")) topTint(null); return; }
+    if (!u) { prof.style.removeProperty("--pc-img"); return; }
     prof.style.setProperty("--pc-img", 'url("' + u + '")');
-    sampleTop(u, function (c) {
-      if (coverUrl() !== u) return;              // 等的时候又换了一张
-      tintNow = c;
-      if (c) prof.style.setProperty("--pc-tint", c); else prof.style.removeProperty("--pc-tint");
-      if (prof.classList.contains("open")) topTint(c);
-    });
-    if (prof.classList.contains("open") && tintNow) topTint(tintNow);
   }
   var actBg = prof.querySelector(".psheetbg"), act = prof.querySelector(".pact");
   function openAct() { actBg.hidden = false; act.hidden = false; }
   function closeAct() { if (actBg) { actBg.hidden = true; act.hidden = true; } }
-  prof.querySelector(".pcbtn").addEventListener("click", openAct);
+  /* 2026-10-12 她:「换背景的图标我不想要,改成点背景图就能换」—— ~~右上一颗玻璃圆钮 .pcbtn~~ 撤了,点背景本身弹同一个操作表。
+     返回键也在 .pcover 里,点它不算。 */
+  var pcover = prof.querySelector(".pcover");
+  pcover.setAttribute("role", "button"); pcover.setAttribute("aria-label", "换背景");
+  pcover.addEventListener("click", function (e) { if (!e.target.closest(".pback")) openAct(); });
   actBg.addEventListener("click", closeAct);
   prof.querySelector(".pa-cancel").addEventListener("click", closeAct);
   prof.querySelector(".pa-pick").addEventListener("click", function () { closeAct(); pcFile.value = ""; pcFile.click(); });
@@ -6093,11 +6167,17 @@ box.focus();
   /* 照 TG:面板在下、输入栏被顶到面板上方(不然面板盖住输入栏,图标再也点不到、关不上 —— 10-09 测出来的) */
   var footEl = document.querySelector("footer");
   function setPick(open) {
+    if (open === pick.classList.contains("open")) return;
     pick.classList.toggle("open", open);
+    var h = open ? pick.offsetHeight - 6 : 0;
     if (footEl) {
       footEl.style.transition = "transform .32s cubic-bezier(.32,.72,0,1)";
-      footEl.style.transform = open ? "translateY(-" + (pick.offsetHeight - 6) + "px)" : "";
+      footEl.style.transform = h ? "translateY(-" + h + "px)" : "";
     }
+    /* 2026-10-12:~~只顶起输入栏~~ 列表不动,最后几条被面板盖住。现在列表底部多留面板那截,贴底的话跟着一起滑上去 / 落回来(同 TG) */
+    var d = h - dwUnder;
+    dwUnder = h; padLog();
+    if (stickBottom) { log.scrollTop = log.scrollHeight - log.clientHeight; if (!calm && d) slide(d, 320, "cubic-bezier(.32,.72,0,1)"); }
   }
   stkBtn.addEventListener("click", function (e) { e.stopPropagation(); setPick(!pick.classList.contains("open")); });
   document.addEventListener("click", function (e) {
@@ -6878,7 +6958,7 @@ box.focus();
     slide(d);
     return true;
   }
-  function slide(d) {
+  function slide(d, ms, ease) {
     var top = log.getBoundingClientRect().top - d, n = 0;
     for (var r = log.lastElementChild; r && n < 60; r = r.previousElementSibling) {
       var rc = r.getBoundingClientRect();
@@ -6891,11 +6971,34 @@ box.focus();
         try { r._glide.cancel(); } catch (e) {}
       }
       var a = r.animate([{ transform: "translate3d(0," + from + "px,0)" }, { transform: "translate3d(0,0,0)" }],
-                        { duration: GLIDE_MS, easing: EASE_SMOOTH });
+                        { duration: ms || GLIDE_MS, easing: ease || EASE_SMOOTH });
       r._glide = a;
       a.onfinish = (function (row, an) { return function () { if (row._glide === an) row._glide = null; }; })(r, a);
     }
   }
+  /* ══ 交互流畅度(2026-10-12)══ 键盘 / 贴纸面板把可视区挤矮(或放回)时,列表和输入栏跟着一起滑,不是一下跳过去。
+     键盘:外壳把 iframe 摆成「眼睛看得到的那块」(index.html 的 kbFit),于是这页会收到一次 resize、根节点多一个 data-dwkb。
+     iOS 的键盘是动画升上来的,而 iframe 一步就缩到了终点 —— 不处理的话,输入栏先「跳」到键盘上沿、键盘再追上来,中间露一截空。
+     所以:贴底的话先一步拉到底(一次布局),再让看得见的那几行和输入栏从原位置用键盘那条曲线滑过去(只动 transform)。
+     只在「键盘开 / 关」那一下滑(看 data-dwkb 变没变);转屏之类的普通 resize 照旧一步到位。系统减弱动态效果时不滑。 */
+  var KB_MS = 300, KB_EASE = "cubic-bezier(.38, .7, .125, 1)";   // iOS 键盘那条曲线(近似),时长同系统键盘
+  var lastVH = innerHeight, kbWas = root.hasAttribute("data-dwkb");
+  function follow(d, foot) {
+    var wasBottom = stickBottom;
+    if (wasBottom) log.scrollTop = log.scrollHeight - log.clientHeight;
+    if (calm || !isTg() || Math.abs(d) < 24) return;
+    if (foot && foot.animate) foot.animate([{ transform: "translate3d(0," + d + "px,0)" }, { transform: "translate3d(0,0,0)" }],
+                                           { duration: KB_MS, easing: KB_EASE });
+    if (wasBottom) slide(d, KB_MS, KB_EASE);
+  }
+  window.__tgFollow = follow;
+  window.addEventListener("resize", function () {
+    var h = innerHeight, d = lastVH - h, kbNow = root.hasAttribute("data-dwkb");
+    lastVH = h;
+    if (!d) return;
+    if (kbNow !== kbWas) { kbWas = kbNow; follow(d, document.querySelector("footer")); }
+    else if (stickBottom) log.scrollTop = log.scrollHeight - log.clientHeight;   // 其它尺寸变化:贴底就留在底,不滑
+  });
   function flyAll(list) {
     var box = document.getElementById("box"), br = box && box.getBoundingClientRect();
     list.forEach(function (f) {
