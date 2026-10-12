@@ -2497,11 +2497,19 @@
   /* 「他」页顶上的状态栏那条跟照片同色(2026-10-12 晚,她:「是顶部的分层」)。
      ⚠️ 涂的是 **.topcap**,不是 .chatview:她真机截图里那条是 243,242,241 = .topcap 的 --paper-top(聊天页底色是 242,241,241),
      说明 iOS 26 取的是这块固定条的色。~~10-10 那版涂的是 .chatview~~ —— 涂错了对象,所以「iOS 不跟」那个结论下早了。
-     iOS 会不会在页面开着时跟着这块变色,只有真机验得了;null = 还原。返回 Chats 时也还原(goBack)。 */
+     null = 还原。返回 Chats 时也还原(goBack)。
+     ⚠️ 2026-10-13 真机查实(她:换皮肤时「要关掉」设置页状态栏才变色):**光改颜色 iOS 不理**,它只在顶上有一层固定元素
+     出现 / 消失时才重新取一次色 —— 10-12 那版只改了 .topcap 的底色,所以状态栏停在浅灰、照片顶上一刀切。
+     所以:涂色 → 把 .topcap 抬到聊天页(80)之上 → 让它消失一帧再出现(两次 rAF),逼 iOS 重取。还原时同样走一遍。
+     抬上来那条在她手机上只有 12px 高、颜色 = 照片最上沿的平均色,照片顶上本来就从这个色化开,看不出来。 */
   var topcapEl = document.querySelector(".topcap");
   window.__dwTopTint = function (c) {
     if (!topcapEl) return;
-    topcapEl.style.background = c && /^rgb\(\d{1,3},\d{1,3},\d{1,3}\)$/.test(c) ? c : "";
+    var ok = c && /^rgb\(\d{1,3},\d{1,3},\d{1,3}\)$/.test(c);
+    topcapEl.style.background = ok ? c : "";
+    topcapEl.style.zIndex = ok ? "85" : "";               // 聊天页 80 之上、设置 90 之下
+    topcapEl.style.display = "none";                      // 消失一帧再出现 = iOS 重新取状态栏的色
+    requestAnimationFrame(function () { requestAnimationFrame(function () { topcapEl.style.display = ""; }); });
   };
 
   /* ── 部署完自己刷新 ──

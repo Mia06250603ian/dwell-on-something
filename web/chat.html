@@ -4907,7 +4907,7 @@ box.focus();
             rgba(0,0,0,.825) 29%, rgba(0,0,0,.741) 35.3%, rgba(0,0,0,.648) 41.2%, rgba(0,0,0,.55) 47.1%, rgba(0,0,0,.45) 52.9%,
             rgba(0,0,0,.352) 58.8%, rgba(0,0,0,.259) 64.7%, rgba(0,0,0,.175) 71%, rgba(0,0,0,.104) 77.5%, rgba(0,0,0,.049) 84.5%,
             rgba(0,0,0,.013) 91.9%, transparent 100%); }
-  .tgprof .pcover { height: calc(270px + var(--dw-sat, env(safe-area-inset-top))); }
+  .tgprof .pcover { height: calc(296px + var(--dw-sat, env(safe-area-inset-top))); }   /* 270 → 296(2026-10-13,她「下移一点头像」):照片多露 26px,头像跟着下来 */
   .tgprof .pcimg { -webkit-mask: linear-gradient(#000, #000) top / 100% 53% no-repeat, var(--ease-mask) bottom / 100% 48% no-repeat;
                            mask: linear-gradient(#000, #000) top / 100% 53% no-repeat, var(--ease-mask) bottom / 100% 48% no-repeat; }
   .tgprof:not([data-cover]) .pcimg { inset: -120px -120px 0; filter: blur(80px) saturate(1.05); opacity: .5; transform: scale(1.15); }
@@ -5536,17 +5536,8 @@ box.focus();
             mask: linear-gradient(#000, #000) top / 100% calc(var(--edge-solid) + 1px) no-repeat,
                   var(--edge-ease) 0 var(--edge-solid) / 100% calc(100% - var(--edge-solid)) no-repeat;
   }
-  .tgprof .pcedge { position: absolute; left: -40px; right: -40px; top: 0; height: calc(150px + var(--dw-sat, env(safe-area-inset-top)));
-                   z-index: 1; pointer-events: none; }
-  .tgprof .pcedge i { position: absolute; left: 0; right: 0; top: 0; display: block;
-                      -webkit-mask: var(--ease-mask) 0 var(--dw-sat, env(safe-area-inset-top)) / 100% calc(100% - var(--dw-sat, env(safe-area-inset-top))) no-repeat,
-                                    linear-gradient(#000, #000) top / 100% calc(var(--dw-sat, env(safe-area-inset-top)) + 1px) no-repeat;
-                              mask: var(--ease-mask) 0 var(--dw-sat, env(safe-area-inset-top)) / 100% calc(100% - var(--dw-sat, env(safe-area-inset-top))) no-repeat,
-                                    linear-gradient(#000, #000) top / 100% calc(var(--dw-sat, env(safe-area-inset-top)) + 1px) no-repeat; }
-  .tgprof .pcedge i:nth-child(1) { height: 100%; -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }
-  .tgprof .pcedge i:nth-child(2) { height: 76%;  -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
-  .tgprof .pcedge i:nth-child(3) { height: 54%;  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
-  .tgprof .pcedge i:nth-child(4) { height: 36%;  -webkit-backdrop-filter: blur(20px) saturate(1.1); backdrop-filter: blur(20px) saturate(1.1); }
+  /* ~~.pcedge 四层渐进模糊(2/5/10/20px,高 150px)~~ 2026-10-13 撤:她「模糊的部分好多啊」「模糊太多且分层」。
+     状态栏那条现在能跟着照片变色了(index.html __dwTopTint 让 .topcap 消失一帧逼 iOS 重取),照片顶上只剩 60px 从照片自己的颜色化开,不用再糊。 */
   .tgprof .pcover::after { z-index: 1; height: calc(60px + var(--dw-sat, env(safe-area-inset-top))); }
   /* ══ 玻璃第四版:照 iOS 原生(2026-10-12,所有者:「目前的 UI 特别扁平卡片化」+ 一张 iOS 输入栏上方那条工具栏的截图,「所有的玻璃质感都改成这种」)══
      **量出来的**(她截图 3px/pt,同一条竖线):我们的输入栏整块 253 的近纯白 + 外圈一道 203 的深描边 = 一张白卡片;
@@ -5616,6 +5607,12 @@ box.focus();
   /* 「他」页顶上(2026-10-12 晚,她「是顶部的分层」):换过背景时,照片顶上化开的颜色 = 照片最上沿的平均色(--pc-tint),
      外壳同时把状态栏那块固定条涂成它(脚本 paintCover 上面那段)。没换背景 / 取不到色时照旧用聊天页底色。 */
   .tgprof[data-cover] .pcover::after { background: var(--pc-tint, var(--tg-page, var(--bg))); }
+  /* 2026-10-13:换过背景时外壳把 .topcap(她手机上 12px 高、照片顶色)抬到聊天页之上逼 iOS 重取状态栏色(index.html __dwTopTint),
+     返回键原来离顶 8px 会被它切掉上沿 —— 换过背景时往下挪到 16px。 */
+  .tgprof[data-cover] .pcover .pback { top: calc(16px + var(--dw-sat, env(safe-area-inset-top))); }
+  /* 照片顶上化开那截在换过背景时拉长到 120px(她「还是有分界线」):颜色就是照片自己最上沿的色,拉长不会像 10-12 第一版那样起灰雾,
+     只是让状态栏那条纯色慢慢融进照片,看不出一刀。 */
+  .tgprof[data-cover] .pcover::after { height: calc(120px + var(--dw-sat, env(safe-area-inset-top))); }
   /* 认不得 backdrop-filter 的浏览器(iOS 主屏 App 是认的,-webkit- 前缀):别退成一张透明的空壳,垫一层实一点的底 */
   /* 键盘 ⇄ 贴纸面板(2026-10-12):面板开着时,框里那颗换成键盘图标(TG 第三种状态),同一条过渡 */
   .tgstk .k { opacity: 0; transform: scale(.7);
@@ -5797,7 +5794,7 @@ box.focus();
   prof.innerHTML =
     '<div class="poster"></div><div class="scroll">' +
     /* 2026-10-10 第六版:照她给的参考图 P2 的位置 —— 顶上一张背景(能换),下面一张圆角底板压上去,头像骑在交界线上 */
-    '<div class="pcover"><div class="pcimg"></div><div class="pcedge" aria-hidden="true"><i></i><i></i><i></i><i></i></div>' +
+    '<div class="pcover"><div class="pcimg"></div>' +
       '<button class="pback glass" type="button" aria-label="返回"><svg viewBox="0 0 9 15" width="8" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7.8 1.2 1.6 7.5l6.2 6.3"/></svg></button>' +
       '</div>' +
     '<div class="psheet">' +
