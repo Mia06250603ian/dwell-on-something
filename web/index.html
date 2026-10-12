@@ -777,19 +777,29 @@
     :root:not([data-theme="light"]):not([data-skin]), :root:not([data-theme="light"])[data-skin="ivory"] { --g4-w: .22; }
   }
   /* 2026-10-12 晚 玻璃第五版:照 iOS 键盘工具栏逐段重配(量法与理由见 chat.html TG 样式末尾《玻璃第五版》);撤掉下面那团影,只留细边 */
-  .tabbar, .tabplus {
-    background: linear-gradient(to top, rgb(255 255 255 / calc(.9 * var(--g4-w))) 0, rgb(255 255 255 / calc(.62 * var(--g4-w))) 1px,
-                                rgb(255 255 255 / calc(.37 * var(--g4-w))) 2px, rgb(255 255 255 / calc(.17 * var(--g4-w))) 3px, transparent 5px),
-                linear-gradient(to bottom, rgb(255 255 255 / calc(.86 * var(--g4-w))) 0, rgb(255 255 255 / calc(.67 * var(--g4-w))) 1.5px,
-                                rgb(255 255 255 / calc(.55 * var(--g4-w))) 3px, rgb(255 255 255 / calc(.43 * var(--g4-w))) 5px,
-                                rgb(255 255 255 / calc(.3 * var(--g4-w))) 7px, rgb(255 255 255 / calc(.2 * var(--g4-w))) 10px,
-                                rgb(255 255 255 / calc(.21 * var(--g4-w))) 15px, rgb(255 255 255 / calc(.36 * var(--g4-w))) 20px,
-                                rgb(255 255 255 / calc(.45 * var(--g4-w))) 25px, rgb(255 255 255 / calc(.48 * var(--g4-w))) 30px, rgb(255 255 255 / calc(.48 * var(--g4-w))) 100%),
-                color-mix(in srgb, var(--card) 22%, transparent);
-    -webkit-backdrop-filter: blur(14px) saturate(1.6); backdrop-filter: blur(14px) saturate(1.6);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / calc(.2 + .75 * var(--g4-w))), inset 0 -.5px 0 rgb(255 255 255 / calc(.7 * var(--g4-w))),
-                0 0 0 .5px rgb(0 0 0 / .07), 0 .5px .5px rgb(0 0 0 / .04);
+  /* 玻璃第五版的配方抽成公共的两个变量(2026-10-12 晚,她:「我想要所有玻璃的地方都是这个质感」)。
+     量法见 chat.html TG 样式末尾《玻璃第五版》;深色皮肤白光按 --g4-w 收到两成。**以后调玻璃只动这两个变量**。 */
+  :root {
+    --g5-bg: linear-gradient(to top, rgb(255 255 255 / calc(.9 * var(--g4-w))) 0, rgb(255 255 255 / calc(.62 * var(--g4-w))) 1px,
+                             rgb(255 255 255 / calc(.37 * var(--g4-w))) 2px, rgb(255 255 255 / calc(.17 * var(--g4-w))) 3px, transparent 5px),
+             linear-gradient(to bottom, rgb(255 255 255 / calc(.86 * var(--g4-w))) 0, rgb(255 255 255 / calc(.67 * var(--g4-w))) 1.5px,
+                             rgb(255 255 255 / calc(.55 * var(--g4-w))) 3px, rgb(255 255 255 / calc(.43 * var(--g4-w))) 5px,
+                             rgb(255 255 255 / calc(.3 * var(--g4-w))) 7px, rgb(255 255 255 / calc(.2 * var(--g4-w))) 10px,
+                             rgb(255 255 255 / calc(.21 * var(--g4-w))) 15px, rgb(255 255 255 / calc(.36 * var(--g4-w))) 20px,
+                             rgb(255 255 255 / calc(.45 * var(--g4-w))) 25px, rgb(255 255 255 / calc(.48 * var(--g4-w))) 30px, rgb(255 255 255 / calc(.48 * var(--g4-w))) 100%);
+    --g5-sh: inset 0 1px 0 rgb(255 255 255 / calc(.2 + .75 * var(--g4-w))), inset 0 -.5px 0 rgb(255 255 255 / calc(.7 * var(--g4-w))),
+             0 0 0 .5px rgb(0 0 0 / .07), 0 .5px .5px rgb(0 0 0 / .04);
   }
+  /* 底栏、「+」、设置那颗圆钮、首页的卡(今天的歌 / 纪念日)都用它;卡片下面原来那团 14~32px 的影(卡片感)一并撤掉 */
+  .tabbar, .tabplus, .hround, .homefeed .card, .homefeed .whisper {
+    background: var(--g5-bg), color-mix(in srgb, var(--card) 22%, transparent);
+    -webkit-backdrop-filter: blur(14px) saturate(1.6); backdrop-filter: blur(14px) saturate(1.6);
+    box-shadow: var(--g5-sh);
+  }
+  .homefeed .huscard { background: none !important; box-shadow: none !important; }   /* Day N 那块本来就不要框(第二版) */
+  /* 经期日历那块面板:是要读的面板,底保持实一点,只换上同一套边光、撤掉那团影 */
+  .perpanel { background: var(--g5-bg), color-mix(in srgb, var(--card) 86%, transparent);
+              -webkit-backdrop-filter: blur(20px) saturate(1.5); backdrop-filter: blur(20px) saturate(1.5); box-shadow: var(--g5-sh); }
   .tabbar button[aria-selected="true"] { background: color-mix(in srgb, var(--ink) 6%, transparent); box-shadow: none; }   /* iOS 26:选中那格是一颗淡灰胶囊,不是白卡 */
   /* ---------- 入场:Spring Reveal ----------
      一次整体的落位,不是「每张卡各跳各的」:轻微 stagger(45ms 一级),

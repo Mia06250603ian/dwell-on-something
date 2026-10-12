@@ -5610,6 +5610,9 @@ box.focus();
   html[data-chatstyle="tg"][data-tgdark] {
     --g4-sh: inset 0 1px 0 rgba(255,255,255,.2), inset 0 -.5px 0 rgba(255,255,255,.06), 0 0 0 .5px rgba(255,255,255,.07), 0 .5px 1px rgba(0,0,0,.35);
   }
+  /* 贴纸面板也换成同一套玻璃(2026-10-12 晚,她「所有玻璃的地方都是这个质感」):底保持实一点(要看清贴纸),撤掉上面那团 30px 的影 */
+  html[data-chatstyle="tg"] .tgpick { background: var(--g4-bg), color-mix(in srgb, var(--card) 80%, transparent);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5); backdrop-filter: blur(20px) saturate(1.5); box-shadow: var(--g4-sh); }
   /* 认不得 backdrop-filter 的浏览器(iOS 主屏 App 是认的,-webkit- 前缀):别退成一张透明的空壳,垫一层实一点的底 */
   /* 键盘 ⇄ 贴纸面板(2026-10-12):面板开着时,框里那颗换成键盘图标(TG 第三种状态),同一条过渡 */
   .tgstk .k { opacity: 0; transform: scale(.7);
