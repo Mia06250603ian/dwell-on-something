@@ -15,12 +15,10 @@
      那个值会把状态栏文字锁成白色,而这套皮肤默认是浅色纸 —— 白字打在米白上等于看不见。
      用 default + theme-color,iOS 15 起会拿 theme-color 填状态栏那一条并自动挑可读的字色;
      下面的 JS 还会让 theme-color 跟着当前皮肤走,所以那一条和页面底色永远是同一个色,看不出接缝。 -->
-<!-- ⚠️⚠️ 2026-10-13 改成 black-translucent(所有者要「他」页照片像她朋友的原生 App 那样铺到状态栏底下;**试验**):
-     default 时网页从状态栏下面才开始,那 62pt 是系统画的一条纯色、网页画不进去 —— 「他」页的分层都是它造成的。
-     改成这个值后网页从屏顶画起;其他页靠 .topcap(高 = --sat,不透明)垫一条和页面同色的纯色,看着和原来一样。
-     **代价**:①状态栏字色可能锁成白色(旧资料如此,iOS 26 未证实;浅色皮肤上会看不清 → 改回 default)
-     ②这个值只在「添加到主屏幕」那一刻读一次 —— 改了 / 改回都要她删掉重新添加。~~content="default"~~ -->
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- ⚠️⚠️ 2026-10-12 深夜试过 black-translucent(要「他」页照片铺到状态栏底下),**当晚改回 default,别再试**:
+     iOS 26 在 translucent 时会在屏顶自己盖一层毛玻璃(约 75pt,比状态栏还深一截,不认顶上的不透明 .topcap),
+     Chats 标题、聊天页顶栏、「他」页照片顶上全被糊;她真机看完「改回去吧」。主屏网页 App 做不到「铺到顶又不糊」。 -->
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <!-- ⚠️ 2026-10-10:iOS 26 起 theme-color 不再被认,状态栏那条改由「顶边的固定元素」定色(见下面 .topcap)。
      这几行 meta 和下面那段脚本留着给旧系统,别指望它们在 iOS 26 上起作用。 -->
 <meta name="theme-color" content="#f3f2f1" media="(prefers-color-scheme: light)">
