@@ -5609,6 +5609,43 @@ box.focus();
      照片直接画到屏顶,~~顶上从底色 / 照片色化开的那截 ::after~~ 和 ~~.pcedge 四层渐进模糊~~ 都撤了(她「模糊太多且分层」);
      照片 270 → 296px(+ 状态栏),头像跟着往下(她「下移一点头像」)。 */
   .tgprof .pcover::after { display: none; }
+  /* ══ 「他」页相机标 + 名字那块的字号 / 间距,参考 iOS 原生个人页(2026-10-12 深夜,她发朋友原生 App 截图)══
+     她的话:「也不用完全抄袭,我想让你改的是相机标和那个字体排列大小参考」—— 所以**只动这两样**,返回键 / 档位 / 小笔都照旧。
+     量(她朋友那张,约 2.95px/pt):头像约 90pt、白圈约 4pt;相机 = 约 28.5pt 黑圆 + 15.6×12.4pt **实心**白色相机(镜头挖空、右上闪光点)+ 约 1.7pt 白圈外一道淡灰,压在头像右下;
+     名字约 26pt 粗、下面型号 15pt 灰、两行间距约 6pt,名字离头像约 14pt。字体仍用我们自己的(没换衬线)。 */
+  .tgprof .hero .big { width: 90px; height: 90px; margin-top: -47px; margin-bottom: 17px; box-shadow: 0 0 0 4px #fff, 0 8px 24px rgba(0,0,0,.12); }
+  html[data-tgdark] .tgprof .hero .big { box-shadow: 0 0 0 4px var(--bg), 0 8px 24px rgba(0,0,0,.3); }
+  .tgprof .hero .cam { width: 28.5px; height: 28.5px; right: -3px; bottom: -1px; background: #111; color: #fff;
+                       box-shadow: 0 0 0 2px #f1f1ef, 0 0 0 2.6px rgba(0,0,0,.1), 0 2px 5px rgba(0,0,0,.12); }
+  .tgprof .hero .cam svg { width: 15.6px; height: 12.8px; }
+  .tgprof .hero b { font-size: 24.5px; font-weight: 700; letter-spacing: -.015em; line-height: 1.15; }
+  .tgprof .hero .who { font-size: 12px; margin-top: 3.6px; line-height: 1.2; }
+  /* 改名那支笔撤了(她 10-12 深夜「改名的那个铅笔删掉吧」),点名字照样能改 */
+  .tgprof .hero .pname { padding: 2px 4px; } .tgprof .hero .pname .pen { display: none; }
+  /* 思考档位那排,和她朋友那张 1:1(她「思考模式那一行选择和她一比一」):白色胶囊 250×32.5、黑色选中块 57×26.5(上下各留 3)、字约 11pt;
+     名字 → 型号 → 档位的间距也照她的量:头像白圈下沿 → 名字顶 20、名字基线 → 型号顶 14、型号底 → 胶囊顶 23。 */
+  .tgprof .peff { max-width: 250px; }
+  .tgprof .hero:has(+ .peff:not([hidden])) { margin-bottom: 20px; }   /* 型号底 → 胶囊顶 ≈ 23(她那张);原来 16 */
+  /* 背景分层(2026-10-12 深夜,她「这个背景分层你能解决一下吗」):底板上沿原来是半透明 + 毛玻璃(62% → 实色化 96px),
+     照片在那截里糊着透上来 = 一层;照片下沿又往透明化开(--ease-mask)= 又一层。她朋友那张是:照片清楚地一直到底板,
+     底板一整块实色、圆角干净。所以两样都撤:底板实色、无毛玻璃;换过背景时照片不再化开。 */
+  .tgprof .psheet::before { background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none;
+                            box-shadow: 0 -.5px 0 rgba(0,0,0,.04); }
+  html[data-tgdark] .tgprof .psheet::before { box-shadow: 0 -.5px 0 rgba(255,255,255,.06); }
+  .tgprof[data-cover] .pcimg { -webkit-mask: none; mask: none; }
+  /* 照片顶上从照片自己的顶色化开 48px(她选的第三种),换过背景且取到色时才有;状态栏那条由外壳涂成同一个色。
+     返回键下移到 16px:外壳抬上来的那条 .topcap(12px)会切掉它上沿。 */
+  .tgprof[data-cover] .pcover::after { display: block; height: calc(48px + var(--dw-sat, env(safe-area-inset-top)));
+    background: linear-gradient(to bottom, var(--pc-tint, transparent) 0, var(--pc-tint, transparent) var(--dw-sat, env(safe-area-inset-top)), transparent 100%);
+    -webkit-mask: none; mask: none; }
+  .tgprof[data-cover] .pcover .pback { top: calc(16px + var(--dw-sat, env(safe-area-inset-top))); }
+  .tgprof .pseg { height: 32.5px; padding: 3px; background: #fff; border-radius: 999px; box-shadow: 0 .5px 1.5px rgba(0,0,0,.04); }
+  .tgprof .pseg button { font-size: 11px; font-weight: 400; color: #3a3a3c; border-radius: 999px; transition: color .25s; }
+  .tgprof .pseg button[aria-checked="true"] { color: #fff; font-weight: 500; }
+  .tgprof .pthumb { top: 3px; bottom: 3px; left: 5px; width: calc((100% - 6px) / var(--n, 4) - 4px); border-radius: 999px; background: #1c1c1e; box-shadow: none;
+                    transform: translateX(calc((100% + 4px) * var(--i, 0))); }   /* 块比一格窄 4px,挪的时候按「一格」挪 */
+  html[data-tgdark] .tgprof .pseg { background: #2c2c2e; } html[data-tgdark] .tgprof .pseg button { color: #d1d1d6; }
+  html[data-tgdark] .tgprof .pthumb { background: #f2f2f7; } html[data-tgdark] .tgprof .pseg button[aria-checked="true"] { color: #000; }
   .tgprof .pcover { height: calc(296px + var(--dw-sat, env(safe-area-inset-top))); }
   /* 认不得 backdrop-filter 的浏览器(iOS 主屏 App 是认的,-webkit- 前缀):别退成一张透明的空壳,垫一层实一点的底 */
   /* 键盘 ⇄ 贴纸面板(2026-10-12):面板开着时,框里那颗换成键盘图标(TG 第三种状态),同一条过渡 */
@@ -5775,7 +5812,10 @@ box.focus();
   prof.className = "tgprof"; prof.setAttribute("role", "dialog"); prof.setAttribute("aria-label", "他");
   var CHEV = '<svg viewBox="0 0 8 13" width="8" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m1.5 1.5 5 5-5 5"/></svg>';
   /* 头像角上的相机 / 名字旁的笔(2026-10-10,照她给的参考图 P2:头像右下一颗深色小圆 + 相机) */
-  var CAM = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.4-2h6.2l1.4 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.8" r="3.3"/></svg>';
+  /* 相机标(2026-10-12 深夜,照她朋友原生 App 那颗 = SF Symbols 的 camera.fill)。SF Symbols 网页用不了(苹果不许),
+     ~~照截图逐像素重画~~ 她看了「还是不一样」—— 现在用开源的 **Framework7 Icons 5.0.5 的 camera_fill**(MIT,© Vladimir Kharlampidi;
+     那套就是照 SF Symbols 画的)原样路径,只裁了 viewBox 去掉上下留白;镜头内侧再描一圈 2.2 的黑(r=8.7,和镂空那圈重叠着、看不出接缝),把镜头环加粗到她手机上新版 SF Symbols 的粗细(F7 画的是旧版,环偏细)。镜头与闪光点是镂空,透出底下的黑圆。 */
+  var CAM = '<svg viewBox="0 5 56 46" width="16" height="13" aria-hidden="true"><path fill="currentColor" d="M 7.8086 50.3477 L 48.1914 50.3477 C 53.0663 50.3477 55.5508 47.9102 55.5508 43.0820 L 55.5508 18.5430 C 55.5508 13.7149 53.0663 11.3008 48.1914 11.3008 L 42.7069 11.3008 C 40.8789 11.3008 40.3164 10.9258 39.2617 9.7539 L 37.3633 7.6445 C 36.2149 6.3555 35.0196 5.6523 32.5820 5.6523 L 23.2539 5.6523 C 20.8398 5.6523 19.6445 6.3555 18.4727 7.6445 L 16.5742 9.7539 C 15.5430 10.9023 14.9571 11.3008 13.1289 11.3008 L 7.8086 11.3008 C 2.9336 11.3008 .4492 13.7149 .4492 18.5430 L .4492 43.0820 C .4492 47.9102 2.9336 50.3477 7.8086 50.3477 Z M 27.9883 42.8477 C 20.9102 42.8477 15.2149 37.1523 15.2149 30.0273 C 15.2149 22.9023 20.9102 17.2071 27.9883 17.2071 C 35.1133 17.2071 40.7852 22.9023 40.7852 30.0273 C 40.7852 37.1523 35.0898 42.8477 27.9883 42.8477 Z M 44.8400 24.3086 C 43.2460 24.3086 41.9336 23.0195 41.9336 21.4258 C 41.9336 19.8086 43.2460 18.5195 44.8400 18.5195 C 46.4336 18.5195 47.7460 19.8086 47.7460 21.4258 C 47.7460 23.0195 46.4336 24.3086 44.8400 24.3086 Z M 27.9883 39.2852 C 33.0977 39.2852 37.2461 35.1602 37.2461 30.0273 C 37.2461 24.8945 33.0977 20.7695 27.9883 20.7695 C 22.8789 20.7695 18.7539 24.8945 18.7539 30.0273 C 18.7539 35.1602 22.9024 39.2852 27.9883 39.2852 Z"/><circle cx="28" cy="30.03" r="8.7" fill="none" stroke="#111" stroke-width="2.2"/></svg>';
   var PEN = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5l4 4M4 20l1-4.5L16 4.5a1.4 1.4 0 0 1 2 0l1.5 1.5a1.4 1.4 0 0 1 0 2L8.5 19z"/></svg>';
   function ringHTML(cls, name) {
     return '<div class="g ' + cls + '"><div class="ring"><svg viewBox="0 0 78 78"><circle class="trk" cx="39" cy="39" r="34" fill="none" stroke-width="4.5"/>' +
@@ -5831,26 +5871,50 @@ box.focus();
   prof.querySelector(".pmore").addEventListener("click", function () {
     closeProf(); var d = document.getElementById("dotsBtn"); if (d) setTimeout(function () { d.click(); }, 280);
   });
-  function closeProf() { if (nameIn && !nameIn.hidden) nameIn.blur(); closeAct(); prof.classList.remove("open"); himTop(false); }
-  function openProf() { prof.classList.add("open"); himTop(true); foldModels(false); paintCover(); loadProf(); }
+  function closeProf() { if (nameIn && !nameIn.hidden) nameIn.blur(); closeAct(); prof.classList.remove("open"); topTint(null); }
+  function openProf() { prof.classList.add("open"); foldModels(false); paintCover(); loadProf(); }
 
   /* ── 背景(2026-10-10 第六版,所有者「我也想要这种能换背景的」)──
      存法同聊天壁纸:长边压到 1600px 的 JPEG → POST api/avatar/cover(本层上限 1.5MB,和壁纸同一档)。
      去掉要确认,只有她点才删。没换过 = 他的头像放大虚化(原来的海报)。 */
   var pcImg = prof.querySelector(".pcimg"), pcFile = prof.querySelector(".pcFile");
   function coverUrl() { var v = prefs.avatars && prefs.avatars.cover; return v ? "api/avatar/cover?v=" + v : ""; }
-  /* ~~状态栏那条跟背景同色(sampleTop 取照片最上沿的色 + __dwTopTint 涂外壳那块固定条)~~ —— 2026-10-13 整套撤了:
-     iOS 只在固定层出现 / 消失时才重新取状态栏色,涂色不认;就算认,也只是一截纯色再化进照片,她看了说丑。
-     现在外壳改成 black-translucent,网页本来就铺到状态栏底下,照片直接画到屏顶(dwell 手册《「他」页照片铺到状态栏底下》)。
-     himTop:打开这页时请外壳把 .chatview 的底色拿掉,免得 iOS 拿那块不透明的固定层去涂状态栏;关页还原。 */
-  function himTop(on) { try { if (window.parent !== window && typeof window.parent.__dwHimTop === "function") window.parent.__dwHimTop(on); } catch (e) {} }
+  /* 状态栏那条跟照片同色(2026-10-12 深夜,她选的):取照片「可见区域」最上沿那一窄条的平均色(cover 居中裁,竖图上下会被裁,按同样的裁法算)
+     → --pc-tint(照片顶上从它化开 48px)+ 外壳 __dwTopTint 涂 .topcap 并让它闪一下逼 iOS 重取色。关页 / 返回还原。
+     ⚠️ 别只改颜色不闪那一下 —— 10-10、10-12 两版就是这样,iOS 不认(dwell 手册《「他」页照片铺到状态栏底下》)。 */
+  var tintNow = null;
+  function sampleTop(url, cb) {
+    var img = new Image();
+    img.onload = function () {
+      try {
+        var box = prof.querySelector(".pcover").getBoundingClientRect(), W = box.width || 402, H = box.height || 296;
+        var k = Math.max(W / img.naturalWidth, H / img.naturalHeight), sw = W / k, sh = H / k;
+        var sx = (img.naturalWidth - sw) / 2, sy = (img.naturalHeight - sh) / 2;
+        var c = document.createElement("canvas"); c.width = 12; c.height = 2;
+        var g = c.getContext("2d"); g.drawImage(img, sx, sy, sw, Math.max(1, sh * 0.03), 0, 0, 12, 2);
+        var d = g.getImageData(0, 0, 12, 2).data, r = 0, gg = 0, bb = 0, n = d.length / 4;
+        for (var i = 0; i < d.length; i += 4) { r += d[i]; gg += d[i + 1]; bb += d[i + 2]; }
+        cb("rgb(" + Math.round(r / n) + "," + Math.round(gg / n) + "," + Math.round(bb / n) + ")");
+      } catch (e) { cb(null); }
+    };
+    img.onerror = function () { cb(null); };
+    img.src = url;
+  }
+  function topTint(c) { try { if (window.parent !== window && typeof window.parent.__dwTopTint === "function") window.parent.__dwTopTint(c); } catch (e) {} }
   function paintCover() {
     if (!prof) return;
     var u = coverUrl();
     prof.toggleAttribute("data-cover", !!u);
     prof.querySelector(".pa-del").hidden = !u;
-    if (!u) { prof.style.removeProperty("--pc-img"); return; }
+    if (!u) { prof.style.removeProperty("--pc-img"); prof.style.removeProperty("--pc-tint"); tintNow = null; if (prof.classList.contains("open")) topTint(null); return; }
     prof.style.setProperty("--pc-img", 'url("' + u + '")');
+    if (tintNow && prof.classList.contains("open")) topTint(tintNow);
+    sampleTop(u, function (c) {
+      if (coverUrl() !== u) return;              // 等的时候又换了一张
+      tintNow = c;
+      if (c) prof.style.setProperty("--pc-tint", c); else prof.style.removeProperty("--pc-tint");
+      if (prof.classList.contains("open")) topTint(c);
+    });
   }
   var actBg = prof.querySelector(".psheetbg"), act = prof.querySelector(".pact");
   function openAct() { actBg.hidden = false; act.hidden = false; }
