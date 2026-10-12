@@ -15,7 +15,12 @@
      那个值会把状态栏文字锁成白色,而这套皮肤默认是浅色纸 —— 白字打在米白上等于看不见。
      用 default + theme-color,iOS 15 起会拿 theme-color 填状态栏那一条并自动挑可读的字色;
      下面的 JS 还会让 theme-color 跟着当前皮肤走,所以那一条和页面底色永远是同一个色,看不出接缝。 -->
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- ⚠️⚠️ 2026-10-13 改成 black-translucent(所有者要「他」页照片像她朋友的原生 App 那样铺到状态栏底下;**试验**):
+     default 时网页从状态栏下面才开始,那 62pt 是系统画的一条纯色、网页画不进去 —— 「他」页的分层都是它造成的。
+     改成这个值后网页从屏顶画起;其他页靠 .topcap(高 = --sat,不透明)垫一条和页面同色的纯色,看着和原来一样。
+     **代价**:①状态栏字色可能锁成白色(旧资料如此,iOS 26 未证实;浅色皮肤上会看不清 → 改回 default)
+     ②这个值只在「添加到主屏幕」那一刻读一次 —— 改了 / 改回都要她删掉重新添加。~~content="default"~~ -->
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <!-- ⚠️ 2026-10-10:iOS 26 起 theme-color 不再被认,状态栏那条改由「顶边的固定元素」定色(见下面 .topcap)。
      这几行 meta 和下面那段脚本留着给旧系统,别指望它们在 iOS 26 上起作用。 -->
 <meta name="theme-color" content="#f3f2f1" media="(prefers-color-scheme: light)">
@@ -2036,7 +2041,7 @@
     });
   });
   function goBack() {
-    if (window.__dwTopTint) window.__dwTopTint(null);   // 「他」页涂过的状态栏那条,退回去就还原
+    if (window.__dwHimTop) window.__dwHimTop(false);   // 「他」页开着直接返回 Chats 时还原
     tabbar.hidden = false;
     loadLast();
     pushTo(1, null, function () { chatview.hidden = true; });
@@ -2494,15 +2499,11 @@
   /* 「他」那一页(聊天页里)直接换了他的头像 / 名字(2026-10-10)—— 存服务器之后叫一声,这里重新拉一遍,
      首页 / Chats / 设置跟着变(pullPrefs → apply → tellChat 再递回聊天页,两边一致)。同 __dwSwipe 的接法。 */
   window.__dwPrefsChanged = function () { pullPrefs(); };
-  /* 「他」页顶上的状态栏那条跟照片同色(2026-10-12 晚,她:「是顶部的分层」)。
-     ⚠️ 涂的是 **.topcap**,不是 .chatview:她真机截图里那条是 243,242,241 = .topcap 的 --paper-top(聊天页底色是 242,241,241),
-     说明 iOS 26 取的是这块固定条的色。~~10-10 那版涂的是 .chatview~~ —— 涂错了对象,所以「iOS 不跟」那个结论下早了。
-     iOS 会不会在页面开着时跟着这块变色,只有真机验得了;null = 还原。返回 Chats 时也还原(goBack)。 */
-  var topcapEl = document.querySelector(".topcap");
-  window.__dwTopTint = function (c) {
-    if (!topcapEl) return;
-    topcapEl.style.background = c && /^rgb\(\d{1,3},\d{1,3},\d{1,3}\)$/.test(c) ? c : "";
-  };
+  /* ~~__dwTopTint:「他」页把 .topcap 涂成照片顶色~~ 2026-10-13 撤(iOS 只在固定层出现 / 消失时重取状态栏色,涂色不认;她看了也嫌丑)。
+     现在 black-translucent,「他」页照片自己画到屏顶。剩下一件:.chatview 是钉在顶边、不透明的固定层,
+     iOS 26 可能拿它的底色去涂状态栏 —— 「他」页开着时把它的底色拿掉(里面的 iframe 自己有底色,看不出来);关页 / 返回还原。 */
+  window.__dwHimTop = function (on) { chatview.style.background = on ? "transparent" : ""; };
+
 
   /* ── 部署完自己刷新 ──
      这条契约是从旧 index.html 继承来的(它叫 tryReload):读后端 /api/health 的 ver,
