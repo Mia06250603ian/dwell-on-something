@@ -2184,6 +2184,21 @@
      只用 top / height,不碰 transform(推入 / 拖动返回的动画用的是 transform,两边不打架)。
      外壳这页被 iOS 顺手滚动过的话,键盘收起时滚回原处(首页回来不跳)。 */
   var kbOn = false, kbRaf = 0, homeY = 0;
+  /* 键盘 ⇄ 贴纸面板互换(2026-10-12,所有者发了 TG 三种状态的截图:「点输入框右侧的图标能丝滑切换到不同界面」)。
+     TG 的秘诀:面板和键盘一样高、就在键盘底下,换的时候输入框一动不动。聊天页那头要外壳配合两件事:
+     release():要换成面板了 —— 立刻把聊天页放回全高(键盘还没退,面板先垫在它底下),接下来 800ms 里键盘还「开着」的读数一律不理;
+     hold(ms):要换回键盘了 —— 键盘升上来那段先别缩小聊天页(面板还要露着,等键盘盖住它),到点再缩、聊天页同一帧收掉面板。
+     height():最近一次量到的键盘高(面板照它定高)。 */
+  var kbHoldUntil = 0, kbIgnoreUntil = 0, kbLastH = 0;
+  window.__dwKb = {
+    height: function () { return kbLastH; },
+    release: function () {
+      kbIgnoreUntil = Date.now() + 800; kbHoldUntil = 0;
+      if (kbOn) { kbOn = false; chatview.style.top = chatview.style.height = chatview.style.bottom = ""; kbTell(false); }
+      setTimeout(kbQueue, 820);
+    },
+    hold: function (ms) { kbHoldUntil = Date.now() + (ms || 0); kbIgnoreUntil = 0; setTimeout(kbQueue, (ms || 0) + 16); },
+  };
   window.addEventListener("scroll", function () { if (chatview.hidden) homeY = window.scrollY; }, { passive: true });
   function kbTell(on) {
     try {
@@ -2197,6 +2212,9 @@
     var vv = window.visualViewport;
     var kb = vv ? innerHeight - vv.height : 0;
     var on = !!vv && !chatview.hidden && kb > 80 && Math.abs((vv.scale || 1) - 1) < 0.01;
+    if (on) kbLastH = Math.round(kb);
+    if (on && Date.now() < kbIgnoreUntil) return;      // 刚 release:键盘正在退,别又缩回去
+    if (on && Date.now() < kbHoldUntil) return;        // hold 中:到点由 hold 排的那次再来
     if (on) {
       chatview.style.top = Math.max(0, vv.offsetTop) + "px";
       chatview.style.height = vv.height + "px";
