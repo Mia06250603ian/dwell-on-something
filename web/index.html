@@ -2112,11 +2112,51 @@
       document.body.appendChild(p);
       var c = getComputedStyle(p);
       d.documentElement.style.setProperty("--dw-sat", c.paddingTop);
-      d.documentElement.style.setProperty("--dw-sab", c.paddingBottom);
+      d.documentElement.style.setProperty("--dw-sab", kbOn ? "0px" : c.paddingBottom);   // 键盘开着时底部不留 Home 条那截(见下面 kbFit)
       p.remove();
     } catch (e) {}
   }
   window.addEventListener("resize", pushSafe);
+  /* ── 键盘(2026-10-12,所有者「iPhone 主屏运行时键盘、视口、安全区的跳动 / 遮挡 / 多余空白」)──
+     查实的病根:聊天页装在 iframe 里,**iOS 只把键盘告诉最外层**(这页的 visualViewport 会变矮、会被往上推),
+     iframe 里的 visualViewport 一动不动 —— 所以 chat.html 自己那段 fitKeyboard 在主屏 App 里一直算出「键盘没开」,
+     键盘全靠 iOS 自己把整页往上推:顶栏被推出屏幕、输入栏底下还留着 Home 条那截 34pt 的空白。
+     做法:键盘开着时,把 .chatview 摆成正好盖住「眼睛看得到的那块」(top = 被推上去的量、height = 可视高),
+     iframe 跟着变矮,聊天页在新尺寸里自己排:顶栏在上、输入栏贴着键盘(它那头怎么接着滑见 chat.html《交互流畅度》);
+     同时把 --dw-sab 递成 0、根节点打上 data-dwkb,输入栏底下不再留 Home 条的空。键盘走了全部还原。
+     只用 top / height,不碰 transform(推入 / 拖动返回的动画用的是 transform,两边不打架)。
+     外壳这页被 iOS 顺手滚动过的话,键盘收起时滚回原处(首页回来不跳)。 */
+  var kbOn = false, kbRaf = 0, homeY = 0;
+  window.addEventListener("scroll", function () { if (chatview.hidden) homeY = window.scrollY; }, { passive: true });
+  function kbTell(on) {
+    try {
+      var d = chatframe.contentDocument;
+      if (d && d.documentElement) d.documentElement.toggleAttribute("data-dwkb", on);
+    } catch (e) {}
+    pushSafe();
+  }
+  function kbFit() {
+    kbRaf = 0;
+    var vv = window.visualViewport;
+    var kb = vv ? innerHeight - vv.height : 0;
+    var on = !!vv && !chatview.hidden && kb > 80 && Math.abs((vv.scale || 1) - 1) < 0.01;
+    if (on) {
+      chatview.style.top = Math.max(0, vv.offsetTop) + "px";
+      chatview.style.height = vv.height + "px";
+      chatview.style.bottom = "auto";
+      if (!kbOn) { kbOn = true; kbTell(true); }
+    } else if (kbOn) {
+      kbOn = false;
+      chatview.style.top = chatview.style.height = chatview.style.bottom = "";
+      kbTell(false);
+      if (window.scrollY !== homeY) window.scrollTo(0, homeY);
+    }
+  }
+  function kbQueue() { if (!kbRaf) kbRaf = requestAnimationFrame(kbFit); }
+  if (window.visualViewport) {
+    visualViewport.addEventListener("resize", kbQueue);
+    visualViewport.addEventListener("scroll", kbQueue);
+  }
   chatframe.addEventListener("load", function () {
     pushSafe(); mountBack(); syncBg();
     try {

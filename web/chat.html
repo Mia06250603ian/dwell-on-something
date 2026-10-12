@@ -3272,6 +3272,11 @@ document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState !== 'visible') return;
   if (Date.now() - lastEventAt < 30000) return;
   try {
+    /* 2026-10-12:~~离开过 30 秒就整页清空重画~~ —— 400 条全拆一遍、闪一下,她往上翻着的位置也被拽回底部。
+       先问一句服务器事件游标(只取 1 条,很轻):和这边的 cursor 一样 = 离开这段时间什么都没发生,不重画。
+       不一样(有新的、或本层重启过游标重来)才照旧整页重摆。 */
+    const q = await fetch('api/messages?limit=1', { cache: 'no-store' }).then((r) => r.ok ? r.json() : null).catch(() => null);
+    if (q && q.upto === cursor) { lastEventAt = Date.now(); return; }
     const upto = await loadSaid();
     if (upto) cursor = upto;
     lastEventAt = Date.now();
@@ -3696,7 +3701,7 @@ function send() {
   const wasBusy = guBusy;
   if (wasBusy) { try { fetch('api/stop', { method: 'POST' }); } catch (e) {} }
   box.value = '';
-  box.style.height = 'auto';
+  fitBox();
   stickBottom = true;              // 刚发完话，总是想看最新的
   setBusy(true);
   const payload = { text };
@@ -3714,10 +3719,23 @@ box.addEventListener('input', refreshSend);
 box.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); }
 });
-box.addEventListener('input', () => {
+/* 输入框随字长高(2026-10-12 改):~~height = auto → 读 scrollHeight → 写回~~ 每个字都瞬间跳一下,TG 版也没法过渡
+   (auto 不能插值)。现在:先关掉过渡量出新高,把旧高写回去、强制一次布局,再交还过渡写新高 —— 旧 → 新是两个 px,
+   TG 版 CSS 里的 height 过渡(见 TG 样式末尾《交互流畅度》)就能接上;官端没有那条过渡,照旧一步到位,外观不变。
+   高度没变(绝大多数按键)直接返回,不多做一次布局。 */
+let boxH = 0;
+function fitBox() {
+  const was = box.style.height;
+  box.style.transition = 'none';
   box.style.height = 'auto';
-  box.style.height = Math.min(box.scrollHeight, 160) + 'px';
-});
+  const h = Math.min(box.scrollHeight, 160);
+  if (Math.abs(h - boxH) < 0.5 && was) { box.style.height = was; box.style.transition = ''; return; }
+  if (boxH && was) { box.style.height = was; void box.offsetHeight; }
+  box.style.transition = '';
+  box.style.height = h + 'px';
+  boxH = h;
+}
+box.addEventListener('input', fitBox);
 
 const footerEl = document.querySelector('footer');
 let kbShift = 0, kbGap = 0;
@@ -3736,7 +3754,8 @@ function fitKeyboard() {
   const seen = vv.offsetTop + vv.height;             // 眼睛能看到的最低那条线
   const rect = footerEl.getBoundingClientRect();
   const over = rect.bottom - seen;                   // 输入卡底边比它低多少
-  if (Math.abs(over) > 0.5) {
+  /* 2026-10-12:贴纸面板开着时输入栏是被面板(setPick)顶上去的,这里别把它当成「跑位」按回去 —— 原来两边会抢,面板一开输入栏就掉回原处 */
+  if (!dwUnder && Math.abs(over) > 0.5) {
     kbShift = Math.min(0, kbShift - over);           // 只往上顶，不往下坠
     footerEl.style.transform = kbShift ? 'translateY(' + kbShift + 'px)' : '';
   }
@@ -3744,7 +3763,7 @@ function fitKeyboard() {
     kbShift = 0;
     footerEl.style.transform = '';
   }
-  log.style.paddingBottom = (footerEl.offsetHeight + (on ? -kbShift + 16 : 48)) + 'px';
+  log.style.paddingBottom = (footerEl.offsetHeight + (on ? -kbShift + 16 : 48) + (typeof dwUnder === 'number' ? dwUnder : 0)) + 'px';
   if (on && window.scrollY !== 0) window.scrollTo(0, 0);
 }
 /* 键盘是动画上来的（约 0.3 秒），头尾各校一次会卡在半路——整段动画都盯着 */
@@ -3792,9 +3811,12 @@ if (location.search.includes('kb=1')) {
 }
 box.addEventListener('focus', trackKeyboard);
 box.addEventListener('blur', () => setTimeout(trackKeyboard, 50));
+/* dwUnder = 贴纸面板这类从底下顶上来的东西占掉的高度(2026-10-12):列表底部要多留这一截,不然最后几条被面板盖住 */
+var dwUnder = 0;
+function padLog() { log.style.paddingBottom = (footerEl.offsetHeight + (kbGap > 20 ? kbGap + 16 : 48) + dwUnder) + 'px'; }
 new ResizeObserver(() => {
   const wasBottom = atBottom();
-  log.style.paddingBottom = (footerEl.offsetHeight + (kbGap > 20 ? kbGap + 16 : 48)) + 'px';
+  padLog();
   if (wasBottom) scroll(true);
 }).observe(footerEl);
 
@@ -5546,6 +5568,15 @@ box.focus();
   .tgprof .pactg.glass { background: var(--g4-bg), var(--gl); }
   .tgrmenu .glass { background: var(--g4-bg), rgba(250,250,252,.62); box-shadow: var(--g4-sh), 0 10px 40px rgba(0,0,0,.12); }
   html[data-tgdark] .tgrmenu .glass { background: var(--g4-bg), rgba(44,44,46,.66); box-shadow: var(--g4-sh), 0 10px 40px rgba(0,0,0,.45); }
+  /* ══ 交互流畅度(2026-10-12)══ 只改动效,不改样子。脚本那半见 TG 脚本里同名一段与基础脚本的 fitBox / padLog。
+     ①「他」页 / 贴纸面板**关的时候是瞬间消失的**:visibility 没进过渡,一摘 .open 就藏了,滑出去那段根本看不到。
+       visibility 跟 transform 用同一个时长过渡 —— 关的时候整段都可见、到终点才藏;开的时候第一帧就可见。
+     ② 输入框长高 / 变矮:跟着 fitBox 写的 px 走一条短过渡(原来一步跳过去)。 */
+  .tgprof, .tgpick { transition-property: transform, visibility; }
+  html[data-chatstyle="tg"] #box { transition: padding-right var(--tg-dur) var(--tg-ease), height .2s cubic-bezier(.32,.72,0,1); }
+  @media (prefers-reduced-motion: reduce) {
+    .tgprof, .tgpick { transition-duration: .01s !important; }
+  }
 </style>
 <script>
 (function () {
@@ -6136,11 +6167,17 @@ box.focus();
   /* 照 TG:面板在下、输入栏被顶到面板上方(不然面板盖住输入栏,图标再也点不到、关不上 —— 10-09 测出来的) */
   var footEl = document.querySelector("footer");
   function setPick(open) {
+    if (open === pick.classList.contains("open")) return;
     pick.classList.toggle("open", open);
+    var h = open ? pick.offsetHeight - 6 : 0;
     if (footEl) {
       footEl.style.transition = "transform .32s cubic-bezier(.32,.72,0,1)";
-      footEl.style.transform = open ? "translateY(-" + (pick.offsetHeight - 6) + "px)" : "";
+      footEl.style.transform = h ? "translateY(-" + h + "px)" : "";
     }
+    /* 2026-10-12:~~只顶起输入栏~~ 列表不动,最后几条被面板盖住。现在列表底部多留面板那截,贴底的话跟着一起滑上去 / 落回来(同 TG) */
+    var d = h - dwUnder;
+    dwUnder = h; padLog();
+    if (stickBottom) { log.scrollTop = log.scrollHeight - log.clientHeight; if (!calm && d) slide(d, 320, "cubic-bezier(.32,.72,0,1)"); }
   }
   stkBtn.addEventListener("click", function (e) { e.stopPropagation(); setPick(!pick.classList.contains("open")); });
   document.addEventListener("click", function (e) {
@@ -6921,7 +6958,7 @@ box.focus();
     slide(d);
     return true;
   }
-  function slide(d) {
+  function slide(d, ms, ease) {
     var top = log.getBoundingClientRect().top - d, n = 0;
     for (var r = log.lastElementChild; r && n < 60; r = r.previousElementSibling) {
       var rc = r.getBoundingClientRect();
@@ -6934,11 +6971,34 @@ box.focus();
         try { r._glide.cancel(); } catch (e) {}
       }
       var a = r.animate([{ transform: "translate3d(0," + from + "px,0)" }, { transform: "translate3d(0,0,0)" }],
-                        { duration: GLIDE_MS, easing: EASE_SMOOTH });
+                        { duration: ms || GLIDE_MS, easing: ease || EASE_SMOOTH });
       r._glide = a;
       a.onfinish = (function (row, an) { return function () { if (row._glide === an) row._glide = null; }; })(r, a);
     }
   }
+  /* ══ 交互流畅度(2026-10-12)══ 键盘 / 贴纸面板把可视区挤矮(或放回)时,列表和输入栏跟着一起滑,不是一下跳过去。
+     键盘:外壳把 iframe 摆成「眼睛看得到的那块」(index.html 的 kbFit),于是这页会收到一次 resize、根节点多一个 data-dwkb。
+     iOS 的键盘是动画升上来的,而 iframe 一步就缩到了终点 —— 不处理的话,输入栏先「跳」到键盘上沿、键盘再追上来,中间露一截空。
+     所以:贴底的话先一步拉到底(一次布局),再让看得见的那几行和输入栏从原位置用键盘那条曲线滑过去(只动 transform)。
+     只在「键盘开 / 关」那一下滑(看 data-dwkb 变没变);转屏之类的普通 resize 照旧一步到位。系统减弱动态效果时不滑。 */
+  var KB_MS = 300, KB_EASE = "cubic-bezier(.38, .7, .125, 1)";   // iOS 键盘那条曲线(近似),时长同系统键盘
+  var lastVH = innerHeight, kbWas = root.hasAttribute("data-dwkb");
+  function follow(d, foot) {
+    var wasBottom = stickBottom;
+    if (wasBottom) log.scrollTop = log.scrollHeight - log.clientHeight;
+    if (calm || !isTg() || Math.abs(d) < 24) return;
+    if (foot && foot.animate) foot.animate([{ transform: "translate3d(0," + d + "px,0)" }, { transform: "translate3d(0,0,0)" }],
+                                           { duration: KB_MS, easing: KB_EASE });
+    if (wasBottom) slide(d, KB_MS, KB_EASE);
+  }
+  window.__tgFollow = follow;
+  window.addEventListener("resize", function () {
+    var h = innerHeight, d = lastVH - h, kbNow = root.hasAttribute("data-dwkb");
+    lastVH = h;
+    if (!d) return;
+    if (kbNow !== kbWas) { kbWas = kbNow; follow(d, document.querySelector("footer")); }
+    else if (stickBottom) log.scrollTop = log.scrollHeight - log.clientHeight;   // 其它尺寸变化:贴底就留在底,不滑
+  });
   function flyAll(list) {
     var box = document.getElementById("box"), br = box && box.getBoundingClientRect();
     list.forEach(function (f) {
