@@ -1058,6 +1058,47 @@
     background: var(--ink); color: var(--card); font-size: 15px;
     display: inline-flex; align-items: center; justify-content: center;
   }
+
+  /* ══ 首页 iOS 化(2026-10-12 深夜)══
+     她发来 GPT 给的首页思路图(底图不看),要「在现有基础上改出最适合我们的、最 iOS 的」「大圆环不一定要保留,主要是协调」。
+     取了它对的那几样,没照搬的:声波(没真数据)、每行的「›」(点了没去处)、「天前」(它写错了,那几天都还没到)、头像挪左边。
+     ① 日期 = 问候上面一行小号大写眉题 ② since 斜体 + 名字下一道短线 ③ 纪念日环换成和下面一样的一行、上面「Upcoming」分区标题
+     ④ 每行图标改圆形、数字后写「天后」 ⑤ 底栏每格加图标(Framework7 Icons,MIT;选中实心、没选中空心)。字体仍是原来那几款。 */
+  .htop .hdate { order: -1; margin: 0 0 6px; font-family: var(--sans); font-size: 11.5px; font-weight: 500; letter-spacing: .14em;
+                 text-transform: uppercase; color: var(--dim); }
+  .htop .grow { display: flex; flex-direction: column; }
+  /* 第三版(她看第二版:「英文保留衬线体吧?」)—— 规矩一条:**英文和数字一律衬线,中文一律黑体**。
+     做法是一套「拉丁先找衬线、汉字落到苹方」的字体栈(--en):New York / Georgia 都没有汉字,汉字自然往后落,
+     所以「佳佳's birthday」这种混排同一行也分得开。~~第二版:衬线只留问候和 Day N、其余全黑体~~(她要英文衬线)。
+     第一版的斜体、名字下短线、中文副标题照旧不要(那是「乱」的来源)。 */
+  :root { --en: SerifNum, ui-serif, "New York", Georgia, -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; }
+  .htop .hdate { font-family: var(--en); letter-spacing: .12em; }
+  .huscard .hsince, .huscard .hk { font-family: var(--en); font-size: 13.5px; }
+  .huscard .hrule { display: none; }
+  .hupc { margin: 14px 4px -4px; }
+  .hupc h2 { margin: 0; font-family: var(--en); font-size: 12px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); }
+  .hupc p { display: none; }
+  .dli .t { font-family: var(--en); }
+  .dli .s { font-family: var(--en); font-size: 13px; color: var(--dim); }
+  .dli .dn { font-family: var(--en); }
+  .dli .dn small { font-family: var(--sans); }
+  /* 她「最下面的只留图标不要 home 那些」:字藏起来(读屏仍念得出),图标放大一点 */
+  .tabbar .tl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .tabbar .ti { width: 26px; height: 26px; }
+  .dayscard { padding: 4px 18px 4px 16px; }
+  .dayscard .dli:first-child { border-top: 0; }
+  .dtile { width: 40px; height: 40px; border-radius: 50%; background: var(--card); color: var(--ink);
+           box-shadow: 0 0 0 .5px color-mix(in srgb, var(--ink) 8%, transparent), 0 2px 6px rgba(0,0,0,.05); }
+  .dtile svg { width: 18px; height: 18px; }
+  .dli { padding: 13px 0; }
+  .dli .dn { font-size: 20px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .dli .dn small { font-size: 11.5px; margin-left: 3px; }
+  .tabbar button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+  .tabbar .ti { width: 23px; height: 23px; display: block; position: relative; }
+  .tabbar .ti svg { position: absolute; inset: 0; width: 100%; height: 100%; fill: currentColor; }
+  .tabbar .ti .f, .tabbar button[aria-selected="true"] .ti .o { display: none; }
+  .tabbar button[aria-selected="true"] .ti .f { display: block; }
+  .tabbar .tl { font-size: 11px; line-height: 1; letter-spacing: .01em; }
 </style>
 
 <div class="topcap" aria-hidden="true"></div>
@@ -1072,8 +1113,9 @@
     <div class="reveal" style="--i:0">
     <div class="htop">
       <div class="grow">
-        <h1 class="greet"><span id="greetWord">Good evening,</span> <span class="cn">佳佳</span></h1>
+        <!-- 2026-10-12 深夜(iOS 化):日期挪到问候上面,小号大写字(iOS 天气 / 健身那种眉题) -->
         <div class="hdate" id="homeDate">Sunday, July 26</div>
+        <h1 class="greet"><span id="greetWord">Good evening,</span> <span>Mia</span></h1>
         <!-- 天气:和晏的注入同源(dwell-bridge 的 /api/weather),读不到留空不编 -->
         <p class="weather sub" id="homeWeather">&nbsp;</p>
       </div>
@@ -1090,9 +1132,10 @@
       <article class="card huscard reveal" style="--i:1">
         <div class="hpair"><span class="av hav him" data-bloom aria-hidden="true"></span><span class="av hav" data-avatar="me" aria-hidden="true"></span></div>
         <div class="grow">
-          <div class="hk">佳佳 &amp; <span data-himname>晏</span></div>
+          <div class="hk">Mia &amp; <span data-himname>晏</span></div>
           <div class="hday" id="dayN">Day 35</div>
           <div class="hsince">since 2026.6.3</div>
+          <i class="hrule" aria-hidden="true"></i>
         </div>
       </article>
 
@@ -1118,28 +1161,15 @@
         </div>
       </article>
 
-      <h2 class="hsec reveal" style="--i:4">Days</h2>
+      <!-- 2026-10-12 深夜(她:「参考 gpt 的建议在现有基础上改出最适合我们的、最 iOS 的」「大圆环不一定要保留,主要是协调」):
+           ~~「Monthly Anniversary + 大圆环」那块~~ 换成和下面几行同一个样子的一行(圆形图标 + 名字 / 日期 + 右边几天后),
+           上面一个「Upcoming」分区标题。id 照旧(moDate / moLeft),脚本没改;moArc 没了,renderDays 本来就判空。 -->
+      <div class="hupc reveal" style="--i:4"><h2>Upcoming</h2><p>接下来的日子</p></div>
       <article class="card dayscard reveal" style="--i:4">
-        <div class="annihead">
-          <div class="grow">
-            <h2 class="headline" style="margin:0">Monthly Anniversary</h2>
-            <p class="sub en" id="moDate">Aug 21</p>
-          </div>
-          <div class="ring">
-            <!-- ⚠️ 这几个数是把参考图放大 4 倍读出来的(2026-09-19):
-                 半径 30pt、弧宽 4.5pt、弧**从 12 点前 5° 起顺时针扫 55°**。
-                 交叉验证:弧的水平跨度实测 25.7pt,而 r(sin50°−sin(−5°)) = 25.6 ✓
-                 ~~原来是 r=25、弧宽 3.2、扫 128°~~ —— 扫得太长、太细、圈太小。
-                 track 几乎看不见(参考 #ededed 打在 #fcfcfe 的卡上),所以透明度压到 .055。 -->
-            <svg viewBox="0 0 71 71" width="71" height="71" aria-hidden="true">
-              <!-- ⚠️ track 比弧**细一半**:参考图那圈明显更细,同宽画出来会变成一个抢眼的灰圈 -->
-              <circle cx="35.5" cy="35.5" r="32.2" fill="none" stroke="currentColor" stroke-width="2.5" opacity=".04"/>   <!-- .04 是量出来的:参考 track 只比卡底暗 9.0,原来的 .075 暗了 16.7 -->
-              <circle id="moArc" cx="35.5" cy="35.5" r="32.2" fill="none" stroke="currentColor" stroke-width="5.06"
-                      stroke-linecap="round" stroke-dasharray="30.9 202.3"
-                      transform="rotate(-95 35.5 35.5)"/>
-            </svg>
-            <span class="num" id="moLeft">27</span>
-          </div>
+        <div class="dli">
+          <span class="dtile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 9.5h17M8 3v4M16 3v4M12 17.2s-2.6-1.6-2.6-3.3c0-.9.7-1.5 1.4-1.5.6 0 1 .3 1.2.7.2-.4.6-.7 1.2-.7.7 0 1.4.6 1.4 1.5 0 1.7-2.6 3.3-2.6 3.3Z"/></svg></span>
+          <div class="grow"><div class="t">Monthly anniversary</div><div class="s" id="moDate">Aug 21</div></div>
+          <div class="dn"><span id="moLeft">27</span><small>天后</small></div>
         </div>
         <!-- 经期(2026-10-12):和晏注入的是同一份记录(shim 的 /period,经本层 /api/period);点开是日历 + 「今天来了 / 今天结束了」。读不到就藏着 -->
         <button class="dli dper" id="perRow" type="button" hidden>
@@ -1149,13 +1179,13 @@
         </button>
         <div class="dli">
           <span class="dtile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M6 20v-7h12v7M12 13V9M10.5 6.5c0-1 1.5-2.5 1.5-2.5s1.5 1.5 1.5 2.5a1.5 1.5 0 0 1-3 0Z"/></svg></span>
-          <div class="grow"><div class="t">佳佳's birthday</div><div class="s">Jun 25</div></div>
-          <div class="dn"><span data-until="6-25">259</span><small>天</small></div>
+          <div class="grow"><div class="t">Mia's birthday</div><div class="s">Jun 25</div></div>
+          <div class="dn"><span data-until="6-25">259</span><small>天后</small></div>
         </div>
         <div class="dli">
           <span class="dtile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.3-9-8.7C1.6 8.2 3.5 4.6 7 4.6c2 0 3.4 1.1 4.1 2.3.4.6 1.3.6 1.7 0 .7-1.2 2.1-2.3 4.1-2.3 3.5 0 5.4 3.6 4 6.7-2 4.4-8.9 8.7-8.9 8.7Z"/></svg></span>
-          <div class="grow"><div class="t">anniversary</div><div class="s">Jun 3</div></div>
-          <div class="dn"><span data-until="6-3">237</span><small>天</small></div>
+          <div class="grow"><div class="t">Anniversary</div><div class="s">Jun 3</div></div>
+          <div class="dn"><span data-until="6-3">237</span><small>天后</small></div>
         </div>
       </article>
 
@@ -1227,9 +1257,9 @@
 </main>
 
 <nav class="tabbar" role="tablist" aria-label="主导航">
-  <button role="tab" aria-selected="true"  aria-controls="tab-home"  data-tab="home">Home</button>
-  <button role="tab" aria-selected="false" aria-controls="tab-chats" data-tab="chats">Chats</button>
-  <button role="tab" aria-selected="false" aria-controls="tab-diary" data-tab="diary">Diary</button>
+  <button role="tab" aria-selected="true"  aria-controls="tab-home"  data-tab="home"><span class="ti" aria-hidden="true"><svg class="o" viewBox="0 0 56 56"><path d="M 12.6251 52.6445 L 43.3986 52.6445 C 46.7267 52.6445 48.6722 50.7695 48.6722 47.4648 L 48.6722 26.0664 L 51.6952 28.8320 C 52.1877 29.3008 52.7267 29.6289 53.3829 29.6289 C 54.4845 29.6289 55.3749 28.9492 55.3749 27.8242 C 55.3749 27.1211 55.1171 26.6758 54.6722 26.2774 L 46.5391 18.8476 L 46.5391 5.0430 C 46.5391 4.0117 45.8829 3.3555 44.8519 3.3555 L 41.7813 3.3555 C 40.7735 3.3555 40.0704 4.0117 40.0704 5.0430 L 40.0704 12.9648 L 30.8126 4.5274 C 29.9923 3.7774 29.0079 3.3555 28.0001 3.3555 C 26.9923 3.3555 26.0079 3.7774 25.1876 4.5274 L 1.3282 26.2774 C .9064 26.6758 .6251 27.1211 .6251 27.8242 C .6251 28.9492 1.5157 29.6289 2.6173 29.6289 C 3.2970 29.6289 3.8360 29.3008 4.3048 28.8320 L 7.3282 26.0898 L 7.3282 47.4648 C 7.3282 50.7695 9.2735 52.6445 12.6251 52.6445 Z M 34.7501 33.3086 C 34.7501 32.2305 34.0470 31.5508 32.9689 31.5508 L 23.0313 31.5508 C 21.9532 31.5508 21.2267 32.2305 21.2267 33.3086 L 21.2267 48.8711 L 13.4220 48.8711 C 11.9220 48.8711 11.1017 48.0508 11.1017 46.5273 L 11.1017 22.6445 L 27.1798 7.9961 C 27.4142 7.7617 27.6954 7.6211 28.0001 7.6211 C 28.3048 7.6211 28.5860 7.7383 28.8439 7.9961 L 44.8984 22.6445 L 44.8984 46.5273 C 44.8984 48.0508 44.0781 48.8711 42.6017 48.8711 L 34.7501 48.8711 Z"/></svg><svg class="f" viewBox="0 0 56 56"><path d="M .6249 27.8242 C .6249 28.9492 1.5155 29.6289 2.6171 29.6289 C 3.2968 29.6289 3.8358 29.3008 4.3046 28.8320 L 27.1796 7.9961 C 27.4374 7.7383 27.7187 7.6445 28.0233 7.6445 C 28.3046 7.6445 28.5624 7.7383 28.8436 7.9961 L 51.6954 28.8320 C 52.1874 29.3008 52.7264 29.6289 53.3826 29.6289 C 54.4842 29.6289 55.3751 28.9492 55.3751 27.8242 C 55.3751 27.1211 55.1173 26.6758 54.6719 26.2774 L 46.5623 18.8945 L 46.5623 5.0430 C 46.5623 4.0117 45.9061 3.3555 44.8751 3.3555 L 41.8046 3.3555 C 40.7968 3.3555 40.0936 4.0117 40.0936 5.0430 L 40.0936 13.0117 L 30.8124 4.5274 C 29.9921 3.7539 28.9843 3.3789 27.9999 3.3789 C 27.0155 3.3789 26.0312 3.7539 25.1874 4.5274 L 1.3280 26.2774 C .9062 26.6758 .6249 27.1211 .6249 27.8242 Z M 7.3280 47.4883 C 7.3280 50.7461 9.2968 52.6445 12.6015 52.6445 L 22.0936 52.6445 L 22.0936 35.9805 C 22.0936 34.9023 22.8202 34.1992 23.8984 34.1992 L 32.1718 34.1992 C 33.2499 34.1992 33.9531 34.9023 33.9531 35.9805 L 33.9531 52.6445 L 43.4216 52.6445 C 46.7264 52.6445 48.6719 50.7461 48.6719 47.4883 L 48.6719 30.3320 L 28.7734 12.4023 C 28.5155 12.1679 28.2343 12.0508 27.9531 12.0508 C 27.6952 12.0508 27.4374 12.1679 27.1562 12.4258 L 7.3280 30.4492 Z"/></svg></span><span class="tl">Home</span></button>
+  <button role="tab" aria-selected="false" aria-controls="tab-chats" data-tab="chats"><span class="ti" aria-hidden="true"><svg class="o" viewBox="0 0 56 56"><path d="M17.5035668,40.5296937 C19.0024662,40.0159063 20.530255,39.9036804 22.1150875,40.242095 C23.3913721,40.4234251 24.6878688,40.5153676 26,40.5153676 C38.462083,40.5153676 48.2812121,32.2755588 48.2812121,22.5377685 C48.2812121,12.8019501 38.4617239,4.56240733 26,4.56240733 C13.5368558,4.56240733 3.71878789,12.8012343 3.71878789,22.5377685 C3.71878789,27.5645198 6.32376869,32.3237361 10.8918817,35.7272859 C11.006387,35.811306 11.2685741,35.9959543 11.5565666,36.1954672 C11.6839828,36.2837375 11.8060878,36.367737 11.8989137,36.4310247 C11.8796069,36.4178214 11.9540395,36.4678495 11.851738,36.407108 L12.042003,36.5200778 L12.2201977,36.6512631 C14.0421606,37.9925748 14.911757,39.7895096 15.034093,41.7494472 C16.0115023,41.2059428 16.9508283,40.7191594 17.5035668,40.5296937 Z M0.17,22.559188 C0.17,10.5904526 11.7325761,0.885839053 26,0.885839053 C40.2652635,0.885839053 51.83,10.5904526 51.83,22.559188 C51.83,34.5300838 40.2652635,44.2346974 26,44.2346974 C24.4509778,44.2346974 22.9365222,44.120195 21.4631148,43.9019924 C21.4609543,43.9019924 21.4566335,43.899832 21.4544731,43.899832 C17.9653923,43.0680697 16.4876639,46.9481868 8.53731265,48.9595393 C6.90403396,49.3743402 6.7074356,48.9616997 7.95831967,47.6352009 C10.2224415,45.2392934 12.4044672,41.3332512 10.1360246,39.6632454 C10.0668911,39.6221974 9.19192037,39.0194398 8.85921546,38.7753121 C3.5294555,34.8044573 0.17,29.0080463 0.17,22.559188 Z"/></svg><svg class="f" viewBox="0 0 56 56"><path d="M0.17,22.559188 C0.17,10.5904526 11.7325761,0.885839053 26,0.885839053 C40.2652635,0.885839053 51.83,10.5904526 51.83,22.559188 C51.83,34.5300838 40.2652635,44.2346974 26,44.2346974 C24.4509778,44.2346974 22.9365222,44.120195 21.4631148,43.9019924 C21.4609543,43.9019924 21.4566335,43.899832 21.4544731,43.899832 C17.9653923,43.0680697 16.4876639,46.9481868 8.53731265,48.9595393 C6.90403396,49.3743402 6.7074356,48.9616997 7.95831967,47.6352009 C10.2224415,45.2392934 12.4044672,41.3332512 10.1360246,39.6632454 C10.0668911,39.6221974 9.19192037,39.0194398 8.85921546,38.7753121 C3.5294555,34.8044573 0.17,29.0080463 0.17,22.559188 Z"/></svg></span><span class="tl">Chats</span></button>
+  <button role="tab" aria-selected="false" aria-controls="tab-diary" data-tab="diary"><span class="ti" aria-hidden="true"><svg class="o" viewBox="0 0 56 56"><path d="M 28.0118 11.3945 C 26.2071 9.1445 21.7774 7.1523 16.8555 7.1523 C 10.3399 7.1523 5.0899 10.5039 3.8008 13.6445 L 3.8008 46.3867 C 3.8008 48.1680 4.9727 48.8477 6.2383 48.8477 C 7.2696 48.8477 7.8555 48.5430 8.4883 48.0508 C 9.8243 46.9023 12.5196 45.3555 16.8555 45.3555 C 21.1680 45.3555 24.1914 46.8555 25.3633 47.9102 C 25.9727 48.4023 26.7227 48.8477 28.0118 48.8477 C 29.2774 48.8477 30.0040 48.3555 30.6368 47.9102 C 31.8790 46.9258 34.8321 45.3555 39.1446 45.3555 C 43.4805 45.3555 46.1992 46.9258 47.5120 48.0508 C 48.1446 48.5430 48.7307 48.8477 49.7617 48.8477 C 51.0275 48.8477 52.1992 48.1680 52.1992 46.3867 L 52.1992 13.6445 C 50.9104 10.5039 45.6602 7.1523 39.1446 7.1523 C 34.2227 7.1523 29.7930 9.1445 28.0118 11.3945 Z M 7.5743 14.7695 C 8.1133 13.3164 11.5118 10.6914 16.8555 10.6914 C 22.1758 10.6914 25.6446 13.3398 26.1133 14.7695 L 26.1133 44.4180 C 23.8868 42.7539 20.4883 41.8164 16.8555 41.8164 C 13.1992 41.8164 9.8008 42.7539 7.5743 44.5117 Z M 48.4259 14.7695 L 48.4259 44.5117 C 46.1992 42.7539 42.8008 41.8164 39.1446 41.8164 C 35.5118 41.8164 32.1133 42.7539 29.8868 44.4180 L 29.8868 14.7695 C 30.3555 13.3398 33.8243 10.6914 39.1446 10.6914 C 44.4883 10.6914 47.8868 13.3164 48.4259 14.7695 Z"/></svg><svg class="f" viewBox="0 0 56 56"><path d="M 17.0897 44.8984 C 20.9804 44.8984 23.5819 46.3516 24.7304 47.1719 C 25.1523 47.4062 26.3476 48.1094 26.6054 48.1328 L 26.6054 12.6953 C 25.0819 9.8594 20.6054 7.5625 15.9648 7.5625 C 10.1054 7.5625 5.1366 10.9375 4.0351 13.2110 L 4.0351 46.3047 C 4.0351 47.8516 4.9492 48.4375 6.0507 48.4375 C 6.9413 48.4375 7.5273 48.1328 8.0897 47.6641 C 9.4726 46.4219 12.7304 44.8984 17.0897 44.8984 Z M 38.9335 44.8984 C 43.2929 44.8984 46.5275 46.4219 47.9334 47.6641 C 48.4724 48.1094 49.0585 48.4375 49.9489 48.4375 C 51.0505 48.4375 51.9649 47.8516 51.9649 46.3047 L 51.9649 13.2110 C 50.8633 10.9375 45.9179 7.5625 40.0585 7.5625 C 35.4179 7.5625 30.9413 9.8594 29.4179 12.6953 L 29.4179 48.1797 C 29.6757 48.1562 30.8710 47.4297 31.3163 47.1719 C 32.4413 46.3516 35.0429 44.8984 38.9335 44.8984 Z"/></svg></span><span class="tl">Diary</span></button>
 </nav>
 <!-- 2026-10-10:底栏旁边一颗「+」= 写今天(跳到 Diary)。底栏藏起来时它也藏(CSS 兄弟选择器) -->
 <button class="tabplus" id="tabPlus" aria-label="写今天"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
@@ -1394,7 +1424,7 @@
       <section class="card group">
         <div class="srow">
           <span class="av" data-avatar="me" aria-hidden="true"></span>
-          <span class="grow t">佳佳</span>
+          <span class="grow t">Mia</span>
           <button class="datum" data-avreset="me">恢复默认</button>
           <button class="datum act" data-avpick="me">换一张</button>
         </div>
@@ -2236,7 +2266,7 @@
       setText("perT", "经期");
       setText("perS", "下次 · " + short(r.next));
       var left = r.next - r.today;
-      n.innerHTML = left <= 0 ? '<span>今天</span>' : '<span>' + left + '</span><small>天</small>';
+      n.innerHTML = left <= 0 ? '<span>今天</span>' : '<span>' + left + '</span><small>天后</small>';
     }
   }
   function paintPerCal() {

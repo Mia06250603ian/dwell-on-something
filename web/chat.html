@@ -5639,6 +5639,10 @@ box.focus();
     background: linear-gradient(to bottom, var(--pc-tint, transparent) 0, var(--pc-tint, transparent) var(--dw-sat, env(safe-area-inset-top)), transparent 100%);
     -webkit-mask: none; mask: none; }
   .tgprof[data-cover] .pcover .pback { top: calc(16px + var(--dw-sat, env(safe-area-inset-top))); }
+  /* Model 一行并进 More settings 那张卡:展开的清单夹在两行中间,More settings 上沿补一条分隔线;脚注只在有待换的模型时出现 */
+  .tgprof .pmcard .pmore { position: relative; }
+  .tgprof .pmhead .pmcur, .tgprof .pmhead .pmeng { display: none !important; }   /* 只给脚本留着,不显示(.it small 默认 display:block,hidden 属性压不住) */
+  .tgprof .pmcard .pmore::before { content: ""; position: absolute; top: 0; left: 18px; right: 0; height: .5px; background: var(--hair); }
   .tgprof .pseg { height: 32.5px; padding: 3px; background: #fff; border-radius: 999px; box-shadow: 0 .5px 1.5px rgba(0,0,0,.04); }
   .tgprof .pseg button { font-size: 11px; font-weight: 400; color: #3a3a3c; border-radius: 999px; transition: color .25s; }
   .tgprof .pseg button[aria-checked="true"] { color: #fff; font-weight: 500; }
@@ -5847,11 +5851,14 @@ box.focus();
       '<div class="bar ctxBar"><i></i></div>' + rowHTML("q5", "5-hour limit") + rowHTML("q7", "Weekly limit") + '</div>' +
     '<div class="card glass uB">' + ringHTML("pctx", "Context") + ringHTML("p5h", "5-hour") + ringHTML("p7d", "Weekly") + '</div>' +
     '<div class="udots" aria-hidden="true"><i></i><i></i></div><p class="foot ugnote"></p>' +
-    '<div class="sect">Model</div><div class="card glass pmcard">' +
-      '<button class="it pmhead" type="button" aria-expanded="false"><span class="grow"><span class="t pmcur">…</span><small class="pmeng"></small></span>' +
+    /* 2026-10-12 深夜她选 A:~~单独一个「MODEL」分区 + 一张卡~~ 并进 More settings 那张卡,做成 iOS 设置页那种一行:
+       左「Model」、右灰字 = 现在的型号(或「→ 下一句要换的」),点了照旧往下展开清单。.pmcur / .pmeng 留着(藏起来)只为脚本不用改两处。 */
+    '<div class="card glass pmcard">' +
+      '<button class="it pmhead" type="button" aria-expanded="false"><span class="grow"><span class="t">Model</span><span class="pmcur" hidden></span><small class="pmeng" hidden></small></span>' +
       '<span class="tr pmsum"></span><span class="chev pmchev">' + CHEV + '</span></button>' +
-      '<div class="pmfold"><div class="pmodels"></div></div></div><p class="foot pmnote"></p>' +
-    '<div class="card glass"><button class="it pmore" type="button"><span class="grow"><span class="t">More settings</span></span><span class="chev">' + CHEV + '</span></button></div>' +
+      '<div class="pmfold"><div class="pmodels"></div></div>' +
+      '<button class="it pmore" type="button"><span class="grow"><span class="t">More settings</span></span><span class="chev">' + CHEV + '</span></button></div>' +
+    '<p class="foot pmnote"></p>' +
     '</div></div>' +
     /* iOS 操作表(换背景 / 去掉背景 / 取消) */
     '<div class="psheetbg" hidden></div><div class="pact" role="dialog" aria-label="背景" hidden><div class="pactg glass">' +
@@ -6134,7 +6141,7 @@ box.focus();
       prof.querySelector(".pmeng").textContent = cur ? (cur.engine === "next" ? "New CLI" : "Legacy CLI") : "";
       var sum = prof.querySelector(".pmsum");
       sum.classList.toggle("pend", !!d.pending);
-      sum.textContent = d.pending ? "→ " + prettyModel(d.pending).replace("(新版)", "") : menu.length > 1 ? menu.length + " models" : "";
+      sum.textContent = d.pending ? "→ " + prettyModel(d.pending).replace("(新版)", "") : prettyModel(cur ? cur.model : d.model).replace("(新版)", "");
       var box = prof.querySelector(".pmodels"); box.innerHTML = "";
       (d.menu || []).forEach(function (m) {
         var b = document.createElement("button");
@@ -6150,7 +6157,7 @@ box.focus();
       });
       prof.querySelector(".pmnote").textContent = d.pending
         ? "Switches to " + prettyModel(d.pending).replace("(新版)", "") + " with your next message. Tap the ✓ one to cancel."
-        : "Switches with your next message.";
+        : "";                                     // 没有待换的就不占一行(并进 More settings 那张卡之后,2026-10-12 深夜)
     }).catch(function () { prof.querySelector(".pmnote").textContent = "Couldn't load models — server unreachable."; });
     if (onlyModel === true) return;          // 只换了档位 / 模型:用量那几条别再从 0 长一遍
     fetch("api/context", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
