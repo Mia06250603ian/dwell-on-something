@@ -5577,6 +5577,28 @@ box.focus();
   @media (prefers-reduced-motion: reduce) {
     .tgprof, .tgpick { transition-duration: .01s !important; }
   }
+  /* ══ 玻璃第五版(2026-10-12 晚,所有者又发了一张「我们的输入栏 / iOS 键盘工具栏」上下对比:「质感老是不对」)══
+     **同一张截图里两条逐像素量**(亮度,背后 234):
+       我们:本体 242~249(偏白)、最暗处在中段且不明显、底边从中段一路慢慢亮;**下沿一道 193 的深线再拖出约 3pt 灰影** = 卡片感的主因。
+       iOS :本体 238~244(只比背后亮一点)、离上沿约 10~15pt 最暗(238,弧面背光那侧)、中下段平、**只在最后约 4pt 才亮回 254**;
+             外圈只有一圈约 .07 的细边,**下面没有影子**。
+     所以:①去掉那团影,只留细边 + 半像素的接地影;②本体按 iOS 的数逐段重配(px 定位,换算:亮度 = 234 + 21×alpha);
+     ③底边那道亮只占最后 4~5px。数都在下面这两个变量里,浅色才动,深色只撤影子。官端不动。 */
+  html[data-chatstyle="tg"] {
+    --g4-bg: linear-gradient(to top, rgba(255,255,255,.9) 0, rgba(255,255,255,.62) 1px, rgba(255,255,255,.37) 2px, rgba(255,255,255,.17) 3px, rgba(255,255,255,0) 5px),
+             linear-gradient(to bottom, rgba(255,255,255,.86) 0, rgba(255,255,255,.67) 1.5px, rgba(255,255,255,.55) 3px, rgba(255,255,255,.43) 5px,
+                             rgba(255,255,255,.3) 7px, rgba(255,255,255,.2) 10px, rgba(255,255,255,.21) 15px, rgba(255,255,255,.36) 20px,
+                             rgba(255,255,255,.45) 25px, rgba(255,255,255,.48) 30px, rgba(255,255,255,.48) 100%);
+    --g4-sh: inset 0 1px 0 rgba(255,255,255,.95), inset 0 -.5px 0 rgba(255,255,255,.7), 0 0 0 .5px rgba(0,0,0,.07), 0 .5px .5px rgba(0,0,0,.04);
+  }
+  html[data-chatstyle="tg"][data-tgdark] {
+    --g4-sh: inset 0 1px 0 rgba(255,255,255,.2), inset 0 -.5px 0 rgba(255,255,255,.06), 0 0 0 .5px rgba(255,255,255,.07), 0 .5px 1px rgba(0,0,0,.35);
+  }
+  /* 认不得 backdrop-filter 的浏览器(iOS 主屏 App 是认的,-webkit- 前缀):别退成一张透明的空壳,垫一层实一点的底 */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    html[data-chatstyle="tg"] :is(#menuBtn, .tgname, .tgsrch, .tgdown, #plusBtn, #box, #micBtn), .tgprof .glass {
+      background: var(--g4-bg), color-mix(in srgb, var(--card) 82%, transparent) !important; }
+  }
 </style>
 <script>
 (function () {
