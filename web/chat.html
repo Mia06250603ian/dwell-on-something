@@ -5613,6 +5613,9 @@ box.focus();
   /* 贴纸面板也换成同一套玻璃(2026-10-12 晚,她「所有玻璃的地方都是这个质感」):底保持实一点(要看清贴纸),撤掉上面那团 30px 的影 */
   html[data-chatstyle="tg"] .tgpick { background: var(--g4-bg), color-mix(in srgb, var(--card) 80%, transparent);
     -webkit-backdrop-filter: blur(20px) saturate(1.5); backdrop-filter: blur(20px) saturate(1.5); box-shadow: var(--g4-sh); }
+  /* 「他」页顶上(2026-10-12 晚,她「是顶部的分层」):换过背景时,照片顶上化开的颜色 = 照片最上沿的平均色(--pc-tint),
+     外壳同时把状态栏那块固定条涂成它(脚本 paintCover 上面那段)。没换背景 / 取不到色时照旧用聊天页底色。 */
+  .tgprof[data-cover] .pcover::after { background: var(--pc-tint, var(--tg-page, var(--bg))); }
   /* 认不得 backdrop-filter 的浏览器(iOS 主屏 App 是认的,-webkit- 前缀):别退成一张透明的空壳,垫一层实一点的底 */
   /* 键盘 ⇄ 贴纸面板(2026-10-12):面板开着时,框里那颗换成键盘图标(TG 第三种状态),同一条过渡 */
   .tgstk .k { opacity: 0; transform: scale(.7);
@@ -5834,7 +5837,7 @@ box.focus();
   prof.querySelector(".pmore").addEventListener("click", function () {
     closeProf(); var d = document.getElementById("dotsBtn"); if (d) setTimeout(function () { d.click(); }, 280);
   });
-  function closeProf() { if (nameIn && !nameIn.hidden) nameIn.blur(); closeAct(); prof.classList.remove("open"); }
+  function closeProf() { if (nameIn && !nameIn.hidden) nameIn.blur(); closeAct(); prof.classList.remove("open"); topTint(null); }
   function openProf() { prof.classList.add("open"); foldModels(false); paintCover(); loadProf(); }
 
   /* ── 背景(2026-10-10 第六版,所有者「我也想要这种能换背景的」)──
@@ -5845,13 +5848,41 @@ box.focus();
   /* ~~状态栏那条跟背景同色:sampleTop 取背景可见区最上沿的平均色 → --pc-tint + window.__dwTopTint 请外壳涂成它~~
      2026-10-12 撤了:她真机截图里状态栏那条**停在打开那一刻的颜色**(#f3f2f1),iOS 不跟着页面里的改动换色,
      背景顶上却从取样的深色起步,62pt 处一刀切 —— 正是手册预言的「不跟」那种情形。现在背景顶上一律从聊天页底色化开。 */
+  /* 2026-10-12 晚(她:「是顶部的分层」):照片最上沿的颜色 → 外壳那块固定条(.topcap,iOS 26 状态栏取的就是它)+ 照片顶上从这个色化开。
+     取「可见区域」最上沿那一窄条的平均色(background-size: cover 居中,竖图上下会被裁,要按同样的裁法算)。 */
+  var tintNow = null;
+  function sampleTop(url, cb) {
+    var img = new Image();
+    img.onload = function () {
+      try {
+        var box = prof.querySelector(".pcover").getBoundingClientRect(), W = box.width || 402, H = box.height || 290;
+        var k = Math.max(W / img.naturalWidth, H / img.naturalHeight), sw = W / k, sh = H / k;
+        var sx = (img.naturalWidth - sw) / 2, sy = (img.naturalHeight - sh) / 2;
+        var c = document.createElement("canvas"); c.width = 12; c.height = 2;
+        var g = c.getContext("2d"); g.drawImage(img, sx, sy, sw, Math.max(1, sh * 0.04), 0, 0, 12, 2);
+        var d = g.getImageData(0, 0, 12, 2).data, r = 0, gg = 0, bb = 0, n = d.length / 4;
+        for (var i = 0; i < d.length; i += 4) { r += d[i]; gg += d[i + 1]; bb += d[i + 2]; }
+        cb("rgb(" + Math.round(r / n) + "," + Math.round(gg / n) + "," + Math.round(bb / n) + ")");
+      } catch (e) { cb(null); }
+    };
+    img.onerror = function () { cb(null); };
+    img.src = url;
+  }
+  function topTint(c) { try { if (window.parent !== window && typeof window.parent.__dwTopTint === "function") window.parent.__dwTopTint(c); } catch (e) {} }
   function paintCover() {
     if (!prof) return;
     var u = coverUrl();
     prof.toggleAttribute("data-cover", !!u);
     prof.querySelector(".pa-del").hidden = !u;
-    if (!u) { prof.style.removeProperty("--pc-img"); return; }
+    if (!u) { prof.style.removeProperty("--pc-img"); prof.style.removeProperty("--pc-tint"); tintNow = null; if (prof.classList.contains("open")) topTint(null); return; }
     prof.style.setProperty("--pc-img", 'url("' + u + '")');
+    if (tintNow && prof.classList.contains("open")) topTint(tintNow);
+    sampleTop(u, function (c) {
+      if (coverUrl() !== u) return;              // 等的时候又换了一张
+      tintNow = c;
+      if (c) prof.style.setProperty("--pc-tint", c); else prof.style.removeProperty("--pc-tint");
+      if (prof.classList.contains("open")) topTint(c);
+    });
   }
   var actBg = prof.querySelector(".psheetbg"), act = prof.querySelector(".pact");
   function openAct() { actBg.hidden = false; act.hidden = false; }
