@@ -777,19 +777,29 @@
     :root:not([data-theme="light"]):not([data-skin]), :root:not([data-theme="light"])[data-skin="ivory"] { --g4-w: .22; }
   }
   /* 2026-10-12 晚 玻璃第五版:照 iOS 键盘工具栏逐段重配(量法与理由见 chat.html TG 样式末尾《玻璃第五版》);撤掉下面那团影,只留细边 */
-  .tabbar, .tabplus {
-    background: linear-gradient(to top, rgb(255 255 255 / calc(.9 * var(--g4-w))) 0, rgb(255 255 255 / calc(.62 * var(--g4-w))) 1px,
-                                rgb(255 255 255 / calc(.37 * var(--g4-w))) 2px, rgb(255 255 255 / calc(.17 * var(--g4-w))) 3px, transparent 5px),
-                linear-gradient(to bottom, rgb(255 255 255 / calc(.86 * var(--g4-w))) 0, rgb(255 255 255 / calc(.67 * var(--g4-w))) 1.5px,
-                                rgb(255 255 255 / calc(.55 * var(--g4-w))) 3px, rgb(255 255 255 / calc(.43 * var(--g4-w))) 5px,
-                                rgb(255 255 255 / calc(.3 * var(--g4-w))) 7px, rgb(255 255 255 / calc(.2 * var(--g4-w))) 10px,
-                                rgb(255 255 255 / calc(.21 * var(--g4-w))) 15px, rgb(255 255 255 / calc(.36 * var(--g4-w))) 20px,
-                                rgb(255 255 255 / calc(.45 * var(--g4-w))) 25px, rgb(255 255 255 / calc(.48 * var(--g4-w))) 30px, rgb(255 255 255 / calc(.48 * var(--g4-w))) 100%),
-                color-mix(in srgb, var(--card) 22%, transparent);
-    -webkit-backdrop-filter: blur(14px) saturate(1.6); backdrop-filter: blur(14px) saturate(1.6);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / calc(.2 + .75 * var(--g4-w))), inset 0 -.5px 0 rgb(255 255 255 / calc(.7 * var(--g4-w))),
-                0 0 0 .5px rgb(0 0 0 / .07), 0 .5px .5px rgb(0 0 0 / .04);
+  /* 玻璃第五版的配方抽成公共的两个变量(2026-10-12 晚,她:「我想要所有玻璃的地方都是这个质感」)。
+     量法见 chat.html TG 样式末尾《玻璃第五版》;深色皮肤白光按 --g4-w 收到两成。**以后调玻璃只动这两个变量**。 */
+  :root {
+    --g5-bg: linear-gradient(to top, rgb(255 255 255 / calc(.9 * var(--g4-w))) 0, rgb(255 255 255 / calc(.62 * var(--g4-w))) 1px,
+                             rgb(255 255 255 / calc(.37 * var(--g4-w))) 2px, rgb(255 255 255 / calc(.17 * var(--g4-w))) 3px, transparent 5px),
+             linear-gradient(to bottom, rgb(255 255 255 / calc(.86 * var(--g4-w))) 0, rgb(255 255 255 / calc(.67 * var(--g4-w))) 1.5px,
+                             rgb(255 255 255 / calc(.55 * var(--g4-w))) 3px, rgb(255 255 255 / calc(.43 * var(--g4-w))) 5px,
+                             rgb(255 255 255 / calc(.3 * var(--g4-w))) 7px, rgb(255 255 255 / calc(.2 * var(--g4-w))) 10px,
+                             rgb(255 255 255 / calc(.21 * var(--g4-w))) 15px, rgb(255 255 255 / calc(.36 * var(--g4-w))) 20px,
+                             rgb(255 255 255 / calc(.45 * var(--g4-w))) 25px, rgb(255 255 255 / calc(.48 * var(--g4-w))) 30px, rgb(255 255 255 / calc(.48 * var(--g4-w))) 100%);
+    --g5-sh: inset 0 1px 0 rgb(255 255 255 / calc(.2 + .75 * var(--g4-w))), inset 0 -.5px 0 rgb(255 255 255 / calc(.7 * var(--g4-w))),
+             0 0 0 .5px rgb(0 0 0 / .07), 0 .5px .5px rgb(0 0 0 / .04);
   }
+  /* 底栏、「+」、设置那颗圆钮、首页的卡(今天的歌 / 纪念日)都用它;卡片下面原来那团 14~32px 的影(卡片感)一并撤掉 */
+  .tabbar, .tabplus, .hround, .homefeed .card, .homefeed .whisper {
+    background: var(--g5-bg), color-mix(in srgb, var(--card) 22%, transparent);
+    -webkit-backdrop-filter: blur(14px) saturate(1.6); backdrop-filter: blur(14px) saturate(1.6);
+    box-shadow: var(--g5-sh);
+  }
+  .homefeed .huscard { background: none !important; box-shadow: none !important; }   /* Day N 那块本来就不要框(第二版) */
+  /* 经期日历那块面板:是要读的面板,底保持实一点,只换上同一套边光、撤掉那团影 */
+  .perpanel { background: var(--g5-bg), color-mix(in srgb, var(--card) 86%, transparent);
+              -webkit-backdrop-filter: blur(20px) saturate(1.5); backdrop-filter: blur(20px) saturate(1.5); box-shadow: var(--g5-sh); }
   .tabbar button[aria-selected="true"] { background: color-mix(in srgb, var(--ink) 6%, transparent); box-shadow: none; }   /* iOS 26:选中那格是一颗淡灰胶囊,不是白卡 */
   /* ---------- 入场:Spring Reveal ----------
      一次整体的落位,不是「每张卡各跳各的」:轻微 stagger(45ms 一级),
@@ -2026,6 +2036,7 @@
     });
   });
   function goBack() {
+    if (window.__dwTopTint) window.__dwTopTint(null);   // 「他」页涂过的状态栏那条,退回去就还原
     tabbar.hidden = false;
     loadLast();
     pushTo(1, null, function () { chatview.hidden = true; });
@@ -2483,8 +2494,15 @@
   /* 「他」那一页(聊天页里)直接换了他的头像 / 名字(2026-10-10)—— 存服务器之后叫一声,这里重新拉一遍,
      首页 / Chats / 设置跟着变(pullPrefs → apply → tellChat 再递回聊天页,两边一致)。同 __dwSwipe 的接法。 */
   window.__dwPrefsChanged = function () { pullPrefs(); };
-  /* ~~window.__dwTopTint:「他」页换了背景时把 .chatview 临时涂成背景最上沿的色,好让状态栏那条跟着变(2026-10-10)~~
-     2026-10-12 撤了:她真机上那条停在打开那一刻的颜色,iOS 不跟着换,反倒成了「分层」。「他」页改成从聊天页底色化开(chat.html)。 */
+  /* 「他」页顶上的状态栏那条跟照片同色(2026-10-12 晚,她:「是顶部的分层」)。
+     ⚠️ 涂的是 **.topcap**,不是 .chatview:她真机截图里那条是 243,242,241 = .topcap 的 --paper-top(聊天页底色是 242,241,241),
+     说明 iOS 26 取的是这块固定条的色。~~10-10 那版涂的是 .chatview~~ —— 涂错了对象,所以「iOS 不跟」那个结论下早了。
+     iOS 会不会在页面开着时跟着这块变色,只有真机验得了;null = 还原。返回 Chats 时也还原(goBack)。 */
+  var topcapEl = document.querySelector(".topcap");
+  window.__dwTopTint = function (c) {
+    if (!topcapEl) return;
+    topcapEl.style.background = c && /^rgb\(\d{1,3},\d{1,3},\d{1,3}\)$/.test(c) ? c : "";
+  };
 
   /* ── 部署完自己刷新 ──
      这条契约是从旧 index.html 继承来的(它叫 tryReload):读后端 /api/health 的 ver,
