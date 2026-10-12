@@ -5513,6 +5513,39 @@ box.focus();
   .tgprof .pcedge i:nth-child(3) { height: 54%;  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
   .tgprof .pcedge i:nth-child(4) { height: 36%;  -webkit-backdrop-filter: blur(20px) saturate(1.1); backdrop-filter: blur(20px) saturate(1.1); }
   .tgprof .pcover::after { z-index: 1; height: calc(60px + var(--dw-sat, env(safe-area-inset-top))); }
+  /* ══ 玻璃第四版:照 iOS 原生(2026-10-12,所有者:「目前的 UI 特别扁平卡片化」+ 一张 iOS 输入栏上方那条工具栏的截图,「所有的玻璃质感都改成这种」)══
+     **量出来的**(她截图 3px/pt,同一条竖线):我们的输入栏整块 253 的近纯白 + 外圈一道 203 的深描边 = 一张白卡片;
+     iOS 那条本体只比背后亮一点(背后 234,它 242~246)—— 立体感全靠**边上的光**:上沿一道 255 的亮线 → 往下约 16pt 处最暗(242,弧面的背光那侧)
+     → 中段 245 → 底边又亮回 253 → 外圈只在**下沿**有一道 215 的影。
+     我们发白的根:底叠 50% 白 + 背后再提亮 6%(brightness 1.06),浅底上就成了实心白。所以:去掉提亮,本体降到「只亮一点」,
+     亮边 / 背光带用两层 px 定位的渐变画(不用 %,卡片高 300 也不会在中间出一条带),影只落在下沿。
+     ⚠️ iOS 真正的「折射」(背后的东西被弯一下)Safari 做不了(SVG 位移滤镜只有 Chromium 认),这里只做光。
+     官端不动;要整体调透只动 --g4-bg 里那几个 alpha。 */
+  html[data-chatstyle="tg"] {
+    --g4-bg: linear-gradient(to top, rgba(255,255,255,.42) 0, rgba(255,255,255,.16) 5px, rgba(255,255,255,0) 14px),
+             linear-gradient(to bottom, rgba(255,255,255,.78) 0, rgba(255,255,255,.52) 5px, rgba(255,255,255,.34) 16px, rgba(255,255,255,.44) 30px, rgba(255,255,255,.48) 100%);
+    --g4-sh: inset 0 1px 0 #fff, inset 0 -1px 0 rgba(255,255,255,.8), inset 0 0 0 .5px rgba(255,255,255,.45),
+             0 0 0 .5px rgba(0,0,0,.05), 0 1px 1.5px rgba(0,0,0,.13), 0 6px 18px rgba(0,0,0,.05);
+    --g4-filter: blur(14px) saturate(1.6);
+  }
+  html[data-chatstyle="tg"][data-tgdark] {
+    --g4-bg: linear-gradient(to top, rgba(255,255,255,.07) 0, rgba(255,255,255,.02) 5px, rgba(255,255,255,0) 14px),
+             linear-gradient(to bottom, rgba(255,255,255,.14) 0, rgba(255,255,255,.07) 5px, rgba(255,255,255,.03) 16px, rgba(255,255,255,.05) 30px, rgba(255,255,255,.06) 100%),
+             linear-gradient(rgba(30,30,32,.42), rgba(30,30,32,.42));
+    --g4-sh: inset 0 1px 0 rgba(255,255,255,.22), inset 0 -1px 0 rgba(255,255,255,.07), inset 0 0 0 .5px rgba(255,255,255,.06),
+             0 1px 1.5px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.3);
+    --g4-filter: blur(14px) saturate(1.5);
+  }
+  html[data-chatstyle="tg"] :is(#menuBtn, .tgname, .tgsrch, .tgdown, #plusBtn, #box, #micBtn) {
+    background: var(--g4-bg) !important;
+    -webkit-backdrop-filter: var(--g4-filter); backdrop-filter: var(--g4-filter);
+    box-shadow: var(--g4-sh) !important;
+  }
+  .tgprof .glass { background: var(--g4-bg); -webkit-backdrop-filter: var(--g4-filter); backdrop-filter: var(--g4-filter); box-shadow: var(--g4-sh); }
+  /* 操作表 / 长按菜单是要读字的,底保持原来那么实,只换上同一套边光 */
+  .tgprof .pactg.glass { background: var(--g4-bg), var(--gl); }
+  .tgrmenu .glass { background: var(--g4-bg), rgba(250,250,252,.62); box-shadow: var(--g4-sh), 0 10px 40px rgba(0,0,0,.12); }
+  html[data-tgdark] .tgrmenu .glass { background: var(--g4-bg), rgba(44,44,46,.66); box-shadow: var(--g4-sh), 0 10px 40px rgba(0,0,0,.45); }
 </style>
 <script>
 (function () {
