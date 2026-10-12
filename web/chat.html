@@ -5473,7 +5473,7 @@ box.focus();
   html[data-chatstyle="tg"] .tgname { top: calc(1.7px + var(--dw-sat, env(safe-area-inset-top))); min-width: 178.6px; }
   html[data-chatstyle="tg"]:not([data-tgrec]) #micBtn::before { width: 30px; height: 30px; -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round'%3E%3Crect x='8.6' y='2.4' width='6.8' height='12.4' rx='3.4'/%3E%3Cpath d='M5.2 11.2a6.8 6.8 0 0 0 13.6 0M12 18v3.6'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round'%3E%3Crect x='8.6' y='2.4' width='6.8' height='12.4' rx='3.4'/%3E%3Cpath d='M5.2 11.2a6.8 6.8 0 0 0 13.6 0M12 18v3.6'/%3E%3C/svg%3E"); }
   html[data-chatstyle="tg"] #plusBtn::before { width: 25px; height: 25px; }
-  html[data-chatstyle="tg"]:not([data-tgrec]) #micBtn::before { margin-left: -2px; }   /* 叠图:麦克风比 TG 偏右 1pt */
+  html[data-chatstyle="tg"]:not([data-tgrec]) #micBtn::before { margin-left: 0; translate: -.33px -.5px; }   /* 2026-10-12 她:「麦克风有点偏移」—— 量她的真机图:墨迹中心比圆心偏左 0.8pt。~~margin-left: -2px(叠图:比 TG 偏右 1pt)~~ 改成在按钮里按墨迹居中(本地量:横 0 / 纵 0.17pt) */
   html[data-chatstyle="tg"] .tgstk { right: 50px; }                                   /* 叠图:贴纸偏右 1pt */
   html[data-chatstyle="tg"] .tgstk .b { left: 4.5px; top: 4.5px; width: 25px; height: 25px; }   /* P3:笑脸 19pt */
   html[data-chatstyle="tg"] .tgname b { position: relative; top: 2.2px; }             /* 叠图:名字比 TG 高 2.3pt */
