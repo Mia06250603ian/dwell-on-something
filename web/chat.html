@@ -2350,9 +2350,22 @@ function atBottom() { return log.scrollHeight - log.scrollTop - log.clientHeight
    改成:只有用户**自己**往上翻才松手，翻回底部就重新跟上。 */
 var stickBottom = true;
 log.addEventListener('scroll', function () {
-  stickBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 120;
+  /* 2026-10-12:视口刚变(键盘弹起 / 收起、面板互换)、TG 那段还没处理那次 resize 时,别拿变化后的尺寸改「贴不贴底」——
+     之前排队的滚动事件晚到一拍就会算成「不在底部」,于是不跟着滚,最后一条被输入框挡住(本地实测三次里两次)。 */
+  if (window.__dwVH && window.__dwVH !== window.innerHeight) return;
+  /* 再一条(同日):**只有她自己动手往上翻才算「不贴底」**。排版、加载历史、拆泡、尺寸变化这些程序自己引起的滚动,
+     只能把它改成「贴底」,不能改成「不贴底」—— 原来任何滚动事件都能改,于是总有某个时刻被误记成「不在底部」,
+     之后新消息不自动跟、键盘弹起最后一条被挡(本地实测刚打开聊天页约一半概率)。 */
+  if (log.scrollHeight - log.scrollTop - log.clientHeight < 120) stickBottom = true;
+  else if (Date.now() - userScrollAt < 1500) stickBottom = false;
 }, { passive: true });
-function scroll(force) { if (force || stickBottom) log.scrollTop = log.scrollHeight; }
+var userScrollAt = 0;   // 她最后一次亲手滚列表(手指 / 滚轮 / 拖滚动条 / 方向键)的时刻;惯性滚动还会再来一阵事件,所以给 1.5 秒
+['touchstart', 'touchmove', 'wheel', 'pointerdown', 'keydown'].forEach(function (ev) {
+  log.addEventListener(ev, function () { userScrollAt = Date.now(); }, { passive: true });
+});
+/* 2026-10-12:强制拉到底的同时把「贴底」记上 —— 原来只改 scrollTop:加载历史时中途来过一次滚动事件(那时离底还远,记成了「不贴底」),
+   之后拉到底若位置没再变就不会有新的滚动事件来纠正,于是刚打开聊天页就「人在底部、记成不在」:新消息不自动跟、键盘弹起不跟(本地实测) */
+function scroll(force) { if (force) stickBottom = true; if (force || stickBottom) log.scrollTop = log.scrollHeight; }
 function row(cls) {
   const d = document.createElement('div');
   d.className = 'row ' + (cls || '');
@@ -5473,7 +5486,7 @@ box.focus();
   html[data-chatstyle="tg"] .tgname { top: calc(1.7px + var(--dw-sat, env(safe-area-inset-top))); min-width: 178.6px; }
   html[data-chatstyle="tg"]:not([data-tgrec]) #micBtn::before { width: 30px; height: 30px; -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round'%3E%3Crect x='8.6' y='2.4' width='6.8' height='12.4' rx='3.4'/%3E%3Cpath d='M5.2 11.2a6.8 6.8 0 0 0 13.6 0M12 18v3.6'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round'%3E%3Crect x='8.6' y='2.4' width='6.8' height='12.4' rx='3.4'/%3E%3Cpath d='M5.2 11.2a6.8 6.8 0 0 0 13.6 0M12 18v3.6'/%3E%3C/svg%3E"); }
   html[data-chatstyle="tg"] #plusBtn::before { width: 25px; height: 25px; }
-  html[data-chatstyle="tg"]:not([data-tgrec]) #micBtn::before { margin-left: -2px; }   /* 叠图:麦克风比 TG 偏右 1pt */
+  html[data-chatstyle="tg"]:not([data-tgrec]) #micBtn::before { margin-left: 0; translate: -.33px -.5px; }   /* 2026-10-12 她:「麦克风有点偏移」—— 量她的真机图:墨迹中心比圆心偏左 0.8pt。~~margin-left: -2px(叠图:比 TG 偏右 1pt)~~ 改成在按钮里按墨迹居中(本地量:横 0 / 纵 0.17pt) */
   html[data-chatstyle="tg"] .tgstk { right: 50px; }                                   /* 叠图:贴纸偏右 1pt */
   html[data-chatstyle="tg"] .tgstk .b { left: 4.5px; top: 4.5px; width: 25px; height: 25px; }   /* P3:笑脸 19pt */
   html[data-chatstyle="tg"] .tgname b { position: relative; top: 2.2px; }             /* 叠图:名字比 TG 高 2.3pt */
@@ -5573,9 +5586,41 @@ box.focus();
        visibility 跟 transform 用同一个时长过渡 —— 关的时候整段都可见、到终点才藏;开的时候第一帧就可见。
      ② 输入框长高 / 变矮:跟着 fitBox 写的 px 走一条短过渡(原来一步跳过去)。 */
   .tgprof, .tgpick { transition-property: transform, visibility; }
+  /* 列表的滚动位置一律由脚本管(贴底 / 滑动 / 键盘与面板互换)。浏览器自带的滚动锚定会在列表高度变化时自作主张挪位置,
+     键盘 ⇄ 面板互换时把最后一条推到输入框底下(2026-10-12 本地实测;Safari 本来就没有这功能,关掉只影响 Chromium) */
+  html[data-chatstyle="tg"] #log { overflow-anchor: none; }
   html[data-chatstyle="tg"] #box { transition: padding-right var(--tg-dur) var(--tg-ease), height .2s cubic-bezier(.32,.72,0,1); }
   @media (prefers-reduced-motion: reduce) {
     .tgprof, .tgpick { transition-duration: .01s !important; }
+  }
+  /* ══ 玻璃第五版(2026-10-12 晚,所有者又发了一张「我们的输入栏 / iOS 键盘工具栏」上下对比:「质感老是不对」)══
+     **同一张截图里两条逐像素量**(亮度,背后 234):
+       我们:本体 242~249(偏白)、最暗处在中段且不明显、底边从中段一路慢慢亮;**下沿一道 193 的深线再拖出约 3pt 灰影** = 卡片感的主因。
+       iOS :本体 238~244(只比背后亮一点)、离上沿约 10~15pt 最暗(238,弧面背光那侧)、中下段平、**只在最后约 4pt 才亮回 254**;
+             外圈只有一圈约 .07 的细边,**下面没有影子**。
+     所以:①去掉那团影,只留细边 + 半像素的接地影;②本体按 iOS 的数逐段重配(px 定位,换算:亮度 = 234 + 21×alpha);
+     ③底边那道亮只占最后 4~5px。数都在下面这两个变量里,浅色才动,深色只撤影子。官端不动。 */
+  html[data-chatstyle="tg"] {
+    --g4-bg: linear-gradient(to top, rgba(255,255,255,.9) 0, rgba(255,255,255,.62) 1px, rgba(255,255,255,.37) 2px, rgba(255,255,255,.17) 3px, rgba(255,255,255,0) 5px),
+             linear-gradient(to bottom, rgba(255,255,255,.86) 0, rgba(255,255,255,.67) 1.5px, rgba(255,255,255,.55) 3px, rgba(255,255,255,.43) 5px,
+                             rgba(255,255,255,.3) 7px, rgba(255,255,255,.2) 10px, rgba(255,255,255,.21) 15px, rgba(255,255,255,.36) 20px,
+                             rgba(255,255,255,.45) 25px, rgba(255,255,255,.48) 30px, rgba(255,255,255,.48) 100%);
+    --g4-sh: inset 0 1px 0 rgba(255,255,255,.95), inset 0 -.5px 0 rgba(255,255,255,.7), 0 0 0 .5px rgba(0,0,0,.07), 0 .5px .5px rgba(0,0,0,.04);
+  }
+  html[data-chatstyle="tg"][data-tgdark] {
+    --g4-sh: inset 0 1px 0 rgba(255,255,255,.2), inset 0 -.5px 0 rgba(255,255,255,.06), 0 0 0 .5px rgba(255,255,255,.07), 0 .5px 1px rgba(0,0,0,.35);
+  }
+  /* 认不得 backdrop-filter 的浏览器(iOS 主屏 App 是认的,-webkit- 前缀):别退成一张透明的空壳,垫一层实一点的底 */
+  /* 键盘 ⇄ 贴纸面板(2026-10-12):面板开着时,框里那颗换成键盘图标(TG 第三种状态),同一条过渡 */
+  .tgstk .k { opacity: 0; transform: scale(.7);
+    -webkit-mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6'%3E%3Crect x='2.6' y='5.6' width='18.8' height='12.8' rx='3.2'/%3E%3Cg fill='black' stroke='none'%3E%3Ccircle cx='6.6' cy='9.6' r='.95'/%3E%3Ccircle cx='10.2' cy='9.6' r='.95'/%3E%3Ccircle cx='13.8' cy='9.6' r='.95'/%3E%3Ccircle cx='17.4' cy='9.6' r='.95'/%3E%3Ccircle cx='6.6' cy='12.6' r='.95'/%3E%3Ccircle cx='17.4' cy='12.6' r='.95'/%3E%3C/g%3E%3Cpath d='M9.4 15h5.2' stroke-linecap='round'/%3E%3C/svg%3E");
+            mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6'%3E%3Crect x='2.6' y='5.6' width='18.8' height='12.8' rx='3.2'/%3E%3Cg fill='black' stroke='none'%3E%3Ccircle cx='6.6' cy='9.6' r='.95'/%3E%3Ccircle cx='10.2' cy='9.6' r='.95'/%3E%3Ccircle cx='13.8' cy='9.6' r='.95'/%3E%3Ccircle cx='17.4' cy='9.6' r='.95'/%3E%3Ccircle cx='6.6' cy='12.6' r='.95'/%3E%3Ccircle cx='17.4' cy='12.6' r='.95'/%3E%3C/g%3E%3Cpath d='M9.4 15h5.2' stroke-linecap='round'/%3E%3C/svg%3E"); }
+  html[data-chatstyle="tg"] .tgstk .k { left: 4.5px; top: 4.5px; width: 25px; height: 25px; }
+  html[data-tgpick] .tgstk .a, html[data-tgpick] .tgstk .b { opacity: 0; transform: scale(.7); }
+  html[data-tgpick] .tgstk .k { opacity: 1; transform: none; }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    html[data-chatstyle="tg"] :is(#menuBtn, .tgname, .tgsrch, .tgdown, #plusBtn, #box, #micBtn), .tgprof .glass {
+      background: var(--g4-bg), color-mix(in srgb, var(--card) 82%, transparent) !important; }
   }
 </style>
 <script>
@@ -6158,7 +6203,7 @@ box.focus();
   /* 贴纸面板:TG 版输入栏里那颗贴纸 / 笑脸图标点开;点一张直接发出去(他看得到图,同 Telegram) */
   var stkBtn = document.createElement("button");
   stkBtn.type = "button"; stkBtn.className = "tgstk"; stkBtn.setAttribute("aria-label", "贴纸");
-  stkBtn.innerHTML = '<i class="a"></i><i class="b"></i>';
+  stkBtn.innerHTML = '<i class="a"></i><i class="b"></i><i class="k"></i>';   // k = 键盘图标(面板开着时换成它,同 TG)
   var comp = document.querySelector(".composer");
   if (comp) comp.appendChild(stkBtn);
   var pick = document.createElement("div");
@@ -6166,24 +6211,68 @@ box.focus();
   document.body.appendChild(pick);
   /* 照 TG:面板在下、输入栏被顶到面板上方(不然面板盖住输入栏,图标再也点不到、关不上 —— 10-09 测出来的) */
   var footEl = document.querySelector("footer");
-  function setPick(open) {
+  /* ══ 键盘 ⇄ 贴纸面板互换(2026-10-12,所有者发了 TG 三种状态的截图:「点输入框右侧的图标能丝滑切换」)══
+     TG 的做法:面板**和键盘一样高、就垫在键盘底下**,换的时候输入框一动不动 —— 键盘退下去露出面板,键盘升上来盖住面板。
+     ~~原来:键盘先收、输入栏掉到底,面板再从底下弹上来把输入栏顶上去,高度还和键盘不一样~~ —— 一下一上,就是她说的割裂。
+     iOS 只把键盘告诉外壳,所以要外壳配合(index.html 的 window.__dwKb):
+       键盘 → 面板:release() 让聊天页立刻回到全高 → 同一帧里面板以键盘高度打开、输入栏挪到和键盘开着时同一个位置 → 再 blur 收键盘;
+       面板 → 键盘:focus 时 hold() 让外壳先别缩小聊天页 → 键盘升上来盖住面板 → 外壳到点缩小、这页收到 resize 时同一帧收掉面板(见下面 resize 那段)。
+     不在外壳里(单独打开本页)或减弱动态效果时,退回原来的开关。 */
+  var pickSwap = 0, pickPin = false;   // pickPin:点按钮那一刻她是不是在看最新的(换的途中列表高度会变,滚动事件会把 stickBottom 改掉,不能等那时再读)
+  function pinBottom() { if (pickPin) { stickBottom = true; log.scrollTop = log.scrollHeight - log.clientHeight; } }
+  function kbApi() { try { return window.parent !== window && window.parent.__dwKb ? window.parent.__dwKb : null; } catch (e) { return null; } }
+  function setPick(open, how) {
     if (open === pick.classList.contains("open")) return;
+    var api = kbApi(), kbH = open && api ? api.height() : 0;
+    if (open && kbH > 120) { pick.style.height = kbH + "px"; pick.style.maxHeight = "none"; }
+    var instant = how === "now" || calm, withKb = how === "kb";
+    pick.style.transition = instant ? "none" : withKb ? "transform " + KB_MS + "ms " + KB_EASE + ", visibility " + KB_MS + "ms" : "";
     pick.classList.toggle("open", open);
-    var h = open ? pick.offsetHeight - 6 : 0;
+    root.toggleAttribute("data-tgpick", open);
+    var h = 0;
+    if (open && kbH > 120 && footEl) {
+      /* 输入栏放到和键盘开着时同一个位置:键盘开着时它底边离键盘上沿 8px(那时 --dw-sab 是 0) */
+      var P = parseFloat(getComputedStyle(footEl).paddingBottom) || 0;
+      h = Math.max(0, kbH - P + 8);
+    } else if (open) h = pick.offsetHeight - 6;
     if (footEl) {
-      footEl.style.transition = "transform .32s cubic-bezier(.32,.72,0,1)";
+      footEl.style.transition = (instant || withKb) ? "none" : "transform .32s cubic-bezier(.32,.72,0,1)";
       footEl.style.transform = h ? "translateY(-" + h + "px)" : "";
     }
     /* 2026-10-12:~~只顶起输入栏~~ 列表不动,最后几条被面板盖住。现在列表底部多留面板那截,贴底的话跟着一起滑上去 / 落回来(同 TG) */
     var d = h - dwUnder;
     dwUnder = h; padLog();
-    if (stickBottom) { log.scrollTop = log.scrollHeight - log.clientHeight; if (!calm && d) slide(d, 320, "cubic-bezier(.32,.72,0,1)"); }
+    if (withKb || instant) pinBottom();
+    else if (stickBottom) { log.scrollTop = log.scrollHeight - log.clientHeight; if (!calm && d) slide(d, 320, "cubic-bezier(.32,.72,0,1)"); }
+    if (instant) { void pick.offsetHeight; requestAnimationFrame(function () { pick.style.transition = ""; }); }
+    if (!open) { pick.style.height = ""; pick.style.maxHeight = ""; }
   }
-  stkBtn.addEventListener("click", function (e) { e.stopPropagation(); setPick(!pick.classList.contains("open")); });
-  document.addEventListener("click", function (e) {
-    if (pick.classList.contains("open") && !pick.contains(e.target) && !stkBtn.contains(e.target)) setPick(false);
+  stkBtn.addEventListener("click", function (e) {
+    e.stopPropagation();
+    var open = pick.classList.contains("open"), api = kbApi();
+    if (open) { if (api) { box.focus(); return; } setPick(false); return; }                // 面板开着:点键盘图标 = 换回键盘
+    if (api && root.hasAttribute("data-dwkb") && api.height() > 120) {                      // 键盘开着:换成面板,输入框不动(减弱动态效果也走这条,只是不滑)
+      pickSwap = Date.now(); pickPin = log.scrollHeight - log.scrollTop - log.clientHeight < 120;
+      api.release();
+      setPick(true, calm ? "now" : "kb");
+      box.blur();
+      return;
+    }
+    setPick(true);
   });
-  if (typeof box !== "undefined" && box) box.addEventListener("focus", function () { setPick(false); });   // 点输入框打字 = 收起面板
+  document.addEventListener("click", function (e) {
+    if (pick.classList.contains("open") && !pick.contains(e.target) && !stkBtn.contains(e.target) && e.target !== box) setPick(false);
+  });
+  if (typeof box !== "undefined" && box) box.addEventListener("focus", function () {   // 点输入框打字 = 收起面板
+    if (!pick.classList.contains("open")) return;
+    var api = kbApi();
+    if (!api) { setPick(false); return; }
+    pickSwap = Date.now(); pickPin = log.scrollHeight - log.scrollTop - log.clientHeight < 120;
+    api.hold(KB_MS + 60);          // 键盘升上来盖住面板之前,外壳先别缩
+    setTimeout(function () {       // 保险:没有软键盘(外接键盘 / 电脑)时等不到那次 resize,别让面板一直挂着
+      if (pick.classList.contains("open") && !root.hasAttribute("data-dwkb")) setPick(false);
+    }, 1200);
+  });
   /* 自制贴纸(2026-10-10,所有者「想要一个表情包可以自行添加功能」):面板第一格「+」从相册挑一张;
      她自己加的排在最前,**长按删除**(要确认 —— 她的东西,不会自动删)。
      GIF 原样传(保住会动的);别的在手机上缩到 320px 内、存 PNG(保住透明底)再传。 */
@@ -6951,6 +7040,7 @@ box.focus();
     if (!isTg()) return false;
     if (!force && !stickBottom) return false;
     var max = log.scrollHeight - log.clientHeight, d = max - log.scrollTop;
+    stickBottom = true;   // 走到这儿就是要贴底(同基础脚本的 scroll(true))
     if (d <= 0.5) return true;
     log.scrollTop = max;
     /* 一下子长了快一屏(进页面、切回来补历史、键盘弹起)就直接到位,滑那么远反而晕 */
@@ -6983,8 +7073,10 @@ box.focus();
      只在「键盘开 / 关」那一下滑(看 data-dwkb 变没变);转屏之类的普通 resize 照旧一步到位。系统减弱动态效果时不滑。 */
   var KB_MS = 300, KB_EASE = "cubic-bezier(.38, .7, .125, 1)";   // iOS 键盘那条曲线(近似),时长同系统键盘
   var lastVH = innerHeight, kbWas = root.hasAttribute("data-dwkb");
+  window.__dwVH = lastVH;   // 基础脚本的滚动监听看它:视口变了但这里还没处理时,不改「贴不贴底」
   function follow(d, foot) {
-    var wasBottom = stickBottom;
+    /* 键盘前的位置:视口刚缩了 d,换算回缩之前离底多远(标记偶尔会旧,以实际位置兜底) */
+    var wasBottom = stickBottom || (log.scrollHeight - log.scrollTop - (log.clientHeight + d)) < 120;
     if (wasBottom) log.scrollTop = log.scrollHeight - log.clientHeight;
     if (calm || !isTg() || Math.abs(d) < 24) return;
     if (foot && foot.animate) foot.animate([{ transform: "translate3d(0," + d + "px,0)" }, { transform: "translate3d(0,0,0)" }],
@@ -6995,8 +7087,15 @@ box.focus();
   window.addEventListener("resize", function () {
     var h = innerHeight, d = lastVH - h, kbNow = root.hasAttribute("data-dwkb");
     lastVH = h;
+    setTimeout(function () { window.__dwVH = h; }, 0);   // 这次处理完(含下面的滚动)再放开滚动监听
     if (!d) return;
-    if (kbNow !== kbWas) { kbWas = kbNow; follow(d, document.querySelector("footer")); }
+    if (kbNow !== kbWas) {
+      kbWas = kbNow;
+      var swap = Date.now() - pickSwap < 1500;
+      if (kbNow && document.querySelector(".tgpick.open")) { setPick(false, "now"); pinBottom(); return; }   // 面板 → 键盘:键盘已盖住面板,同一帧收掉,输入框不动
+      if (swap) { pinBottom(); return; }                                                                  // 键盘 → 面板:面板早就垫好了,不滑(原来在看最新的就留在底)
+      follow(d, document.querySelector("footer"));
+    }
     else if (stickBottom) log.scrollTop = log.scrollHeight - log.clientHeight;   // 其它尺寸变化:贴底就留在底,不滑
   });
   function flyAll(list) {
@@ -7017,6 +7116,9 @@ box.focus();
     });
   }
   function settle() {
+    /* 2026-10-12:「贴底」标记偶尔是旧的(人在最底下、记成不在 —— 见基础脚本 scroll() 上面那段)。没有新东西进来时按实际位置纠正一次,
+       不然他发来的下一条不会自动跟上来。有新东西时不纠正:那时离底多远是新内容撑出来的,不代表她往上翻了。 */
+    if (!stickBottom && !fresh && log.scrollHeight - log.scrollTop - log.clientHeight < 2) stickBottom = true;
     var follow = glide(false);
     if (fly.length) { var list = fly; fly = []; flyAll(list); }
     if (fresh && !follow) { unread += fresh; paintDown(); }
