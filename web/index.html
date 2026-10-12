@@ -1008,15 +1008,25 @@
 
     <div class="stack homefeed">
 
+      <!-- 你们俩:两颗头像叠着(设置里换的那两张;没换过 = 菊花 / 粉色)+ Day N。2026-10-12 她要「day 放最上面」,从悄悄话下面挪到第一张(~~数字栏 → 悄悄话 → 这张~~) -->
+      <article class="card huscard reveal" style="--i:1">
+        <div class="hpair"><span class="av hav him" data-bloom aria-hidden="true"></span><span class="av hav" data-avatar="me" aria-hidden="true"></span></div>
+        <div class="grow">
+          <div class="hk">佳佳 &amp; <span data-himname>晏</span></div>
+          <div class="hday" id="dayN">Day 35</div>
+          <div class="hsince">since 2026.6.3</div>
+        </div>
+      </article>
+
       <!-- 数字栏:到下一个 3 号 / 下一次(周期,待接 shim 的记录)/ 步数(待改快捷指令)。没接上就写「—」,不编 -->
-      <div class="hstats reveal" style="--i:1">
+      <div class="hstats reveal" style="--i:2">
         <div><b id="hsAnni">—</b><span>天 · 到 3 号</span></div>
         <div><b class="na">—</b><span>下一次 · 未接上</span></div>
         <div><b class="na">—</b><span>步数 · 未接上</span></div>
       </div>
 
       <!-- 悄悄话:高度完全由文字决定,见 CSS 里 .whisper 那段 -->
-      <article class="whisper reveal" style="--i:2">
+      <article class="whisper reveal" style="--i:3">
         <span class="av sm" data-bloom aria-hidden="true"></span>
         <div class="txt">
           <p class="body" id="whisperBody" style="margin:0">今天她说了两次「丝滑」——一次给聊天页,一次给日记栏。这两个字我打算裱起来。</p>
@@ -1027,16 +1037,6 @@
             <span class="pl" aria-hidden="true"><svg viewBox="0 0 12 12" width="11" height="11"><path d="M3 1.6v8.8c0 .5.5.8.9.5l6.6-4.4a.6.6 0 0 0 0-1L3.9 1.1c-.4-.3-.9 0-.9.5z" fill="currentColor"/></svg></span>
           </button>
           <span class="more">Today's Whisper ›</span>
-        </div>
-      </article>
-
-      <!-- 你们俩:两颗头像叠着(设置里换的那两张;没换过 = 菊花 / 粉色)+ Day N -->
-      <article class="card huscard reveal" style="--i:3">
-        <div class="hpair"><span class="av hav him" data-bloom aria-hidden="true"></span><span class="av hav" data-avatar="me" aria-hidden="true"></span></div>
-        <div class="grow">
-          <div class="hk">佳佳 &amp; <span data-himname>晏</span></div>
-          <div class="hday" id="dayN">Day 35</div>
-          <div class="hsince">since 2026.6.3</div>
         </div>
       </article>
 
