@@ -668,6 +668,12 @@
   .homefeed .wsong .pl { background: color-mix(in srgb, var(--ink) 6%, transparent); }
   .weather { font-family: var(--sans); }
   /* ── 经期(2026-10-12)── 一行 + 底下弹出的日历。全页零彩色照旧:来过 = 实心深色,预测 = 虚线圈 */
+  /* Days 那块一整张列表(2026-10-12,她「Days 特别割裂」):去掉「Days」标题(和上面的 Day 132 撞词)、卡顶那块大标题 + 大圆环藏起来,
+     每月纪念日变成和生日同样的一行。整页成了三段:Day N → 今天的歌 → 一张列表 */
+  .homefeed .hsec { display: none; }
+  .dayscard .annihead { display: none; }
+  .homefeed .dayscard { padding-top: 6px; padding-bottom: 6px; }
+  .homefeed .dayscard .annihead + .dli { border-top: 0; margin-top: 0; }
   .dli.dper { width: 100%; text-align: left; background: none; border-left: 0; border-right: 0; border-bottom: 0; font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
   .dli.dper[hidden] { display: none; }
   .dli.dper:active { opacity: .6; }
@@ -1120,6 +1126,13 @@
             <span class="num" id="moLeft">27</span>
           </div>
         </div>
+        <!-- 每月纪念日一行(2026-10-12,她:「Days 特别割裂」)—— 原来卡顶那块「Monthly Anniversary + 大圆环」和下面的列表行是两种排版挤在一张卡里;
+             现在它也是一行,圆环缩成左边的小图标(同一个算法,renderDays 里一起写)。卡顶那块藏着没删(.annihead),要回去改一行 CSS -->
+        <div class="dli dmo">
+          <span class="dtile" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2" opacity=".14"/><circle id="moArc2" cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="10 50.27" transform="rotate(-90 12 12)"/></svg></span>
+          <div class="grow"><div class="t">Monthly anniversary</div><div class="s" id="moDate2">Nov 3</div></div>
+          <div class="dn"><span id="moLeft2">—</span><small>天</small></div>
+        </div>
         <!-- 经期(2026-10-12):和晏注入的是同一份记录(shim 的 /period,经本层 /api/period);点开是日历 + 「今天来了 / 今天结束了」。读不到就藏着 -->
         <button class="dli dper" id="perRow" type="button" hidden>
           <span class="dtile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5s-6 6.6-6 10.9a6 6 0 0 0 12 0C18 10.1 12 3.5 12 3.5Z"/></svg></span>
@@ -1521,6 +1534,8 @@
     setText("moDate", MON[next.getMonth()] + " " + next.getDate());
     setText("moLeft", String(left));
     setText("hsAnni", String(left));   /* 首页数字栏(2026-10-10) */
+    setText("moDate2", MON[next.getMonth()] + " " + next.getDate());   /* Days 里那一行(2026-10-12) */
+    setText("moLeft2", String(left));
     /* 环 = 这个月已经走了多少。周长 2π·32.2 = 202.3(10-09 环放大;~~2π·30 = 188.5~~);起点仍是 12 点前 5°(rotate(-95))。
        几何(半径/弧宽/起点)照参考图不变,只是长度跟着日子走。 */
     var arc = document.getElementById("moArc");
@@ -1528,6 +1543,11 @@
       var span = daysBetween(prev, next), done = left === 0 ? span : span - left;
       var len = Math.max(3, 202.3 * done / span);
       arc.setAttribute("stroke-dasharray", len.toFixed(1) + " 202.3");
+    }
+    var arc2 = document.getElementById("moArc2");   /* 同一个比例,画在小圆环上(周长 2π·8 = 50.27) */
+    if (arc2) {
+      var span2 = daysBetween(prev, next), done2 = left === 0 ? span2 : span2 - left;
+      arc2.setAttribute("stroke-dasharray", Math.max(2, 50.27 * done2 / span2).toFixed(1) + " 50.27");
     }
 
     /* 生日 / 周年:到下一个这一天还有几天(今天就是 = 0) */
