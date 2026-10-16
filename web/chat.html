@@ -6575,12 +6575,16 @@ box.focus();
       if (!line._ids) {
         var tl = line.querySelector(".lbl");
         if (tl) {
-          var wantT = live && root.getAttribute("data-chatstyle") === "tg";
-          if (wantT && tl.dataset.orig == null) { tl.dataset.orig = tl.innerHTML; tl.textContent = "Thinking"; }
-          else if (!wantT && tl.dataset.orig != null) {
-            tl.innerHTML = tl.dataset.orig; delete tl.dataset.orig;
-            if (!calm && tl.animate) tl.animate([{ opacity: 0, transform: "translate3d(0,3px,0)" }, { opacity: 1, transform: "none" }], { duration: 320, easing: "cubic-bezier(.32,.72,0,1)" });
-          }
+          /* 2026-10-16 所有者:想完 / 历史里那行从「Thought process」改成「In Ian's Mind」(只在 TG 版;官端照旧,切回官端还原原文) */
+          if (root.getAttribute("data-chatstyle") === "tg") {
+            var wantT = live ? "Thinking" : "In Ian's Mind";
+            if (tl.dataset.orig == null) tl.dataset.orig = tl.innerHTML;
+            if (tl.textContent !== wantT) {
+              var wasLive = tl.textContent === "Thinking";
+              tl.textContent = wantT;
+              if (wasLive && !calm && tl.animate) tl.animate([{ opacity: 0, transform: "translate3d(0,3px,0)" }, { opacity: 1, transform: "none" }], { duration: 320, easing: "cubic-bezier(.32,.72,0,1)" });
+            }
+          } else if (tl.dataset.orig != null) { tl.innerHTML = tl.dataset.orig; delete tl.dataset.orig; }
         }
       }
       if (line._ids) {
