@@ -4293,19 +4293,21 @@ box.focus();
   var R = document.documentElement;
   var isTg = function () { return R.getAttribute('data-chatstyle') === 'tg'; };
   var live = function (el) { if (el && !window.__tgHist) el._tgLive = true; return el; };
-  /* 2026-10-16:他忙着时新冒出来的思考 / 工具行,建出来的那一刻就藏(.tghold),别等下一帧 —— 不然会闪一帧。放出来归页尾那段的 releaseHeld */
-  var hold = function (row) { if (row && row._tgLive && isTg() && R.hasAttribute("data-tgbusy")) row.classList.add("tghold"); return row; };
   var _sp = window.sPush;
   if (typeof _sp === 'function') window.sPush = function (el, text) {
     if (!isTg()) return _sp.apply(this, arguments);
     if (sQ.el && sQ.el !== el) sFlush();
     el._raw = (el._raw || '') + text;
     el._tgLive = true;
+    /* 2026-10-16 写完一行就弹一颗:来了换行 = 有一行写完了,请页尾那段处理这一颗(只改 _raw 不动 DOM,MutationObserver 看不见) */
+    if (text.indexOf('\n') >= 0 && window.__tgGrow) window.__tgGrow(el);
   };
   var _eg = window.ensureGu;
   if (typeof _eg === 'function') window.ensureGu = function () {
     var had = guEl, el = _eg.apply(this, arguments);
     if (el !== had) live(el);
+    /* 2026-10-16:TG 版新建的回话先藏着(不逐字吐),建出来那一刻就藏 —— 等下一帧再藏会空着闪一颗 */
+    if (el !== had && el && isTg() && !el._final) el.classList.add("tgwait");
     return el;
   };
   var _am = window.addMe;
@@ -4317,13 +4319,13 @@ box.focus();
   var _et = window.ensureThink;
   if (typeof _et === 'function') window.ensureThink = function () {
     var had = turnThink, out = _et.apply(this, arguments);
-    try { if (out !== had && out.lineEl) hold(live(out.lineEl.parentNode)); } catch (e) {}
+    try { if (out !== had && out.lineEl) live(out.lineEl.parentNode); } catch (e) {}
     return out;
   };
   var _atu2 = window.addToolUse;
   window.addToolUse = function () {
     var n = logEl.children.length, out = _atu2.apply(this, arguments);
-    try { if (logEl.children.length > n) hold(live(logEl.lastElementChild)); } catch (e) {}
+    try { if (logEl.children.length > n) live(logEl.lastElementChild); } catch (e) {}
     return out;
   };
   var _sc = window.scroll, scRaf = 0, scForce = false;
@@ -5400,7 +5402,7 @@ box.focus();
       --tg-ease: var(--tg-spring-smooth); --tg-dur: .5s;
     }
     html[data-chatstyle="tg"] .tgpop-me { animation-timing-function: var(--tg-spring-pop); animation-duration: .53s; }
-    html[data-chatstyle="tg"] .tgpop-in { animation-timing-function: var(--tg-spring-pop); animation-duration: .53s; }
+    html[data-chatstyle="tg"] .tgpop-in { animation-timing-function: var(--tg-spring-pop); animation-duration: .62s; }   /* 2026-10-16 她「跳出来的速度太快」:~~.53s~~ */
     html[data-chatstyle="tg"] .tgtyping { animation-timing-function: var(--tg-spring-pop); animation-duration: .5s; }
     html[data-chatstyle="tg"] .tgpop-react, .tgrmenu.open { animation-timing-function: var(--tg-spring-pop); animation-duration: .5s; }
     html[data-chatstyle="tg"] .tgfold { animation-timing-function: var(--tg-spring-smooth); animation-duration: .45s; }
@@ -5416,8 +5418,6 @@ box.focus();
                          40% { opacity: 1; } 100% { opacity: 1; transform: none; } }
   html[data-chatstyle="tg"] .tgpop-fade { transform-origin: 0 50%; animation: tgthinkin .45s var(--tg-spring-pop, cubic-bezier(.2, 1.2, .35, 1)) both; }
 
-  /* 2026-10-16:他忙着时这一轮的思考 / 工具行先藏着,只留三个点;定稿时依次弹出(脚本 releaseHeld) */
-  html[data-chatstyle="tg"] .row.tghold { display: none; }
 
   /* ── 2026-10-16:思考那行的标题(所有者「只做标题,内容不动」)──
      他正在想:标题写「Thinking」,字上一道光从左扫到右(iOS / TG 加载字那种流光);想完平滑换回「Thought process」(脚本 foldPass 换字 + 一下淡入)。
@@ -5699,6 +5699,48 @@ box.focus();
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     html[data-chatstyle="tg"] :is(#menuBtn, .tgname, .tgsrch, .tgdown, #plusBtn, #box, #micBtn), .tgprof .glass {
       background: var(--g4-bg), color-mix(in srgb, var(--card) 82%, transparent) !important; }
+  }
+
+  /* ══ 输入栏 1:1 第四版(2026-10-16,所有者发了 Telegram iOS 三张截图:贴纸面板开 / 空着 / 有字,「我要一模一样的」)══
+     量法:她的截图 1206px = 402pt@3x,和本页同一坐标系;本地 402×874@3x 渲染、页底临时换白,同一段代码量墨迹框和描边作差(见 dwell 手册《输入栏 1:1 第四版》)。
+     ~~10-10 第三版(左右留边 15.7pt 等)~~ 是照**旧版** TG 截图量的;这一版的 TG 是 iOS 26 那套,留边窄得多。下面全是量出来的 pt:
+     左圆钮 x 7.67 宽 40.33 → 隔 5.67 → 胶囊(高 40.33)→ 隔 5.33 → 右圆钮 40.67、离右边 8;有字时胶囊伸到右边 8 处,
+     发送键是 **40×34 的胶囊**(不是圆),离胶囊右 / 上 / 下各 3.33;胶囊里那颗图标(贴纸 / 笑脸 / 键盘)**位置不跟着动**,中心离右边 66.17。
+     描边:TG 的边是「两侧深(~206)、上下浅(~240)」—— 用左右偏移的内阴影画:圆角上自然是中间粗、上下收尖。 */
+  html[data-chatstyle="tg"] footer { padding-left: 7.67px; padding-right: 8px; }
+  html[data-chatstyle="tg"] #plusBtn { width: 40.33px; height: 40.33px; flex: none; }
+  html[data-chatstyle="tg"] #box {
+    margin-left: 5.67px; min-height: 40.33px; border-radius: 20.17px;
+    padding: 10.33px 46px 9px 12.83px; line-height: 21px; font-size: 16px; caret-color: var(--text);
+  }
+  html[data-chatstyle="tg"][data-tghas] #box { padding-right: 90px; }
+  html[data-chatstyle="tg"] #micBtn { width: 40.67px; height: 40.33px; margin-left: 5.33px; flex: none; }
+  html[data-chatstyle="tg"][data-tghas] #micBtn { width: 0; margin-left: 0; }
+  html[data-chatstyle="tg"] #send { width: 40px; height: 34px; right: 3.33px; bottom: 3.17px; border-radius: 17px; }
+  html[data-chatstyle="tg"] .tgstk, html[data-chatstyle="tg"][data-tghas] .tgstk { right: 49.17px; bottom: 3.17px; }
+  /* 发送键里的飞机 / 面板开着时右边那颗 ^ / 框里的键盘:照她截图的墨迹逐点画(不是从 TG 拷的图) */
+  html[data-chatstyle="tg"] #send:not(.stop)::before { width: 20.33px; height: 18.33px; margin: 0; translate: -1.67px .67px;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 61 55'%3E%3Cpath d='M2.5 25.5 58 3 51 49.5 28.5 36.5 44.5 17 20 31.5Z' fill='black' stroke='black' stroke-width='2.6' stroke-linejoin='round'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 61 55'%3E%3Cpath d='M2.5 25.5 58 3 51 49.5 28.5 36.5 44.5 17 20 31.5Z' fill='black' stroke='black' stroke-width='2.6' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+  html[data-chatstyle="tg"] .tgstk .k { left: 1.5px; top: 7.5px; width: 25.33px; height: 19.33px;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 76 58'%3E%3Crect x='2.6' y='2.6' width='70.8' height='52.8' rx='12' fill='none' stroke='black' stroke-width='5.2'/%3E%3Crect x='16' y='13' width='7' height='7' rx='1.6'/%3E%3Crect x='29' y='13' width='7' height='7' rx='1.6'/%3E%3Crect x='40' y='13' width='7' height='7' rx='1.6'/%3E%3Crect x='53' y='13' width='7' height='7' rx='1.6'/%3E%3Crect x='16' y='25' width='7' height='7' rx='1.6'/%3E%3Crect x='29' y='25' width='7' height='7' rx='1.6'/%3E%3Crect x='40' y='25' width='7' height='7' rx='1.6'/%3E%3Crect x='53' y='25' width='7' height='7' rx='1.6'/%3E%3Crect x='23' y='41.5' width='30' height='4.5' rx='2.25'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 76 58'%3E%3Crect x='2.6' y='2.6' width='70.8' height='52.8' rx='12' fill='none' stroke='black' stroke-width='5.2'/%3E%3Crect x='16' y='13' width='7' height='7' rx='1.6'/%3E%3Crect x='29' y='13' width='7' height='7' rx='1.6'/%3E%3Crect x='40' y='13' width='7' height='7' rx='1.6'/%3E%3Crect x='53' y='13' width='7' height='7' rx='1.6'/%3E%3Crect x='16' y='25' width='7' height='7' rx='1.6'/%3E%3Crect x='29' y='25' width='7' height='7' rx='1.6'/%3E%3Crect x='40' y='25' width='7' height='7' rx='1.6'/%3E%3Crect x='53' y='25' width='7' height='7' rx='1.6'/%3E%3Crect x='23' y='41.5' width='30' height='4.5' rx='2.25'/%3E%3C/svg%3E"); }
+  /* 贴纸面板开着时右边那颗换成 ^(TG 第三种状态),点了面板拉高 / 再点收回(脚本 tgTall) */
+  html[data-chatstyle="tg"][data-tgpick]:not([data-tgrec]) #micBtn::before { width: 20.33px; height: 9px; translate: 0 -.33px;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 61 27'%3E%3Cpath d='M3 24 30.5 3 58 24' fill='none' stroke='black' stroke-width='5.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 61 27'%3E%3Cpath d='M3 24 30.5 3 58 24' fill='none' stroke='black' stroke-width='5.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); transition: rotate .3s cubic-bezier(.32,.72,0,1); }
+  html[data-chatstyle="tg"][data-tgpick][data-tgtall] #micBtn::before { rotate: 180deg; }
+  /* 图标逐个照她截图拟合(2026-10-16):把我们的图在她那颗墨迹上搜「宽 / 高 / 中心」使重叠度最大,换算成下面的数(3x 像素 ÷ 3 = pt)。
+     麦克风 IoU .89、^ .94、笑脸 / 键盘形状本来就一样(差在大小位置);贴纸那颗卷角 TG 的更大、外圈在卷角处断开,照她截图重新拟合了形状(IoU .88)。
+     **改图标前先读 dwell 手册《输入栏 1:1 第四版》**:量法和脚本都在那儿,别目测。 */
+  html[data-chatstyle="tg"]:not([data-tgrec]):not([data-tgpick]) #micBtn::before { width: 30.21px; height: 29.18px; -webkit-mask-size: 100% 100%; mask-size: 100% 100%; translate: 0.33px 0.82px; }
+  html[data-chatstyle="tg"][data-tgpick]:not([data-tgrec]) #micBtn::before { width: 21.26px; height: 9.85px; -webkit-mask-size: 100% 100%; mask-size: 100% 100%; translate: 0.33px -0.00px; }
+  html[data-chatstyle="tg"] .tgstk .a { left: 1.84px; top: 2.33px; width: 30px; height: 30px; -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 90'%3E%3Cpath d='M72.48 46.76A26.77 26.77 0 1 1 37.56 19.33Q50.00 15.90 72.48 46.76M37.56 19.33Q42.58 61.94 72.48 46.76' fill='none' stroke='black' stroke-width='4.77' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 90'%3E%3Cpath d='M72.48 46.76A26.77 26.77 0 1 1 37.56 19.33Q50.00 15.90 72.48 46.76M37.56 19.33Q42.58 61.94 72.48 46.76' fill='none' stroke='black' stroke-width='4.77' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+  html[data-chatstyle="tg"] .tgstk .b { left: 5.39px; top: 5.30px; width: 23.58px; height: 23.85px; -webkit-mask-size: 100% 100%; mask-size: 100% 100%; }
+  html[data-chatstyle="tg"] .tgstk .k { left: 1.71px; top: 7.46px; width: 24.99px; height: 19.49px; -webkit-mask-size: 100% 100%; mask-size: 100% 100%; }
+  /* 回形针:照她截图拟合出来的(四股 + 三个弯参数化,在她那颗墨迹上做重叠度搜索,IoU 0.95;不是 TG 的图)。
+     坐标单位 = 3x 像素,原点 = 圆钮中心,所以 ::before 就是 100 单位 = 33.33pt、居中放 */
+  html[data-chatstyle="tg"] #plusBtn::before { width: 33.33px; height: 33.33px; translate: 0 0;
+    -webkit-mask: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-50 -50 100 100'%3E%3Cpath d='M26.38 8.91L8.69 26.91A22.15 22.15 0 0 1 -22.90 -4.15L0.67 -28.11A15.59 15.59 0 0 1 22.90 -6.25L-0.47 17.52A8.94 8.94 0 0 1 -13.22 4.99L3.94 -12.47' fill='none' stroke='black' stroke-width='4.99' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); mask: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-50 -50 100 100'%3E%3Cpath d='M26.38 8.91L8.69 26.91A22.15 22.15 0 0 1 -22.90 -4.15L0.67 -28.11A15.59 15.59 0 0 1 22.90 -6.25L-0.47 17.52A8.94 8.94 0 0 1 -13.22 4.99L3.94 -12.47' fill='none' stroke='black' stroke-width='4.99' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+  html[data-chatstyle="tg"]:not([data-tgdark]) :is(#plusBtn, #box, #micBtn) {
+    box-shadow: inset 0 0 0 .5px rgba(0,0,0,.075), inset .67px 0 0 rgba(0,0,0,.15), inset -.67px 0 0 rgba(0,0,0,.15) !important;
   }
 </style>
 <script>
@@ -6333,6 +6375,7 @@ box.focus();
   function kbApi() { try { return window.parent !== window && window.parent.__dwKb ? window.parent.__dwKb : null; } catch (e) { return null; } }
   function setPick(open, how) {
     if (open === pick.classList.contains("open")) return;
+    if (!open) root.removeAttribute("data-tgtall");
     var api = kbApi(), kbH = open && api ? api.height() : 0;
     if (open && kbH > 120) { pick.style.height = kbH + "px"; pick.style.maxHeight = "none"; }
     var instant = how === "now" || calm, withKb = how === "kb";
@@ -6357,6 +6400,29 @@ box.focus();
     if (instant) { void pick.offsetHeight; requestAnimationFrame(function () { pick.style.transition = ""; }); }
     if (!open) { pick.style.height = ""; pick.style.maxHeight = ""; }
   }
+  /* 2026-10-16 输入栏 1:1:面板开着时右边那颗是 ^(TG 第三种状态)—— 点了面板拉高到大半屏、箭头转成 v,再点收回;关面板就复原。
+     麦克风那颗自己有「点了开始录音」的监听(捕获阶段),所以在外层 footer 的捕获阶段先截下来 */
+  function tgTall(on) {
+    if (!pick.classList.contains("open")) on = false;
+    if (on === root.hasAttribute("data-tgtall")) return;
+    var oldH = pick.offsetHeight;
+    if (on) pick._baseH = oldH;
+    var newH = on ? Math.max(oldH, Math.round(innerHeight * 0.66)) : (pick._baseH || oldH);
+    root.toggleAttribute("data-tgtall", on);
+    pick.style.transition = calm ? "none" : "height .32s cubic-bezier(.32,.72,0,1), transform .32s cubic-bezier(.32,.72,0,1)";
+    pick.style.maxHeight = "none"; pick.style.height = newH + "px";
+    var h = Math.max(0, dwUnder + (newH - oldH));
+    if (footEl) { footEl.style.transition = calm ? "none" : "transform .32s cubic-bezier(.32,.72,0,1)"; footEl.style.transform = h ? "translateY(-" + h + "px)" : ""; }
+    var d = h - dwUnder; dwUnder = h; padLog();
+    if (stickBottom) { log.scrollTop = log.scrollHeight - log.clientHeight; if (!calm && d > 0) slide(d, 320, "cubic-bezier(.32,.72,0,1)"); }
+  }
+  if (footEl) footEl.addEventListener("click", function (e) {
+    if (!isTg() || !pick.classList.contains("open") || root.hasAttribute("data-tghas")) return;
+    var m = e.target.closest && e.target.closest("#micBtn");
+    if (!m) return;
+    e.preventDefault(); e.stopPropagation();
+    tgTall(!root.hasAttribute("data-tgtall"));
+  }, true);
   stkBtn.addEventListener("click", function (e) {
     e.stopPropagation();
     var open = pick.classList.contains("open"), api = kbApi();
@@ -6589,7 +6655,7 @@ box.focus();
   }
   function pass() {
     queued = false;
-    fly = []; fresh = 0; popBase = 0;
+    fly = []; fresh = 0;
     var scopes, wasFull = full;
     if (full) { full = false; dirty.clear(); scopes = [log]; }
     else { scopes = Array.from(dirty).filter(function (r) { return r.isConnected; }); dirty.clear(); }
@@ -6622,18 +6688,11 @@ box.focus();
       });
       Array.prototype.forEach.call(sc.querySelectorAll(".row > .toolline"), function (line) {
         var r = line.parentNode;
-        /* 2026-10-16 所有者:「保留气泡,thinking 结束之后 thinking 和输出的内容一个一个跳出来」——
-           他忙着的时候,这一轮新冒出来的思考 / 工具行先藏着(.tghold),屏幕上只有那颗三个点在动;
-           等这一轮的回话定稿(或他忙完 / 被打断)再按顺序弹出来,回话的泡接在后面(见 releaseHeld) */
-        if (r._tgLive && !r._tgPopped) {
-          if (root.hasAttribute("data-tgbusy")) { if (!r.classList.contains("tghold")) r.classList.add("tghold"); }
-          else if (!r.classList.contains("tghold")) { r._tgPopped = true; pop(line, "tgpop-fade", 0); }   // 藏着的只由 releaseHeld 放
-        }
+        /* ~~2026-10-16 第三十八次:他忙时思考 / 工具行先藏着(.tghold),定稿时依次弹出~~ —— 她试完「没有刚刚那个高级」,
+           同日改成折中:思考 / 工具行**当场出来**(Thinking 流光、图标转),那时不出三个点;想完才出三个点(见 typing) */
+        if (r._tgLive && !r._tgPopped) { r._tgPopped = true; pop(line, "tgpop-fade", 0); }
       });
-      var gus = sc.querySelectorAll(".gu");
-      /* 有回话这一刻定稿要弹 → 先把藏着的那几行按顺序放出来,回话的泡排在它们后面 */
-      if (!root.hasAttribute("data-tgbusy") || Array.prototype.some.call(gus, function (g) { return g._final && g._tgLive && !g._tgPopped; })) releaseHeld();
-      Array.prototype.forEach.call(gus, guPass);
+      Array.prototype.forEach.call(sc.querySelectorAll(".gu"), guPass);
       stickerPass(sc);                     // 刚拆出来的泡里也可能有贴纸
       reactPass(sc);
     });
@@ -6731,57 +6790,75 @@ box.focus();
       }
     }
   }
-  /* 藏着的思考 / 工具行(.tghold)按页面顺序一行接一行放出来;回话的泡从 popBase 之后接着弹 */
-  var HOLD_STEP = 90, popBase = 0;
-  function releaseHeld() {
-    var held = log.querySelectorAll(":scope > .row.tghold");
-    if (!held.length) return;
-    Array.prototype.forEach.call(held, function (r, k) {
-      r.classList.remove("tghold");
-      r._tgPopped = true;
-      var line = r.querySelector(":scope > .toolline");
-      if (line) pop(line, "tgpop-fade", Math.min(k, 5) * HOLD_STEP);
+  /* ── 他的回话怎么出来(2026-10-16 改,所有者「不是一个气泡一个气泡跳,是隔好久几个一起跳出来」→ 选「写完一行就弹一颗」)──
+     ~~整句定稿后一次拆好、隔 70ms 依次弹~~(10-10 起;看着就是等很久、几颗一起蹦)。
+     现在:他还在写时,**已经写完的行**(最后一个换行之前)每行当场长成一颗泡弹出来;没写完的那一行照旧不露字(不逐字吐,10-10 她定的)。
+     同一刻冒出好几行就一颗隔 STREAM_STEP 弹。定稿时补上最后一行;有代码块照旧整颗等定稿。
+     泡只**追加**、已出来的不重建(重建会再弹一遍、闪一下);定稿时和已出来的逐行对一遍,字不一样(极少)就原地改字不弹。 */
+  var STREAM_STEP = 260;
+  function allLines(text) {
+    if (!text || text.indexOf("```") >= 0) return null;
+    var ls = linesOf(text);
+    if (ls) return ls;
+    var t = text.replace(/⁣/g, "").trim();
+    return t ? [t] : [];
+  }
+  function fillBubble(b, line) {
+    b.innerHTML = ""; b.className = "tgb"; b._voice = null;
+    if (line.indexOf("〔语音〕") === 0) voiceBubble(b, line.slice(4).trim());
+    else {
+      b.textContent = line;
+      try { if (typeof renderPlainInto === "function") renderPlainInto(b, line, true); } catch (e) { b.textContent = line; }
+    }
+  }
+  function growSet(el, lines, t, live) {
+    var set = el.nextElementSibling && el.nextElementSibling.classList.contains("tgset") ? el.nextElementSibling : null;
+    if (!set) { set = document.createElement("div"); set.className = "tgset"; el.after(set); }
+    if (!set._lines) set._lines = [];
+    var had = Math.min(set._lines.length, set.children.length), q = 0;
+    lines.forEach(function (line, i) {
+      var b = set.children[i];
+      if (i < had && b) {
+        if (set._lines[i] !== line) { fillBubble(b, line); b.setAttribute("data-tgt", t); set._lines[i] = line; }   // 定稿时字有出入:原地改,不弹
+        return;
+      }
+      b = document.createElement("div");
+      fillBubble(b, line);
+      b.setAttribute("data-tgt", t);
+      set.appendChild(b); set._lines[i] = line;
+      if (live) { pop(b, "tgpop-in", calm ? 0 : q * STREAM_STEP); q++; fresh++; }
     });
-    popBase = calm ? 0 : Math.min(held.length, 6) * HOLD_STEP;
-    fresh += held.length;
+    while (set.children.length > lines.length) set.lastElementChild.remove();
+    set._lines.length = set.children.length;
+    el.classList.add("tg-split");
+    return set;
   }
   function guPass(el) {
     var raw = el._raw != null ? el._raw : el.textContent;
     var t = stamp(el);
-    /* 不逐字吐:没定稿的泡先藏着(被打断的那种 setBusy 收尾时会放出来) */
-    var wait = !el._final && !el._tgForce;
-    el.classList.toggle("tgwait", wait);
-    if (wait) return;
+    var done = el._final || el._tgForce;
+    var live = el._tgLive && !el._tgPopped;
     var set = el.nextElementSibling && el.nextElementSibling.classList.contains("tgset") ? el.nextElementSibling : null;
+    if (!done) {
+      el.classList.add("tgwait");            // 原 .gu 照旧藏着;写完的行在后面那串 .tgset 里一颗颗出来
+      var cut = raw.lastIndexOf("\n");
+      var ls = cut > 0 ? allLines(raw.slice(0, cut)) : null;
+      if (ls && ls.length && live) growSet(el, ls, t, true);
+      return;
+    }
+    el.classList.remove("tgwait");
     var lines = el._final ? linesOf(raw) : null;
-    var popNow = el._tgLive && !el._tgPopped;
-    if (popNow) fresh += lines ? lines.length : 1;
-    if (!lines) {                       // 长文 / 单行:就用它自己当一个泡
+    if (!lines && set && set._lines && set._lines.length) lines = allLines(raw);   // 已经一颗颗出来过:单行也照这串收尾,别换成整颗再弹一次
+    if (!lines) {                       // 长文 / 单行 / 代码块:就用它自己当一个泡
       if (set) set.remove();
       el.classList.remove("tg-split");
       if (el.getAttribute("data-tgt") !== t) el.setAttribute("data-tgt", t);
-      if (popNow) { el._tgPopped = true; pop(el, "tgpop-in", popBase); }
+      if (live) { el._tgPopped = true; fresh++; pop(el, "tgpop-in", 0); }
       return;
     }
     if (set && el._tgRaw === raw) return;
-    if (set) set.remove();
-    set = document.createElement("div");
-    set.className = "tgset";
-    lines.forEach(function (line, i) {
-      var b = document.createElement("div");
-      b.className = "tgb";
-      if (line.indexOf("〔语音〕") === 0) voiceBubble(b, line.slice(4).trim());
-      else {
-        b.textContent = line;
-        try { if (typeof renderPlainInto === "function") renderPlainInto(b, line, true); } catch (e) { b.textContent = line; }
-      }
-      b.setAttribute("data-tgt", t);
-      set.appendChild(b);
-      if (popNow) pop(b, "tgpop-in", popBase + Math.min(i, 6) * 70);   /* 一行一泡,一颗接一颗冒出来(前面有藏着的思考 / 工具行时,排在它们后面) */
-    });
-    if (popNow) el._tgPopped = true;
-    el.after(set);
-    el.classList.add("tg-split");
+    growSet(el, lines, t, live);
+    if (live) el._tgPopped = true;
     el._tgRaw = raw;
   }
   /* ══ 语音(2026-10-10,所有者「把语音加上吧」)══
@@ -7297,6 +7374,8 @@ box.focus();
   dots.innerHTML = '<span class="tgdots"><i></i><i></i><i></i></span>';
   function typing() {
     var on = root.getAttribute("data-chatstyle") === "tg" && root.hasAttribute("data-tgbusy");
+    /* 2026-10-16 折中(她选的):他正在想 / 正在用工具(那一行亮着在动)时不出三个点,一次只动一样;想完才出三个点 = 在写 */
+    if (on && log.querySelector(":scope > .row > .toolline.tglive")) on = false;
     if (!on) { if (dots.isConnected) dots.remove(); return; }
     /* ⚠️ 菊花那行(.brandline)也要「永远最后」,两边抢会无限互换。所以三个点让它:排在菊花前面就算到位 */
     var last = log.lastElementChild, bl = last && last.classList.contains("brandline") ? last : null;
@@ -7304,6 +7383,7 @@ box.focus();
     if (!want) { if (bl) log.insertBefore(dots, bl); else log.appendChild(dots); try { scroll(); } catch (e) {} }
   }
   window.__tgKick = function () { full = true; schedule(); };
+  window.__tgGrow = function (el) { var r = rowOf(el); if (r) { dirty.add(r); schedule([]); } };
   /* 2026-10-16 帧率:他开始忙 / 说完(setBusy)原来叫 __tgKick 整页过一遍 —— 每一轮开头结尾各一次,几百颗泡全扫。
      忙闲一变,真会跟着变的只有末尾那几行(思考 / 工具那行亮不亮、三个点、被打断那颗放出来的字),所以只过最后 24 行。 */
   window.__tgKickTail = function () {
