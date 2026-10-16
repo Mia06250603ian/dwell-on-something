@@ -5700,6 +5700,48 @@ box.focus();
     html[data-chatstyle="tg"] :is(#menuBtn, .tgname, .tgsrch, .tgdown, #plusBtn, #box, #micBtn), .tgprof .glass {
       background: var(--g4-bg), color-mix(in srgb, var(--card) 82%, transparent) !important; }
   }
+
+  /* ══ 输入栏 1:1 第四版(2026-10-16,所有者发了 Telegram iOS 三张截图:贴纸面板开 / 空着 / 有字,「我要一模一样的」)══
+     量法:她的截图 1206px = 402pt@3x,和本页同一坐标系;本地 402×874@3x 渲染、页底临时换白,同一段代码量墨迹框和描边作差(见 dwell 手册《输入栏 1:1 第四版》)。
+     ~~10-10 第三版(左右留边 15.7pt 等)~~ 是照**旧版** TG 截图量的;这一版的 TG 是 iOS 26 那套,留边窄得多。下面全是量出来的 pt:
+     左圆钮 x 7.67 宽 40.33 → 隔 5.67 → 胶囊(高 40.33)→ 隔 5.33 → 右圆钮 40.67、离右边 8;有字时胶囊伸到右边 8 处,
+     发送键是 **40×34 的胶囊**(不是圆),离胶囊右 / 上 / 下各 3.33;胶囊里那颗图标(贴纸 / 笑脸 / 键盘)**位置不跟着动**,中心离右边 66.17。
+     描边:TG 的边是「两侧深(~206)、上下浅(~240)」—— 用左右偏移的内阴影画:圆角上自然是中间粗、上下收尖。 */
+  html[data-chatstyle="tg"] footer { padding-left: 7.67px; padding-right: 8px; }
+  html[data-chatstyle="tg"] #plusBtn { width: 40.33px; height: 40.33px; flex: none; }
+  html[data-chatstyle="tg"] #box {
+    margin-left: 5.67px; min-height: 40.33px; border-radius: 20.17px;
+    padding: 10.33px 46px 9px 12.83px; line-height: 21px; font-size: 16px; caret-color: var(--text);
+  }
+  html[data-chatstyle="tg"][data-tghas] #box { padding-right: 90px; }
+  html[data-chatstyle="tg"] #micBtn { width: 40.67px; height: 40.33px; margin-left: 5.33px; flex: none; }
+  html[data-chatstyle="tg"][data-tghas] #micBtn { width: 0; margin-left: 0; }
+  html[data-chatstyle="tg"] #send { width: 40px; height: 34px; right: 3.33px; bottom: 3.17px; border-radius: 17px; }
+  html[data-chatstyle="tg"] .tgstk, html[data-chatstyle="tg"][data-tghas] .tgstk { right: 49.17px; bottom: 3.17px; }
+  /* 发送键里的飞机 / 面板开着时右边那颗 ^ / 框里的键盘:照她截图的墨迹逐点画(不是从 TG 拷的图) */
+  html[data-chatstyle="tg"] #send:not(.stop)::before { width: 20.33px; height: 18.33px; margin: 0; translate: -1.67px .67px;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 61 55'%3E%3Cpath d='M2.5 25.5 58 3 51 49.5 28.5 36.5 44.5 17 20 31.5Z' fill='black' stroke='black' stroke-width='2.6' stroke-linejoin='round'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 61 55'%3E%3Cpath d='M2.5 25.5 58 3 51 49.5 28.5 36.5 44.5 17 20 31.5Z' fill='black' stroke='black' stroke-width='2.6' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+  html[data-chatstyle="tg"] .tgstk .k { left: 1.5px; top: 7.5px; width: 25.33px; height: 19.33px;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 76 58'%3E%3Crect x='2.6' y='2.6' width='70.8' height='52.8' rx='12' fill='none' stroke='black' stroke-width='5.2'/%3E%3Crect x='16' y='13' width='7' height='7' rx='1.6'/%3E%3Crect x='29' y='13' width='7' height='7' rx='1.6'/%3E%3Crect x='40' y='13' width='7' height='7' rx='1.6'/%3E%3Crect x='53' y='13' width='7' height='7' rx='1.6'/%3E%3Crect x='16' y='25' width='7' height='7' rx='1.6'/%3E%3Crect x='29' y='25' width='7' height='7' rx='1.6'/%3E%3Crect x='40' y='25' width='7' height='7' rx='1.6'/%3E%3Crect x='53' y='25' width='7' height='7' rx='1.6'/%3E%3Crect x='23' y='41.5' width='30' height='4.5' rx='2.25'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 76 58'%3E%3Crect x='2.6' y='2.6' width='70.8' height='52.8' rx='12' fill='none' stroke='black' stroke-width='5.2'/%3E%3Crect x='16' y='13' width='7' height='7' rx='1.6'/%3E%3Crect x='29' y='13' width='7' height='7' rx='1.6'/%3E%3Crect x='40' y='13' width='7' height='7' rx='1.6'/%3E%3Crect x='53' y='13' width='7' height='7' rx='1.6'/%3E%3Crect x='16' y='25' width='7' height='7' rx='1.6'/%3E%3Crect x='29' y='25' width='7' height='7' rx='1.6'/%3E%3Crect x='40' y='25' width='7' height='7' rx='1.6'/%3E%3Crect x='53' y='25' width='7' height='7' rx='1.6'/%3E%3Crect x='23' y='41.5' width='30' height='4.5' rx='2.25'/%3E%3C/svg%3E"); }
+  /* 贴纸面板开着时右边那颗换成 ^(TG 第三种状态),点了面板拉高 / 再点收回(脚本 tgTall) */
+  html[data-chatstyle="tg"][data-tgpick]:not([data-tgrec]) #micBtn::before { width: 20.33px; height: 9px; translate: 0 -.33px;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 61 27'%3E%3Cpath d='M3 24 30.5 3 58 24' fill='none' stroke='black' stroke-width='5.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 61 27'%3E%3Cpath d='M3 24 30.5 3 58 24' fill='none' stroke='black' stroke-width='5.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); transition: rotate .3s cubic-bezier(.32,.72,0,1); }
+  html[data-chatstyle="tg"][data-tgpick][data-tgtall] #micBtn::before { rotate: 180deg; }
+  /* 图标逐个照她截图拟合(2026-10-16):把我们的图在她那颗墨迹上搜「宽 / 高 / 中心」使重叠度最大,换算成下面的数(3x 像素 ÷ 3 = pt)。
+     麦克风 IoU .89、^ .94、笑脸 / 键盘形状本来就一样(差在大小位置);贴纸那颗卷角 TG 的更大、外圈在卷角处断开,照她截图重新拟合了形状(IoU .88)。
+     **改图标前先读 dwell 手册《输入栏 1:1 第四版》**:量法和脚本都在那儿,别目测。 */
+  html[data-chatstyle="tg"]:not([data-tgrec]):not([data-tgpick]) #micBtn::before { width: 30.21px; height: 29.18px; -webkit-mask-size: 100% 100%; mask-size: 100% 100%; translate: 0.33px 0.82px; }
+  html[data-chatstyle="tg"][data-tgpick]:not([data-tgrec]) #micBtn::before { width: 21.26px; height: 9.85px; -webkit-mask-size: 100% 100%; mask-size: 100% 100%; translate: 0.33px -0.00px; }
+  html[data-chatstyle="tg"] .tgstk .a { left: 1.84px; top: 2.33px; width: 30px; height: 30px; -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 90'%3E%3Cpath d='M72.48 46.76A26.77 26.77 0 1 1 37.56 19.33Q50.00 15.90 72.48 46.76M37.56 19.33Q42.58 61.94 72.48 46.76' fill='none' stroke='black' stroke-width='4.77' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 90'%3E%3Cpath d='M72.48 46.76A26.77 26.77 0 1 1 37.56 19.33Q50.00 15.90 72.48 46.76M37.56 19.33Q42.58 61.94 72.48 46.76' fill='none' stroke='black' stroke-width='4.77' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+  html[data-chatstyle="tg"] .tgstk .b { left: 5.39px; top: 5.30px; width: 23.58px; height: 23.85px; -webkit-mask-size: 100% 100%; mask-size: 100% 100%; }
+  html[data-chatstyle="tg"] .tgstk .k { left: 1.71px; top: 7.46px; width: 24.99px; height: 19.49px; -webkit-mask-size: 100% 100%; mask-size: 100% 100%; }
+  /* 回形针:照她截图拟合出来的(四股 + 三个弯参数化,在她那颗墨迹上做重叠度搜索,IoU 0.95;不是 TG 的图)。
+     坐标单位 = 3x 像素,原点 = 圆钮中心,所以 ::before 就是 100 单位 = 33.33pt、居中放 */
+  html[data-chatstyle="tg"] #plusBtn::before { width: 33.33px; height: 33.33px; translate: 0 0;
+    -webkit-mask: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-50 -50 100 100'%3E%3Cpath d='M26.38 8.91L8.69 26.91A22.15 22.15 0 0 1 -22.90 -4.15L0.67 -28.11A15.59 15.59 0 0 1 22.90 -6.25L-0.47 17.52A8.94 8.94 0 0 1 -13.22 4.99L3.94 -12.47' fill='none' stroke='black' stroke-width='4.99' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); mask: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-50 -50 100 100'%3E%3Cpath d='M26.38 8.91L8.69 26.91A22.15 22.15 0 0 1 -22.90 -4.15L0.67 -28.11A15.59 15.59 0 0 1 22.90 -6.25L-0.47 17.52A8.94 8.94 0 0 1 -13.22 4.99L3.94 -12.47' fill='none' stroke='black' stroke-width='4.99' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+  html[data-chatstyle="tg"]:not([data-tgdark]) :is(#plusBtn, #box, #micBtn) {
+    box-shadow: inset 0 0 0 .5px rgba(0,0,0,.075), inset .67px 0 0 rgba(0,0,0,.15), inset -.67px 0 0 rgba(0,0,0,.15) !important;
+  }
 </style>
 <script>
 (function () {
@@ -6333,6 +6375,7 @@ box.focus();
   function kbApi() { try { return window.parent !== window && window.parent.__dwKb ? window.parent.__dwKb : null; } catch (e) { return null; } }
   function setPick(open, how) {
     if (open === pick.classList.contains("open")) return;
+    if (!open) root.removeAttribute("data-tgtall");
     var api = kbApi(), kbH = open && api ? api.height() : 0;
     if (open && kbH > 120) { pick.style.height = kbH + "px"; pick.style.maxHeight = "none"; }
     var instant = how === "now" || calm, withKb = how === "kb";
@@ -6357,6 +6400,29 @@ box.focus();
     if (instant) { void pick.offsetHeight; requestAnimationFrame(function () { pick.style.transition = ""; }); }
     if (!open) { pick.style.height = ""; pick.style.maxHeight = ""; }
   }
+  /* 2026-10-16 输入栏 1:1:面板开着时右边那颗是 ^(TG 第三种状态)—— 点了面板拉高到大半屏、箭头转成 v,再点收回;关面板就复原。
+     麦克风那颗自己有「点了开始录音」的监听(捕获阶段),所以在外层 footer 的捕获阶段先截下来 */
+  function tgTall(on) {
+    if (!pick.classList.contains("open")) on = false;
+    if (on === root.hasAttribute("data-tgtall")) return;
+    var oldH = pick.offsetHeight;
+    if (on) pick._baseH = oldH;
+    var newH = on ? Math.max(oldH, Math.round(innerHeight * 0.66)) : (pick._baseH || oldH);
+    root.toggleAttribute("data-tgtall", on);
+    pick.style.transition = calm ? "none" : "height .32s cubic-bezier(.32,.72,0,1), transform .32s cubic-bezier(.32,.72,0,1)";
+    pick.style.maxHeight = "none"; pick.style.height = newH + "px";
+    var h = Math.max(0, dwUnder + (newH - oldH));
+    if (footEl) { footEl.style.transition = calm ? "none" : "transform .32s cubic-bezier(.32,.72,0,1)"; footEl.style.transform = h ? "translateY(-" + h + "px)" : ""; }
+    var d = h - dwUnder; dwUnder = h; padLog();
+    if (stickBottom) { log.scrollTop = log.scrollHeight - log.clientHeight; if (!calm && d > 0) slide(d, 320, "cubic-bezier(.32,.72,0,1)"); }
+  }
+  if (footEl) footEl.addEventListener("click", function (e) {
+    if (!isTg() || !pick.classList.contains("open") || root.hasAttribute("data-tghas")) return;
+    var m = e.target.closest && e.target.closest("#micBtn");
+    if (!m) return;
+    e.preventDefault(); e.stopPropagation();
+    tgTall(!root.hasAttribute("data-tgtall"));
+  }, true);
   stkBtn.addEventListener("click", function (e) {
     e.stopPropagation();
     var open = pick.classList.contains("open"), api = kbApi();
