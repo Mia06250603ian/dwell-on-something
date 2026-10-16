@@ -4255,7 +4255,11 @@ box.focus();
     var mark = logEl.children.length;
     window.__tgHist = (window.__tgHist || 0) + 1;      /* ③ 用:历史里画出来的泡不弹动画 */
     var out;
-    try { out = _rs.apply(this, arguments); } finally { window.__tgHist--; }
+    /* 2026-10-16 帧率:画历史时每加一条都会 scroll() 一次(读 scrollHeight = 整页重排),400 条就是 400 次 ——
+       打开聊天页那几秒卡死的大头(样式设置还没到时走的是官端那条同步的路)。画的过程中先不滚,
+       画完由调用方自己滚:loadSaid 末尾 scroll(true)、loadOlder 自己把眼睛放回原来那句。 */
+    window.__dwBulk = (window.__dwBulk || 0) + 1;
+    try { out = _rs.apply(this, arguments); } finally { window.__tgHist--; window.__dwBulk--; }
     try {
       var me = msgs.filter(function (m) { return m.kind === 'me'; }), gu = msgs.filter(function (m) { return m.kind === 'gu'; });
       var i = 0, j = 0;
@@ -4320,6 +4324,7 @@ box.focus();
   };
   var _sc = window.scroll, scRaf = 0, scForce = false;
   if (typeof _sc === 'function') window.scroll = function (force) {
+    if (window.__dwBulk) return;                       // 正在画历史:画完再滚(见上面 renderSaid 的包装)
     if (!isTg()) return _sc.apply(this, arguments);
     if (force) scForce = true;
     if (!scRaf) scRaf = requestAnimationFrame(function () { scRaf = 0; var f = scForce; scForce = false; _sc(f); });
@@ -5416,6 +5421,9 @@ box.focus();
     transition: opacity .2s ease, transform .45s var(--tg-spring-pop, cubic-bezier(.2, 1.2, .35, 1));
   }
   html[data-chatstyle="tg"] .tgdown.show { opacity: 1; transform: none; pointer-events: auto; }
+  /* 2026-10-16 帧率:不显示时 visibility 也藏起来 —— 透明度 0 的玻璃照样带着 backdrop-filter,滚动时每帧都在算模糊。
+     淡出那 .2s 照旧(visibility 等淡完才切),出现时立刻可见 */
+  html[data-chatstyle="tg"] .tgdown:not(.show) { visibility: hidden; transition: opacity .2s ease, transform .45s var(--tg-spring-pop, cubic-bezier(.2, 1.2, .35, 1)), visibility 0s linear .2s; }
   html[data-chatstyle="tg"] .tgdown:active { transform: scale(.9); }
   .tgdown::before { content: ""; position: absolute; inset: 0; margin: auto; width: 20px; height: 20px; background: currentColor;
     -webkit-mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 9 7 7 7-7'/%3E%3C/svg%3E");
@@ -6458,8 +6466,11 @@ box.focus();
     line.after(fold); line.classList.add("open"); fillFold(line, fold);
   }, true);
   function foldPass(sc) {
-    Array.prototype.forEach.call((sc || log).querySelectorAll(".row > .toolline"), function (line) {
-      var live = !!line.querySelector(".spin") && getComputedStyle(line.querySelector(".spin")).display !== "none";
+    /* 2026-10-16 帧率:先把每行转没转圈全读完再改 —— 原来边读 getComputedStyle 边改 class,每行重算一次整页样式 */
+    var lines = Array.prototype.slice.call((sc || log).querySelectorAll(".row > .toolline"));
+    var lives = lines.map(function (line) { var sp = line.querySelector(".spin"); return !!sp && getComputedStyle(sp).display !== "none"; });
+    lines.forEach(function (line, i) {
+      var live = lives[i];
       line.classList.toggle("tglive", live && root.getAttribute("data-chatstyle") === "tg");
       if (line._ids) {
         line.classList.add("tgtool");
@@ -6552,9 +6563,13 @@ box.focus();
       reactPass(sc);
     });
     if (tg) checks(scopes[0] === log);
-    if (tg) scopes.forEach(function (sc) {
-      Array.prototype.forEach.call(sc.querySelectorAll(".row.me > .bubble[data-tgt], .tgb[data-tgt], .gu[data-tgt]:not(.tg-split)"), tighten);
-    });
+    if (tg) {
+      var tl = [];
+      scopes.forEach(function (sc) {
+        Array.prototype.push.apply(tl, sc.querySelectorAll(".row.me > .bubble[data-tgt], .tgb[data-tgt], .gu[data-tgt]:not(.tg-split)"));
+      });
+      tightenAll(tl);
+    }
     typing();
     if (tg) settle();
   }
@@ -6563,27 +6578,50 @@ box.focus();
      于是下面多出一行、空出一大截。这里补一步:量出最后一行字的右边界,时间确实放不下(掉行了)时,掉下去那行压矮(.tgtw)。
      ~~时间掉行时把泡收到最长那行字那么宽~~ —— 做过,她当场说「长度不要变,之前的长度没问题」,**宽度一律不动**,别再加回来。
      只处理纯文字泡(里面有块级东西 / 语音条 / 图就不动);换字号 / 转屏时整页过一遍照样对。 */
+  /* ⚠️ 2026-10-16 帧率:原来是逐颗「先改(摘 .tgtw)再量」,每颗都逼浏览器重排一次整页 ——
+     整页过一遍(打开聊天页、他开始忙 / 说完的 setBusy)时 400 颗 = 400 次重排,4 倍降速下卡 4~9 秒。
+     现在先把要量的全量完(只排一次版),再一起改。.tgtw 只动 ::after 的上下边距,不影响横向的量,所以不用先摘。 */
+  /* 再加一层:量过的泡记下「当时的样子」(列表宽 / 字号 / 头像位置 / 类名 / 时间 / 对勾 / 文字),都没变就不再量 ——
+     整页过一遍时 400 颗里通常只有末尾一两颗是新的。换字号 / 转屏 / 换头像位置时这串会变,照样整页重量。 */
+  function tightenAll(list) {
+    if (!list.length) return;
+    list.forEach(function (b) { if (b.style.width) b.style.width = ""; });
+    var env = log.clientWidth + "|" + getComputedStyle(root).getPropertyValue("--tg-fs") + "|" + root.getAttribute("data-avmode");
+    var keys = list.map(function (b) {
+      return env + "|" + b.className.replace(/(^|\s)tgtw(?=\s|$)/, "") + "|" + b.getAttribute("data-tgt") + "|" + b.getAttribute("data-tgck") + "|" + b.textContent;
+    });
+    var vis = [];
+    var want = list.map(function (b, i) {
+      if (b._tk === keys[i]) return null;
+      vis[i] = b.offsetParent !== null;            // 藏着的(没定稿 / 被外层藏)量不准,不记,等露出来再量
+      return tighten(b);
+    });
+    list.forEach(function (b, i) {
+      if (want[i] === null) return;
+      if (b.classList.contains("tgtw") !== want[i]) b.classList.toggle("tgtw", want[i]);
+      b._tk = vis[i] ? keys[i] : null;              // 类名里不含 tgtw(见 keys 那行),所以自己 toggle 它不会让下次对不上
+    });
+  }
+  /* 只量不改:返回这颗泡该不该带 .tgtw */
   function tighten(b) {
-    if (b.style.width) b.style.width = "";
-    b.classList.remove("tgtw");
-    if (b.classList.contains("stkonly") || b.offsetParent === null) return;
-    if (b.querySelector("div, p, ul, ol, pre, blockquote, table, img, audio, button, .tgvoice")) return;
+    if (b.classList.contains("stkonly") || b.offsetParent === null) return false;
+    if (b.querySelector("div, p, ul, ol, pre, blockquote, table, img, audio, button, .tgvoice")) return false;
     var tm = getComputedStyle(b, "::after");   // 她的泡时间后面还有对勾,画在右内边距里 —— 内边距要算上(10-10 漏过一次)
     var tw = parseFloat(tm.width) + parseFloat(tm.paddingLeft) + parseFloat(tm.paddingRight) + parseFloat(tm.marginLeft) + parseFloat(tm.marginRight);
-    if (!(tw > 0)) return;
+    if (!(tw > 0)) return false;
     var cs = getComputedStyle(b), box = b.getBoundingClientRect();
     var left = box.left + parseFloat(cs.paddingLeft) + parseFloat(cs.borderLeftWidth);
     var right = box.right - parseFloat(cs.paddingRight) - parseFloat(cs.borderRightWidth);
     var rg = document.createRange(); rg.selectNodeContents(b);
     var rects = Array.prototype.filter.call(rg.getClientRects(), function (r) { return r.width > 0 && r.height > 0; });
-    if (!rects.length) return;
+    if (!rects.length) return false;
     var maxR = 0, lastTop = -1e9, lastR = 0;
     rects.forEach(function (r) {
       if (r.right > maxR) maxR = r.right;
       if (r.top > lastTop + 2) { lastTop = r.top; lastR = r.right; } else if (Math.abs(r.top - lastTop) <= 2 && r.right > lastR) lastR = r.right;
     });
-    if (lastR + tw <= right + .5) return;            // 时间跟在最后一行后面放得下:本来就不胖
-    b.classList.add("tgtw");                           // 掉行了:那一行压矮(宽度不动 —— 她 10-10 晚:「长度不要变,之前的长度没问题」)
+    if (lastR + tw <= right + .5) return false;      // 时间跟在最后一行后面放得下:本来就不胖
+    return true;                                       // 掉行了:那一行压矮(宽度不动 —— 她 10-10 晚:「长度不要变,之前的长度没问题」)
   }
   /* 她的泡上的对勾(2026-10-10,照 TG):✓ = 送到了 —— 这颗泡本来就是服务器回声(echo)之后才画的;
      ✓✓ = 他开始看了 —— 后面出现了他的任何动静(思考 / 工具 / 回话)。
