@@ -5703,7 +5703,18 @@ box.focus();
 
   /* ══ 「他」页 HEALTH(2026-10-16)══ 和 USAGE 那张卡同一套:字只靠三档深浅(--p1/--p2/--p3)、数字圆体、半像素线、零彩色。
      服务那排:好的 = 实心点,不好的 = 空心圈(不用红绿灯,这页零彩色);点一颗在下面一行写细节,再点收起 */
-  .tgprof .hlcard { padding: 15px 18px 12px; }
+  .tgprof .hlcard { padding: 0; }
+  .tgprof .hlhead .hpct { font-family: var(--rnd); font-weight: 500; margin-left: 4px; font-variant-numeric: tabular-nums; }
+  .tgprof .hlsum.bad { color: var(--p1); }
+  .tgprof .hlfold { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .42s cubic-bezier(.32,.72,0,1); }
+  .tgprof.hlopen .hlfold { grid-template-rows: 1fr; }
+  .tgprof .hlin { min-height: 0; overflow: hidden; padding: 0 18px; }
+  .tgprof.hlopen .hlin { padding-bottom: 12px; }
+  .tgprof .hlin > .hlead { border-top: .5px solid var(--hair); padding-top: 12px; }
+  .tgprof .hlchev svg { transition: transform .32s cubic-bezier(.32,.72,0,1); }
+  .tgprof.hlopen .hlchev svg { transform: rotate(90deg); }
+  .tgprof:not(.hlopen) .hnote { display: none; }
+  @media (prefers-reduced-motion: reduce) { .tgprof .hlfold, .tgprof .hlchev svg { transition: none; } }
   .tgprof .hlead { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; padding-bottom: 12px; }
   .tgprof .hlead .k { font-size: 11px; color: var(--p2); }
   .tgprof .hlead .n { font-family: var(--rnd); font-size: 24px; font-weight: 500; letter-spacing: -.02em; line-height: 1.1; color: var(--p1); margin-top: 2px; }
@@ -5956,11 +5967,14 @@ box.focus();
     '<div class="udots" aria-hidden="true"><i></i><i></i></div><p class="foot ugnote"></p>' +
     /* 2026-10-16 所有者:「加一个 Health?缓存命中、健不健康的东西做一个可视化」—— 数据来自 dwell-bridge 的 /api/vitals(只读汇总,不碰晏) */
     '<div class="sect">Health</div>' +
-    '<div class="card glass hlcard"><div class="hlead"><div><div class="k">Cache hit</div><div class="n hpct">—</div><div class="hsub"></div></div>' +
+    /* 同日她:「能做成折叠、点开才看见各个项目嘛」—— 平时一行(命中率 + 几个服务好),点开才展开;同 Model 那行的折法,每次打开这页都收着 */
+    '<div class="card glass hlcard"><button class="it hlhead" type="button" aria-expanded="false"><span class="grow"><span class="t">Cache hit <b class="hpct">—</b></span></span>' +
+      '<span class="tr hlsum"></span><span class="chev hlchev">' + CHEV + '</span></button>' +
+      '<div class="hlfold"><div class="hlin"><div class="hlead"><div class="hsub"></div>' +
       '<svg class="hspark" viewBox="0 0 120 40" preserveAspectRatio="none" aria-hidden="true"><path class="hline" d=""/></svg></div>' +
       '<div class="hlrow"><span>Compactions</span><span class="v hcomp">—</span></div>' +
       '<div class="hlrow"><span>Last error</span><span class="v herr">—</span></div>' +
-      '<div class="hsv" role="list"></div><p class="hdet" aria-live="polite"></p></div>' +
+      '<div class="hsv" role="list"></div><p class="hdet" aria-live="polite"></p></div></div></div>' +
     '<p class="foot hnote"></p>' +
     /* 2026-10-12 深夜她选 A:~~单独一个「MODEL」分区 + 一张卡~~ 并进 More settings 那张卡,做成 iOS 设置页那种一行:
        左「Model」、右灰字 = 现在的型号(或「→ 下一句要换的」),点了照旧往下展开清单。.pmcur / .pmeng 留着(藏起来)只为脚本不用改两处。 */
@@ -5990,7 +6004,7 @@ box.focus();
     closeProf(); var d = document.getElementById("dotsBtn"); if (d) setTimeout(function () { d.click(); }, 280);
   });
   function closeProf() { if (nameIn && !nameIn.hidden) nameIn.blur(); closeAct(); prof.classList.remove("open"); topTint(null); }
-  function openProf() { prof.classList.add("open"); foldModels(false); paintCover(); loadProf(); }
+  function openProf() { prof.classList.add("open"); foldModels(false); foldHealth(false); paintCover(); loadProf(); }
 
   /* ── 背景(2026-10-10 第六版,所有者「我也想要这种能换背景的」)──
      存法同聊天壁纸:长边压到 1600px 的 JPEG → POST api/avatar/cover(本层上限 1.5MB,和壁纸同一档)。
@@ -6128,6 +6142,9 @@ box.focus();
     pmHead.setAttribute("aria-expanded", String(!!open));
   }
   pmHead.addEventListener("click", function () { foldModels(!prof.classList.contains("pmopen")); });
+  var hlHead = prof.querySelector(".hlhead");
+  function foldHealth(open) { prof.classList.toggle("hlopen", !!open); hlHead.setAttribute("aria-expanded", String(!!open)); }
+  hlHead.addEventListener("click", function () { foldHealth(!prof.classList.contains("hlopen")); });
 
   /* ── 在这页直接换他的头像 / 改他的名字(2026-10-10 所有者要的;原来只能去外壳的设置里)──
      存法和设置里那份一模一样:头像裁正方、压 256px JPEG → POST api/avatar/him;名字 → POST api/prefs { himName }
@@ -6298,7 +6315,7 @@ box.focus();
     fetch("api/vitals", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
       if (!d || !d.ok) throw 0;
       var c = d.cache || {}, last = c.last;
-      q(".hpct").innerHTML = last ? last.pct + "<small>%</small>" : "—";
+      q(".hpct").textContent = last ? last.pct + "%" : "—";
       q(".hpct").classList.toggle("na", !last);
       q(".hsub").textContent = last ? kfmt(last.read) + " cached · " + kfmt(last.create + last.input) + " new" + (c.avg24 != null && c.n24 > 1 ? " · 24h avg " + c.avg24 + "%" : "") : "No turns recorded yet";
       /* 24 小时那条线:横轴 = 时间(满 24 小时),纵轴 = 命中率(下限按这段最低的再低 2 个点,命中率常年 99 上下,从 0 画就是一条平线) */
@@ -6331,7 +6348,9 @@ box.focus();
       paintDet(d);
       var n = (d.services || []).length;
       q(".hnote").textContent = (bad.length ? bad.length + " need" + (bad.length > 1 ? "" : "s") + " attention: " + bad.join(", ") : "All " + n + " services up") + (d.at ? " · checked " + whenSeen(d.at) : "");
-    }).catch(function () { q(".hnote").textContent = "Health unavailable — server unreachable."; });
+      q(".hlsum").textContent = bad.length ? bad.length + (bad.length > 1 ? " issues" : " issue") : "All " + n + " up";   // 收着时右边那句:有坏的收着也看得出来
+      q(".hlsum").classList.toggle("bad", !!bad.length);
+    }).catch(function () { q(".hnote").textContent = "Health unavailable — server unreachable."; q(".hlsum").textContent = "Unavailable"; });
   }
   function paintDet(d) {
     var el = prof.querySelector(".hdet"), s = null;
