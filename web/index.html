@@ -2458,7 +2458,11 @@
   chatframe.addEventListener("load", function () {
     pushSafe(); mountBack(); syncBg();
     try {
-      new MutationObserver(syncBg).observe(chatframe.contentDocument.documentElement, { attributes: true });
+      /* 2026-10-16 帧率:聊天页根节点的属性一帧里会变好几次(忙 / 键盘 / 安全区),每次都 getComputedStyle 逼它重算样式;并到下一帧做一次 */
+      var bgRaf = 0;
+      new MutationObserver(function () {
+        if (!bgRaf) bgRaf = requestAnimationFrame(function () { bgRaf = 0; syncBg(); });
+      }).observe(chatframe.contentDocument.documentElement, { attributes: true });
     } catch (e) {}
   });
   try {
