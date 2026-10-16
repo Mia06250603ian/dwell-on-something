@@ -3169,7 +3169,9 @@ function renderSaid(msgs) {
 
 async function loadSaid() {
   try {
-    const r = await fetch('api/messages?limit=400', { cache: 'no-store' });
+    /* 2026-10-16 帧率:一打开先画 200 条(~~400~~)。页面上的东西少一半,他每冒出一行、每滑一下浏览器要排的就少一半;
+       往上翻点「看更早的」照旧一次补 400 条(loadOlder 那条没改)。所有者「按你思路优化试试」 */
+    const r = await fetch('api/messages?limit=200', { cache: 'no-store' });
     if (!r.ok) return 0;
     const d = await r.json();
     const msgs = d.msgs || [];
@@ -6589,6 +6591,15 @@ box.focus();
     if (root.getAttribute("data-chatstyle") === "tg") tailPass(wasFull); else tails.clear();   // 只删了一行也要走这步,所以放在下面那个 return 前面
     if (!scopes.length) return;
     var tg = root.getAttribute("data-chatstyle") === "tg";
+    /* 2026-10-16:她往上翻着时,这一趟(拆泡 / 时间掉行 / 贴纸)会让上面的行变高、把她正看的那行往下推 ——
+       Safari 没有滚动锚定、TG 版 #log 也关了它,于是点「看更早的」后眼睛停的那行跑出好几屏。
+       自己锚:先记下屏幕中间那一行的位置,这一趟改完再把它挪回原处。贴底时不管(glide 管) */
+    var anc = null, ancTop = 0;
+    if (tg && !stickBottom) {
+      var lr = log.getBoundingClientRect();
+      anc = rowOf(document.elementFromPoint(lr.left + lr.width / 2, lr.top + lr.height * 0.45));
+      if (anc) ancTop = anc.getBoundingClientRect().top;
+    }
     scopes.forEach(function (sc) {
       stickerPass(sc);                     // 贴纸两套样式都要
       photoPass(sc);                       // 她发的图也是两套样式都要
@@ -6621,6 +6632,10 @@ box.focus();
       tightenAll(tl);
     }
     typing();
+    if (anc && anc.isConnected && !stickBottom) {
+      var dA = anc.getBoundingClientRect().top - ancTop;
+      if (Math.abs(dA) > 0.5) log.scrollTop += dA;
+    }
     if (tg) settle();
   }
   /* ── 时间放不下时别让泡变胖(2026-10-10 晚,她:「消息一长气泡就变胖、日期到下一行、间距太胖」)──
@@ -7396,6 +7411,9 @@ box.focus();
   /* 主脚本和上面几层包装都会叫 scroll():TG 版一律并到下一帧,交给 glide(第二轮那层只是并帧、还是硬跳) */
   var _scPrev = window.scroll, glideQ = false, glideForce = false;
   window.scroll = function (force) {
+    /* 2026-10-16 修:画历史时(renderSaid 包装里的 __dwBulk)不滚。原来这层先接住、排了一个 glide(true) —— addMe 里那句 scroll(true)
+       于是点「看更早的」之后被拽回最底下(线上那版也这样,本地复现:眼睛停的那行从 120 跑到 -56913)。画完由调用方自己滚 */
+    if (window.__dwBulk) return;
     if (!isTg()) return _scPrev.apply(this, arguments);
     if (force) glideForce = true;
     if (!glideQ) {
