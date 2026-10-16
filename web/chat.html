@@ -5701,6 +5701,30 @@ box.focus();
       background: var(--g4-bg), color-mix(in srgb, var(--card) 82%, transparent) !important; }
   }
 
+  /* ══ 「他」页 HEALTH(2026-10-16)══ 和 USAGE 那张卡同一套:字只靠三档深浅(--p1/--p2/--p3)、数字圆体、半像素线、零彩色。
+     服务那排:好的 = 实心点,不好的 = 空心圈(不用红绿灯,这页零彩色);点一颗在下面一行写细节,再点收起 */
+  .tgprof .hlcard { padding: 15px 18px 12px; }
+  .tgprof .hlead { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; padding-bottom: 12px; }
+  .tgprof .hlead .k { font-size: 11px; color: var(--p2); }
+  .tgprof .hlead .n { font-family: var(--rnd); font-size: 24px; font-weight: 500; letter-spacing: -.02em; line-height: 1.1; color: var(--p1); margin-top: 2px; }
+  .tgprof .hlead .n small { font-size: 12px; font-weight: 400; color: var(--p2); margin-left: 1px; }
+  .tgprof .hlead .n.na { color: var(--p3); font-weight: 400; }
+  .tgprof .hsub { font-size: 10.5px; color: var(--p3); margin-top: 4px; }
+  .tgprof .hspark { width: 112px; height: 38px; flex: none; overflow: visible; }
+  .tgprof .hspark[hidden] { display: none; }
+  .tgprof .hline { fill: none; stroke: var(--p1); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+  .tgprof .hlrow { display: flex; align-items: baseline; justify-content: space-between; padding: 9px 0; border-top: .5px solid var(--hair); font-size: 12.5px; color: var(--p1); }
+  .tgprof .hlrow .v { font-family: var(--rnd); font-weight: 500; font-variant-numeric: tabular-nums; }
+  .tgprof .hlrow .v.na { font-weight: 400; color: var(--p3); }
+  .tgprof .hsv { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 4px; padding: 12px 0 2px; border-top: .5px solid var(--hair); }
+  .tgprof .hs { display: flex; flex-direction: column; align-items: center; gap: 6px; border: 0; background: none; padding: 4px 0; color: var(--p2); font: inherit; font-size: 10.5px; cursor: pointer; border-radius: 10px; }
+  .tgprof .hs i { width: 9px; height: 9px; border-radius: 50%; background: var(--p1); }
+  .tgprof .hs.bad i { background: none; box-shadow: inset 0 0 0 1.3px var(--p2); }
+  .tgprof .hs.bad span { color: var(--p1); }
+  .tgprof .hs.on { background: var(--hair); }
+  .tgprof .hdet { margin: 6px 0 0; font-size: 11px; color: var(--p2); min-height: 0; text-align: center; }
+  .tgprof .hdet:empty { display: none; }
+
   /* ══ 输入栏 1:1 第四版(2026-10-16,所有者发了 Telegram iOS 三张截图:贴纸面板开 / 空着 / 有字,「我要一模一样的」)══
      量法:她的截图 1206px = 402pt@3x,和本页同一坐标系;本地 402×874@3x 渲染、页底临时换白,同一段代码量墨迹框和描边作差(见 dwell 手册《输入栏 1:1 第四版》)。
      ~~10-10 第三版(左右留边 15.7pt 等)~~ 是照**旧版** TG 截图量的;这一版的 TG 是 iOS 26 那套,留边窄得多。下面全是量出来的 pt:
@@ -5930,6 +5954,14 @@ box.focus();
       '<div class="bar ctxBar"><i></i></div>' + rowHTML("q5", "5-hour limit") + rowHTML("q7", "Weekly limit") + '</div>' +
     '<div class="card glass uB">' + ringHTML("pctx", "Context") + ringHTML("p5h", "5-hour") + ringHTML("p7d", "Weekly") + '</div>' +
     '<div class="udots" aria-hidden="true"><i></i><i></i></div><p class="foot ugnote"></p>' +
+    /* 2026-10-16 所有者:「加一个 Health?缓存命中、健不健康的东西做一个可视化」—— 数据来自 dwell-bridge 的 /api/vitals(只读汇总,不碰晏) */
+    '<div class="sect">Health</div>' +
+    '<div class="card glass hlcard"><div class="hlead"><div><div class="k">Cache hit</div><div class="n hpct">—</div><div class="hsub"></div></div>' +
+      '<svg class="hspark" viewBox="0 0 120 40" preserveAspectRatio="none" aria-hidden="true"><path class="hline" d=""/></svg></div>' +
+      '<div class="hlrow"><span>Compactions</span><span class="v hcomp">—</span></div>' +
+      '<div class="hlrow"><span>Last error</span><span class="v herr">—</span></div>' +
+      '<div class="hsv" role="list"></div><p class="hdet" aria-live="polite"></p></div>' +
+    '<p class="foot hnote"></p>' +
     /* 2026-10-12 深夜她选 A:~~单独一个「MODEL」分区 + 一张卡~~ 并进 More settings 那张卡,做成 iOS 设置页那种一行:
        左「Model」、右灰字 = 现在的型号(或「→ 下一句要换的」),点了照旧往下展开清单。.pmcur / .pmeng 留着(藏起来)只为脚本不用改两处。 */
     '<div class="card glass pmcard">' +
@@ -6256,6 +6288,56 @@ box.focus();
       setMeter("7d", b.utilization, null, whenReset(b.resetsAt));
       gnote.textContent = d.at ? "Updated " + whenSeen(d.at) : "";
     }).catch(function () { setMeter("5h", null, null, "Unavailable"); setMeter("7d", null, null, "Unavailable"); });
+    loadHealth();
+  }
+  /* ── Health(2026-10-16)── 缓存命中(最近一轮 + 24 小时那条线)/ 这个窗口压缩过几次 / 最近一次报错 / 八个服务好不好 */
+  var hDet = "";
+  function kfmt(n) { return n >= 1000 ? (Math.round(n / 100) / 10) + "k" : String(n); }
+  function loadHealth() {
+    var q = function (c) { return prof.querySelector(c); };
+    fetch("api/vitals", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d || !d.ok) throw 0;
+      var c = d.cache || {}, last = c.last;
+      q(".hpct").innerHTML = last ? last.pct + "<small>%</small>" : "—";
+      q(".hpct").classList.toggle("na", !last);
+      q(".hsub").textContent = last ? kfmt(last.read) + " cached · " + kfmt(last.create + last.input) + " new" + (c.avg24 != null && c.n24 > 1 ? " · 24h avg " + c.avg24 + "%" : "") : "No turns recorded yet";
+      /* 24 小时那条线:横轴 = 时间(满 24 小时),纵轴 = 命中率(下限按这段最低的再低 2 个点,命中率常年 99 上下,从 0 画就是一条平线) */
+      var sv = c.series || [], line = q(".hline"), sp = q(".hspark");
+      if (sv.length > 1) {
+        var now = Date.now() / 1000, lo = Math.min.apply(null, sv.map(function (p) { return p[1]; })) - 2, hi = 100;
+        lo = Math.max(0, Math.min(lo, 96));
+        line.setAttribute("d", sv.map(function (p, i) {
+          var x = Math.max(0, Math.min(120, 120 - (now - p[0]) / 86400 * 120)), y = 37 - (p[1] - lo) / (hi - lo) * 34;
+          return (i ? "L" : "M") + x.toFixed(1) + " " + y.toFixed(1);
+        }).join(""));
+        sp.hidden = false;
+      } else sp.hidden = true;
+      var w = d.window || {};
+      q(".hcomp").textContent = w.compactions == null ? "—" : w.compactions + " this window";
+      q(".herr").textContent = d.lastErr ? d.lastErr.kind + (d.lastErr.at ? " · " + whenSeen(Date.parse(d.lastErr.at) / 1000) : "") : "None";
+      q(".herr").classList.toggle("na", !d.lastErr);
+      var box = q(".hsv"); box.innerHTML = "";
+      var bad = [];
+      (d.services || []).forEach(function (s) {
+        var b = document.createElement("button");
+        b.type = "button"; b.className = "hs" + (s.ok ? "" : " bad"); b.setAttribute("role", "listitem");
+        b.innerHTML = "<i></i><span></span>";
+        b.querySelector("span").textContent = s.name;
+        b.setAttribute("aria-label", s.name + ": " + (s.ok ? "OK" : "needs attention") + (s.detail ? ", " + s.detail : ""));
+        b.addEventListener("click", function () { hDet = hDet === s.key ? "" : s.key; paintDet(d); });
+        box.appendChild(b);
+        if (!s.ok) bad.push(s.name);
+      });
+      paintDet(d);
+      var n = (d.services || []).length;
+      q(".hnote").textContent = (bad.length ? bad.length + " need" + (bad.length > 1 ? "" : "s") + " attention: " + bad.join(", ") : "All " + n + " services up") + (d.at ? " · checked " + whenSeen(d.at) : "");
+    }).catch(function () { q(".hnote").textContent = "Health unavailable — server unreachable."; });
+  }
+  function paintDet(d) {
+    var el = prof.querySelector(".hdet"), s = null;
+    (d.services || []).forEach(function (x) { if (x.key === hDet) s = x; });
+    Array.prototype.forEach.call(prof.querySelectorAll(".hsv .hs"), function (b, i) { b.classList.toggle("on", !!s && d.services[i] === s); });
+    el.textContent = s ? s.name + " — " + (s.ok ? "OK" : "Needs attention") + (s.detail ? " · " + s.detail : "") : "";
   }
   function whenSeen(sec) {
     var m = Math.round((Date.now() / 1000 - sec) / 60);
