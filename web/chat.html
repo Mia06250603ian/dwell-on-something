@@ -4352,7 +4352,7 @@ box.focus();
       if (!b && isTg()) Array.prototype.forEach.call(logEl.querySelectorAll('.gu'), function (el) {
         if (!el._final && el._raw && !el.textContent) { el.textContent = el._raw; el._tgForce = true; try { renderRich(el); } catch (e) {} }
       });
-      if (window.__tgKick) window.__tgKick();
+      if (window.__tgKickTail) window.__tgKickTail(); else if (window.__tgKick) window.__tgKick();   // 2026-10-16:只过末尾那几行,见 __tgKickTail
     } catch (e) {}
     return out;
   };
@@ -5357,23 +5357,26 @@ box.focus();
   html[data-chatstyle="tg"] .row.me .bubble, html[data-chatstyle="tg"] .gu, html[data-chatstyle="tg"] .tgb { border-radius: 18px; }
   /* ④ 同一串里隔 2px */
   html[data-chatstyle="tg"] .tgset { gap: 2px; }
-  /* ① 尾巴:只给一串的最后一颗。他的:单颗的 .gu,或拆开那串的最后一颗 .tgb;她的:后面紧跟的不是她的泡才给 */
+  /* ① 尾巴:只给一串的最后一颗。他的:单颗的 .gu,或拆开那串的最后一颗 .tgb;她的:后面紧跟的不是她的泡才给
+     ⚠️ 2026-10-16 帧率:她那串原来用 `.row.me:not(:has(+ .row.me))` 认,`:has(+ …)` 让每往列表里加一行都重算近千个元素的样式
+     (本地实测加一行 13.9ms → 2.4ms)。现在由脚本记 .tgend(=后面紧跟的不是 .row.me,TG 那段 tailMark),
+     `.tgend.tgend` / `:not(.tgend):not(.tgend)` 重复写是为了和原来的特异性一样(4 个类),层叠顺序不变。**别改回 :has。** */
   html[data-chatstyle="tg"] .gu:not(.tg-split):not(.stkonly),
   html[data-chatstyle="tg"] .tgset .tgb:last-child:not(.stkonly),
-  html[data-chatstyle="tg"] .row.me:not(:has(+ .row.me)) > .bubble:not(.stkonly) { position: relative; }
+  html[data-chatstyle="tg"] .row.me.tgend.tgend > .bubble:not(.stkonly) { position: relative; }
   html[data-chatstyle="tg"] .gu:not(.tg-split):not(.stkonly),
   html[data-chatstyle="tg"] .tgset .tgb:last-child:not(.stkonly) { border-bottom-left-radius: 5px; }
-  html[data-chatstyle="tg"] .row.me:not(:has(+ .row.me)) > .bubble:not(.stkonly) { border-bottom-right-radius: 5px; }
-  html[data-chatstyle="tg"] .row.me:has(+ .row.me) > .bubble { border-bottom-right-radius: 18px; }
+  html[data-chatstyle="tg"] .row.me.tgend.tgend > .bubble:not(.stkonly) { border-bottom-right-radius: 5px; }
+  html[data-chatstyle="tg"] .row.me:not(.tgend):not(.tgend) > .bubble { border-bottom-right-radius: 18px; }
   html[data-chatstyle="tg"] .gu:not(.tg-split):not(.stkonly)::before,
   html[data-chatstyle="tg"] .tgset .tgb:last-child:not(.stkonly)::before,
-  html[data-chatstyle="tg"] .row.me:not(:has(+ .row.me)) > .bubble:not(.stkonly)::before {
+  html[data-chatstyle="tg"] .row.me.tgend.tgend > .bubble:not(.stkonly)::before {
     /* 10-10 她:「尾巴不用放大」—— 收小一号(~~11×18、外伸 6~~),只露一点尖,和 TG 那张图一样含蓄 */
     content: ""; position: absolute; bottom: 0; width: 8px; height: 13px; pointer-events: none;
     -webkit-mask: var(--tg-tail-l) no-repeat center / 100% 100%; mask: var(--tg-tail-l) no-repeat center / 100% 100%;
     left: -4px; background: var(--tg-him);
   }
-  html[data-chatstyle="tg"] .row.me:not(:has(+ .row.me)) > .bubble:not(.stkonly)::before {
+  html[data-chatstyle="tg"] .row.me.tgend.tgend > .bubble:not(.stkonly)::before {
     left: auto; right: -4px; background: var(--tg-me);
     -webkit-mask-image: var(--tg-tail-r); mask-image: var(--tg-tail-r);
   }
@@ -5408,6 +5411,25 @@ box.focus();
   @keyframes tgthinkin { 0% { opacity: 0; transform: translate3d(-4px, 8px, 0) scale(.9); }
                          40% { opacity: 1; } 100% { opacity: 1; transform: none; } }
   html[data-chatstyle="tg"] .tgpop-fade { transform-origin: 0 50%; animation: tgthinkin .45s var(--tg-spring-pop, cubic-bezier(.2, 1.2, .35, 1)) both; }
+
+  /* ── 2026-10-16:思考那行的标题(所有者「只做标题,内容不动」)──
+     他正在想:标题写「Thinking」,字上一道光从左扫到右(iOS / TG 加载字那种流光);想完平滑换回「Thought process」(脚本 foldPass 换字 + 一下淡入)。
+     光只在这几个字上(background-clip: text),面积很小;系统开「减弱动态效果」不扫。 */
+  html[data-chatstyle="tg"] .row > .toolline.tglive:not(.tgtool) .lbl {
+    background: linear-gradient(100deg, color-mix(in srgb, var(--text) 40%, transparent) 0 38%, color-mix(in srgb, var(--text) 92%, transparent) 50%, color-mix(in srgb, var(--text) 40%, transparent) 62% 100%) 0 0 / 250% 100%;
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    animation: tgshimmer 1.7s linear infinite;
+  }
+  @keyframes tgshimmer { from { background-position: 100% 0; } to { background-position: 0% 0; } }
+  @keyframes tglblin { from { opacity: 0; transform: translate3d(0, 3px, 0); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { html[data-chatstyle="tg"] .row > .toolline.tglive:not(.tgtool) .lbl { animation: none; } }
+
+  /* ── 2026-10-16 按下就飞:没送出去的那颗,泡左边一颗红「!」(点它重发,脚本里认),泡本身淡一点 ── */
+  html[data-chatstyle="tg"] .row.me.tgfail::before {
+    content: "!"; flex: none; align-self: flex-end; width: 20px; height: 20px; margin: 0 6px 2px 0; border-radius: 50%;
+    background: #e5484d; color: #fff; font: 700 13px/20px -apple-system, system-ui, sans-serif; text-align: center; cursor: pointer;
+  }
+  html[data-chatstyle="tg"] .row.me.tgfail > .bubble { opacity: .6; }
 
   /* 回到底部 + 未读数(照她发的 TG 截图:右下角一颗玻璃圆、里面一个 ⌄,40pt) */
   .tgdown { display: none; }
@@ -6468,10 +6490,26 @@ box.focus();
   function foldPass(sc) {
     /* 2026-10-16 帧率:先把每行转没转圈全读完再改 —— 原来边读 getComputedStyle 边改 class,每行重算一次整页样式 */
     var lines = Array.prototype.slice.call((sc || log).querySelectorAll(".row > .toolline"));
-    var lives = lines.map(function (line) { var sp = line.querySelector(".spin"); return !!sp && getComputedStyle(sp).display !== "none"; });
+    /* ⚠️ 2026-10-16 修:原来按 .spin 的 computed display 判断 —— 可 TG 样式把 .spin 一律 display:none,于是 tglive 从来没亮过,
+       「他想的时候那朵慢慢转」从上线起就没转过。改看真相:还挂着 .spin(思考歇了 / 想完会换成时钟图标)、没被收尾藏掉(工具干完 inline display:none)、
+       而且他还在忙(工具收尾那一下不触发 MutationObserver,忙完那次整页过一遍兜底)。顺带省掉每行一次 getComputedStyle。 */
+    var busyNow = root.hasAttribute("data-tgbusy");
+    var lives = lines.map(function (line) { var sp = line.querySelector(".spin"); return !!sp && sp.style.display !== "none" && busyNow; });
     lines.forEach(function (line, i) {
       var live = lives[i];
       line.classList.toggle("tglive", live && root.getAttribute("data-chatstyle") === "tg");
+      /* 思考那行的标题:想着 =「Thinking」(CSS 里扫流光),想完换回原字并轻轻淡入一下;切回官端还原 */
+      if (!line._ids) {
+        var tl = line.querySelector(".lbl");
+        if (tl) {
+          var wantT = live && root.getAttribute("data-chatstyle") === "tg";
+          if (wantT && tl.dataset.orig == null) { tl.dataset.orig = tl.innerHTML; tl.textContent = "Thinking"; }
+          else if (!wantT && tl.dataset.orig != null) {
+            tl.innerHTML = tl.dataset.orig; delete tl.dataset.orig;
+            if (!calm && tl.animate) tl.animate([{ opacity: 0, transform: "translate3d(0,3px,0)" }, { opacity: 1, transform: "none" }], { duration: 320, easing: "cubic-bezier(.32,.72,0,1)" });
+          }
+        }
+      }
       if (line._ids) {
         line.classList.add("tgtool");
         /* 标签照参考图写「Used N tool(s)」,具体是哪个展开才看;切回官端时还原原文 */
@@ -6525,7 +6563,18 @@ box.focus();
   /* ⚠️ 2026-10-10 改成「只处理变了的那几行」:原来每次变动(逐字流式时每一帧)都把整页所有气泡扫一遍、
      还逐个 getComputedStyle,聊天记录越长越卡 —— 所有者报「一卡一卡」的主要来源。
      现在 MutationObserver 记下哪几行变了,下一帧只处理那几行;换样式 / 换设置(applyPrefs)时才整页过一遍。 */
-  var dirty = new Set(), full = true;
+  var dirty = new Set(), full = true, tails = new Set();
+  /* 她那串的尾巴(2026-10-16,代替 CSS 里的 :has(+ .row.me),见 TG 样式「① 尾巴」):后面紧跟的不是她的泡 = .tgend */
+  function tailMark(r) {
+    if (!r || r.nodeType !== 1 || !r.classList.contains("row") || !r.classList.contains("me")) return;
+    var n = r.nextElementSibling, end = !(n && n.classList.contains("row") && n.classList.contains("me"));
+    if (r.classList.contains("tgend") !== end) r.classList.toggle("tgend", end);
+  }
+  function tailPass(all) {
+    if (all) Array.prototype.forEach.call(log.querySelectorAll(":scope > .row.me"), tailMark);
+    else tails.forEach(function (r) { if (r.isConnected) { tailMark(r); tailMark(r.previousElementSibling); } });
+    tails.clear();
+  }
   function rowOf(n) {
     var el = n && (n.nodeType === 1 ? n : n.parentElement);
     while (el && el.parentElement !== log) el = el.parentElement;
@@ -6534,9 +6583,10 @@ box.focus();
   function pass() {
     queued = false;
     fly = []; fresh = 0;
-    var scopes;
+    var scopes, wasFull = full;
     if (full) { full = false; dirty.clear(); scopes = [log]; }
     else { scopes = Array.from(dirty).filter(function (r) { return r.isConnected; }); dirty.clear(); }
+    if (root.getAttribute("data-chatstyle") === "tg") tailPass(wasFull); else tails.clear();   // 只删了一行也要走这步,所以放在下面那个 return 前面
     if (!scopes.length) return;
     var tg = root.getAttribute("data-chatstyle") === "tg";
     scopes.forEach(function (sc) {
@@ -6633,6 +6683,8 @@ box.focus();
       if (r.classList.contains("me")) {
         passedMe = true;
         var b = r.querySelector(":scope > .bubble"), v = seen ? "2" : "1";
+        /* 2026-10-16 按下就飞:还没送到 / 没送出去的那颗不打勾(送到那一刻再放 ✓ 那一下) */
+        if (b && (r.classList.contains("tgsending") || r.classList.contains("tgfail"))) { if (b.hasAttribute("data-tgck")) b.removeAttribute("data-tgck"); continue; }
         if (b && b.getAttribute("data-tgck") !== v) {
           /* 第三轮:真的在这一刻变了(不是整页重画、不是历史)才放那一下 1.3 → 1 */
           if (!all && !calm && (r._tgLive || b.hasAttribute("data-tgck"))) ckPop(b);
@@ -6853,6 +6905,84 @@ box.focus();
     if (window.__tgVoicePend === el) window.__tgVoicePend = null;
   }
   window.__tgDropPend = function () { dropPend(window.__tgVoicePend); };
+
+  /* ── 按下就飞(2026-10-16,所有者选的)──
+     原来她的泡要等服务器回声(echo)才画,按下发送到泡飞起来之间隔一个网络来回。TG 是按下就飞、送到再打 ✓。
+     现在只在 TG 版、只对纯文字(带图 / 文件的照旧走原路):按下那一刻就画这颗泡(.tgsending,不打勾),照常从输入框飞上去;
+     回声到了**认领这一颗**(不再画第二颗),送到那一刻放 ✓;没送出去(断网 / 他还在说上一句的 409 / 别的报错)→ .tgfail,
+     泡旁一颗红「!」,点它重发。官端一行没动。 */
+  var pendSend = [];
+  function pendMe(text) {
+    window.addMe(text);                                       // 和回声那条路同一个画法(包装会记 _tgLive,于是照常飞)
+    var r = log.lastElementChild;
+    while (r && !r.classList.contains("me")) r = r.previousElementSibling;
+    if (!r) return null;
+    r.classList.add("tgsending"); r._pendText = text; pendSend.push(r);
+    return r;
+  }
+  function sentOk(r) {
+    if (!r || !r.classList.contains("tgsending")) return;
+    r.classList.remove("tgsending");
+    var b = r.querySelector(":scope > .bubble");
+    checks(false);                                            // 这一颗现在才打勾(r._tgLive,所以放那一下)
+    if (b) tightenAll([b]);                                   // 勾占的宽度变了,时间掉不掉行重量一次
+  }
+  function sendFail(r, why, wasBusy) {
+    var i = pendSend.indexOf(r); if (i >= 0) pendSend.splice(i, 1);
+    if (r && r.isConnected) { r.classList.remove("tgsending"); r.classList.add("tgfail"); r.title = "没送出去,点红色的「!」重发"; }
+    if (!wasBusy) { try { setBusy(false); } catch (e) {} }
+    note("（" + (why || "没送出去,再试一次") + "）", "err");
+  }
+  function postText(r, text, wasBusy) {
+    fetch("api/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: text }) })
+      .then(function (res) { return res.json().catch(function () { return {}; }).then(function (d) { if (!res.ok || !d.ok) throw new Error(d.why || ""); }); })
+      .then(function () { sentOk(r); })
+      .catch(function (e) { sendFail(r, e && e.message, wasBusy); });
+  }
+  var _send = window.send;
+  if (typeof _send === "function") {
+    window.send = function () {
+      if (!isTg() || attachments.length) return _send.apply(this, arguments);
+      var text = (box.value || "").trim();
+      if (!text) return _send.apply(this, arguments);         // 空着按 = 停下,照原路
+      var wasBusy = guBusy;
+      if (wasBusy) { try { fetch("api/stop", { method: "POST" }); } catch (e) {} }
+      box.value = ""; fitBox();
+      stickBottom = true;
+      setBusy(true);
+      var r = pendMe(text);
+      postText(r, text, wasBusy);
+    };
+    sendBtn.onclick = function () { window.send(); };          // 原来那条直接绑着旧函数,换成走包装
+  }
+  /* 点失败那颗的红「!」= 重发(TG 那颗也是点了重发)。他还在说的时候不重发,免得又是 409 */
+  log.addEventListener("click", function (e) {
+    var r = e.target.closest && e.target.closest(".row.me.tgfail");
+    if (!r || !isTg()) return;
+    var b = r.querySelector(":scope > .bubble");
+    if (b && b.contains(e.target)) return;                     // 只认点在「!」上(泡本身照旧能长按复制)
+    e.preventDefault(); e.stopPropagation();
+    if (guBusy) { note("（他还在说上一句,等他说完再点重发）"); return; }
+    var text = r._pendText; if (!text) return;
+    r.remove();
+    stickBottom = true; setBusy(true);
+    postText(pendMe(text), text, false);
+  });
+  /* 回声来了:有在等的同一句,就认领那一颗(handle 里画泡那一步换成「交出那颗」),别的照原路走 */
+  var _hdP = window.handle;
+  if (typeof _hdP === "function") window.handle = function (d) {
+    if (d && d.type === "echo" && !d.voice && pendSend.length) {
+      var t = String(d.text || "").trim(), i = -1;
+      for (var k = 0; k < pendSend.length; k++) if (pendSend[k]._pendText === t && pendSend[k].isConnected) { i = k; break; }
+      if (i >= 0) {
+        var r = pendSend.splice(i, 1)[0], keep = window.addMe;
+        window.addMe = function () { return r; };
+        try { return _hdP.apply(this, arguments); }
+        finally { window.addMe = keep; sentOk(r); }
+      }
+    }
+    return _hdP.apply(this, arguments);
+  };
   if (micBtn) micBtn.addEventListener("click", function (e) {
     if (root.getAttribute("data-chatstyle") !== "tg") return;      // 官端那颗照旧只做样子
     e.preventDefault(); e.stopPropagation();
@@ -7125,10 +7255,33 @@ box.focus();
     if (!want) { if (bl) log.insertBefore(dots, bl); else log.appendChild(dots); try { scroll(); } catch (e) {} }
   }
   window.__tgKick = function () { full = true; schedule(); };
+  /* 2026-10-16 帧率:他开始忙 / 说完(setBusy)原来叫 __tgKick 整页过一遍 —— 每一轮开头结尾各一次,几百颗泡全扫。
+     忙闲一变,真会跟着变的只有末尾那几行(思考 / 工具那行亮不亮、三个点、被打断那颗放出来的字),所以只过最后 24 行。 */
+  window.__tgKickTail = function () {
+    var n = 0;
+    for (var r = log.lastElementChild; r && n < 24; r = r.previousElementSibling) { if (r !== dots) { dirty.add(r); n++; } }
+    schedule([]);
+  };
+  /* 2026-10-16:工具干完 / 一组收尾只改了 .spin 的 inline display,MutationObserver 不看属性 —— 那行会一直闪到这一轮说完。
+     包一层:收尾之后把那一行记成「变了」,下一帧只处理它(不整页过) */
+  ["markToolDone", "closeGroup"].forEach(function (fn) {
+    var orig = window[fn];
+    if (typeof orig !== "function") return;
+    window[fn] = function () {
+      var line = typeof curGroup !== "undefined" && curGroup && curGroup.lineEl;
+      var out = orig.apply(this, arguments);
+      try { var r = line && rowOf(line); if (r) { dirty.add(r); schedule([]); } } catch (e) {}
+      return out;
+    };
+  });
   var queued = false;
   function schedule(recs) {
     if (recs && recs.length) recs.forEach(function (rec) {
-      if (rec.target === log) Array.prototype.forEach.call(rec.addedNodes, function (n) { if (n.nodeType === 1 && n !== dots) dirty.add(n); });
+      if (rec.target === log) {
+        Array.prototype.forEach.call(rec.addedNodes, function (n) { if (n.nodeType === 1) { if (n !== dots) dirty.add(n); tails.add(n); } });
+        /* 加 / 删一行,前面那行「后面紧跟的是谁」就变了(尾巴给不给,见 tailMark) */
+        if (rec.previousSibling && rec.previousSibling.nodeType === 1) tails.add(rec.previousSibling);
+      }
       else { var r = rowOf(rec.target); if (r && r !== dots) dirty.add(r); }
     });
     else if (!recs) full = true;
