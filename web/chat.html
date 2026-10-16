@@ -4293,6 +4293,8 @@ box.focus();
   var R = document.documentElement;
   var isTg = function () { return R.getAttribute('data-chatstyle') === 'tg'; };
   var live = function (el) { if (el && !window.__tgHist) el._tgLive = true; return el; };
+  /* 2026-10-16:他忙着时新冒出来的思考 / 工具行,建出来的那一刻就藏(.tghold),别等下一帧 —— 不然会闪一帧。放出来归页尾那段的 releaseHeld */
+  var hold = function (row) { if (row && row._tgLive && isTg() && R.hasAttribute("data-tgbusy")) row.classList.add("tghold"); return row; };
   var _sp = window.sPush;
   if (typeof _sp === 'function') window.sPush = function (el, text) {
     if (!isTg()) return _sp.apply(this, arguments);
@@ -4315,13 +4317,13 @@ box.focus();
   var _et = window.ensureThink;
   if (typeof _et === 'function') window.ensureThink = function () {
     var had = turnThink, out = _et.apply(this, arguments);
-    try { if (out !== had && out.lineEl) live(out.lineEl.parentNode); } catch (e) {}
+    try { if (out !== had && out.lineEl) hold(live(out.lineEl.parentNode)); } catch (e) {}
     return out;
   };
   var _atu2 = window.addToolUse;
   window.addToolUse = function () {
     var n = logEl.children.length, out = _atu2.apply(this, arguments);
-    try { if (logEl.children.length > n) live(logEl.lastElementChild); } catch (e) {}
+    try { if (logEl.children.length > n) hold(live(logEl.lastElementChild)); } catch (e) {}
     return out;
   };
   var _sc = window.scroll, scRaf = 0, scForce = false;
@@ -5413,6 +5415,9 @@ box.focus();
   @keyframes tgthinkin { 0% { opacity: 0; transform: translate3d(-4px, 8px, 0) scale(.9); }
                          40% { opacity: 1; } 100% { opacity: 1; transform: none; } }
   html[data-chatstyle="tg"] .tgpop-fade { transform-origin: 0 50%; animation: tgthinkin .45s var(--tg-spring-pop, cubic-bezier(.2, 1.2, .35, 1)) both; }
+
+  /* 2026-10-16:他忙着时这一轮的思考 / 工具行先藏着,只留三个点;定稿时依次弹出(脚本 releaseHeld) */
+  html[data-chatstyle="tg"] .row.tghold { display: none; }
 
   /* ── 2026-10-16:思考那行的标题(所有者「只做标题,内容不动」)──
      他正在想:标题写「Thinking」,字上一道光从左扫到右(iOS / TG 加载字那种流光);想完平滑换回「Thought process」(脚本 foldPass 换字 + 一下淡入)。
@@ -6584,7 +6589,7 @@ box.focus();
   }
   function pass() {
     queued = false;
-    fly = []; fresh = 0;
+    fly = []; fresh = 0; popBase = 0;
     var scopes, wasFull = full;
     if (full) { full = false; dirty.clear(); scopes = [log]; }
     else { scopes = Array.from(dirty).filter(function (r) { return r.isConnected; }); dirty.clear(); }
@@ -6617,9 +6622,18 @@ box.focus();
       });
       Array.prototype.forEach.call(sc.querySelectorAll(".row > .toolline"), function (line) {
         var r = line.parentNode;
-        if (r._tgLive && !r._tgPopped) { r._tgPopped = true; pop(line, "tgpop-fade", 0); }
+        /* 2026-10-16 所有者:「保留气泡,thinking 结束之后 thinking 和输出的内容一个一个跳出来」——
+           他忙着的时候,这一轮新冒出来的思考 / 工具行先藏着(.tghold),屏幕上只有那颗三个点在动;
+           等这一轮的回话定稿(或他忙完 / 被打断)再按顺序弹出来,回话的泡接在后面(见 releaseHeld) */
+        if (r._tgLive && !r._tgPopped) {
+          if (root.hasAttribute("data-tgbusy")) { if (!r.classList.contains("tghold")) r.classList.add("tghold"); }
+          else if (!r.classList.contains("tghold")) { r._tgPopped = true; pop(line, "tgpop-fade", 0); }   // 藏着的只由 releaseHeld 放
+        }
       });
-      Array.prototype.forEach.call(sc.querySelectorAll(".gu"), guPass);
+      var gus = sc.querySelectorAll(".gu");
+      /* 有回话这一刻定稿要弹 → 先把藏着的那几行按顺序放出来,回话的泡排在它们后面 */
+      if (!root.hasAttribute("data-tgbusy") || Array.prototype.some.call(gus, function (g) { return g._final && g._tgLive && !g._tgPopped; })) releaseHeld();
+      Array.prototype.forEach.call(gus, guPass);
       stickerPass(sc);                     // 刚拆出来的泡里也可能有贴纸
       reactPass(sc);
     });
@@ -6717,6 +6731,20 @@ box.focus();
       }
     }
   }
+  /* 藏着的思考 / 工具行(.tghold)按页面顺序一行接一行放出来;回话的泡从 popBase 之后接着弹 */
+  var HOLD_STEP = 90, popBase = 0;
+  function releaseHeld() {
+    var held = log.querySelectorAll(":scope > .row.tghold");
+    if (!held.length) return;
+    Array.prototype.forEach.call(held, function (r, k) {
+      r.classList.remove("tghold");
+      r._tgPopped = true;
+      var line = r.querySelector(":scope > .toolline");
+      if (line) pop(line, "tgpop-fade", Math.min(k, 5) * HOLD_STEP);
+    });
+    popBase = calm ? 0 : Math.min(held.length, 6) * HOLD_STEP;
+    fresh += held.length;
+  }
   function guPass(el) {
     var raw = el._raw != null ? el._raw : el.textContent;
     var t = stamp(el);
@@ -6732,7 +6760,7 @@ box.focus();
       if (set) set.remove();
       el.classList.remove("tg-split");
       if (el.getAttribute("data-tgt") !== t) el.setAttribute("data-tgt", t);
-      if (popNow) { el._tgPopped = true; pop(el, "tgpop-in", 0); }
+      if (popNow) { el._tgPopped = true; pop(el, "tgpop-in", popBase); }
       return;
     }
     if (set && el._tgRaw === raw) return;
@@ -6749,7 +6777,7 @@ box.focus();
       }
       b.setAttribute("data-tgt", t);
       set.appendChild(b);
-      if (popNow) pop(b, "tgpop-in", Math.min(i, 6) * 70);   /* 一行一泡,一颗接一颗冒出来 */
+      if (popNow) pop(b, "tgpop-in", popBase + Math.min(i, 6) * 70);   /* 一行一泡,一颗接一颗冒出来(前面有藏着的思考 / 工具行时,排在它们后面) */
     });
     if (popNow) el._tgPopped = true;
     el.after(set);
