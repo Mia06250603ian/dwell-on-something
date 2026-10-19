@@ -4985,6 +4985,22 @@ box.focus();
   .tgpick .rlab { font-size: 11px; color: var(--dim); margin: 0 4px 4px; letter-spacing: .04em; }
   .tgpick .recent { padding-bottom: 8px; margin-bottom: 8px; border-bottom: .5px solid var(--line); }
   .tgpick .rlab[hidden], .tgpick .recent[hidden] { display: none; }
+  /* 长按放大预览(2026-10-19,照 TG):背后压暗 + 模糊,中间一张大图 + 名字;按着拖到别的格子上换那一张,松手停住,出「发送 / 改名 / 删除」(后两个只有她自制的有)。点空白处收起 */
+  .stkpv { position: fixed; inset: 0; z-index: 70; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+           background: rgba(0,0,0,.28); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); opacity: 0; transition: opacity .18s; }
+  .stkpv.on { opacity: 1; }
+  .stkpv { pointer-events: none; } .stkpv.pinned { pointer-events: auto; }   /* 按着拖的时候让手指底下取到的是格子,不是这层;松手停住才接点击 */
+  .stkpv[hidden] { display: none; }
+  .stkpv img { width: min(62vw, 240px); height: min(62vw, 240px); object-fit: contain; transform: scale(.86); transition: transform .26s cubic-bezier(.32,.72,0,1); pointer-events: none;
+               -webkit-touch-callout: none; user-select: none; }
+  .stkpv.on img { transform: none; }
+  .stkpv .nm { font-size: 15px; font-weight: 500; color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,.35); max-width: 80vw; text-align: center; }
+  .stkpv .pvacts { display: flex; gap: 8px; visibility: hidden; }
+  .stkpv.pinned .pvacts { visibility: visible; }
+  .stkpv .pvacts button { border: 0; border-radius: 999px; padding: 9px 18px; font: inherit; font-size: 14px; color: var(--text); background: var(--card); box-shadow: 0 4px 14px rgba(0,0,0,.12); }
+  .stkpv .pvacts button.pvdel { color: #e5484d; }
+  .stkpv .pvacts button[hidden] { display: none; }
+  @media (prefers-reduced-motion: reduce) { .stkpv, .stkpv img { transition: none; } }
 
   /* .acts 藏了,但它还在行里 —— 别让它把头像顶上去 */
   html[data-chatstyle="tg"][data-avmode="each"] .row:has(> .gu) > .acts { display: none; }
@@ -6554,7 +6570,7 @@ box.focus();
   function loadStickers() {
     fetch("api/stickers", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
       if (!d || !d.ok) return;
-      STK = {}; d.items.forEach(function (it) { STK[it.tag] = it.file; });
+      STK = {}; d.items.forEach(function (it) { STK[it.tag] = it.file; (it.aka || []).forEach(function (a) { if (!STK[a]) STK[a] = it.file; }); });   // 改过名的自制贴纸:记录里的旧名照样出图
       buildPicker(d.items); schedule();
     }).catch(function () {});
   }
@@ -6738,11 +6754,72 @@ box.focus();
     try { localStorage.setItem(RECENT_KEY, JSON.stringify(a.slice(0, 8))); } catch (e) {}
     if (stkItems.length) buildPicker(stkItems);
   }
+  /* ── 长按放大预览(2026-10-19)── 按住 400ms 出大图;不松手拖到别的格子 = 换那一张;松手 = 停住出按钮;点空白收起。
+     按住前手指挪了 8px 以上 = 她在滚面板,不算长按 */
+  var pv = document.createElement("div"); pv.className = "stkpv"; pv.hidden = true;
+  pv.innerHTML = '<img alt=""><div class="nm"></div><div class="pvacts"><button type="button" class="pvsend">Send</button><button type="button" class="pvren">Rename</button><button type="button" class="pvdel">Delete</button></div>';
+  document.body.appendChild(pv);
+  var pvIt = null, pvHeld = false, pvPinAt = 0;
+  function showPv(it) {
+    pvIt = it;
+    pv.querySelector("img").src = "stickers/" + encodeURIComponent(it.file);
+    pv.querySelector(".nm").textContent = it.tag;
+    pv.querySelector(".pvren").hidden = pv.querySelector(".pvdel").hidden = !it.mine;
+    if (pv.hidden) { pv.classList.remove("pinned"); pv.hidden = false; requestAnimationFrame(function () { pv.classList.add("on"); }); }
+  }
+  function hidePv() { pv.classList.remove("on", "pinned"); pvIt = null; setTimeout(function () { if (!pv.classList.contains("on")) pv.hidden = true; }, 180); }
+  pv.addEventListener("click", function (e) {
+    e.stopPropagation();                                       // 别冒到 document(那边点空白会把贴纸面板也关了)
+    if (!pv.classList.contains("pinned")) return;
+    var it = pvIt; if (!it) return;
+    if (e.target.closest(".pvsend")) { hidePv(); sendSticker(it.tag); return; }
+    if (e.target.closest(".pvren")) { renameSticker(it); return; }
+    if (e.target.closest(".pvdel")) {
+      if (confirm("删掉这张贴纸吗?删了就找不回来了。")) { hidePv(); fetch("api/stickers/mine/" + encodeURIComponent(it.id), { method: "DELETE" }).then(function () { loadStickers(); }); }
+      return;
+    }
+    if (!e.target.closest(".pvacts") && Date.now() - pvPinAt > 450) hidePv();   // 原地松手时浏览器补的那一下 click 会落在这层上,别当成「点空白收起」
+  });
+  function renameSticker(it) {
+    var n = prompt("给这张贴纸改个名字(他和聊天记录里看到的就是这个名字)", it.tag);
+    if (n == null || !n.trim() || n.trim() === it.tag) return;
+    fetch("api/stickers/mine/" + encodeURIComponent(it.id) + "/name", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: n }) })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d.ok) throw new Error(d.why || "");
+        try { localStorage.setItem(RECENT_KEY, JSON.stringify(recentTags().map(function (t) { return t === it.tag ? d.item.tag : t; }))); } catch (e) {}
+        it.tag = d.item.tag; pv.querySelector(".nm").textContent = it.tag;
+        loadStickers();
+      })
+      .catch(function (e) { note("（没改上:" + (e.message || "再试一次") + "）", "err"); });
+  }
+  function itemAt(x, y) {
+    var el = document.elementFromPoint(x, y), b = el && el.closest && el.closest(".tgpick button[data-tag]");
+    if (!b) return null;
+    for (var i = 0; i < stkItems.length; i++) if (stkItems[i].tag === b.getAttribute("data-tag")) return stkItems[i];
+    return null;
+  }
   function stkButton(it) {
-    var b = document.createElement("button"); b.type = "button"; b.title = it.tag;
+    var b = document.createElement("button"); b.type = "button"; b.title = it.tag; b.setAttribute("data-tag", it.tag);
+    if (it.mine) b.className = "mine";
     var img = document.createElement("img"); img.loading = "lazy"; img.alt = it.tag; img.src = "stickers/" + encodeURIComponent(it.file);
     b.appendChild(img);
-    b.addEventListener("click", function () { sendSticker(it.tag); });
+    var t = 0, x0 = 0, y0 = 0;
+    function arm(x, y) { pvHeld = false; x0 = x; y0 = y; clearTimeout(t); t = setTimeout(function () { pvHeld = true; showPv(it); try { navigator.vibrate && navigator.vibrate(8); } catch (e) {} }, 400); }
+    function move(x, y, e) {
+      if (!pvHeld) { if (Math.abs(x - x0) > 8 || Math.abs(y - y0) > 8) clearTimeout(t); return; }
+      if (e && e.cancelable) e.preventDefault();               // 预览出来以后手指再动 = 换贴纸,不滚面板
+      var o = itemAt(x, y); if (o && o !== pvIt) showPv(o);
+    }
+    function up() { clearTimeout(t); if (pvHeld && pvIt) { pv.classList.add("pinned"); pvPinAt = Date.now(); } }
+    b.addEventListener("touchstart", function (e) { var p = e.touches[0]; arm(p.clientX, p.clientY); }, { passive: true });
+    b.addEventListener("touchmove", function (e) { var p = e.touches[0]; move(p.clientX, p.clientY, e); }, { passive: false });
+    b.addEventListener("touchend", up); b.addEventListener("touchcancel", function () { clearTimeout(t); });
+    b.addEventListener("mousedown", function (e) { arm(e.clientX, e.clientY); });
+    b.addEventListener("mousemove", function (e) { if (e.buttons) move(e.clientX, e.clientY); });
+    b.addEventListener("mouseup", up); b.addEventListener("mouseleave", function () { if (!pvHeld) clearTimeout(t); });
+    b.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+    b.addEventListener("click", function () { if (pvHeld) { pvHeld = false; return; } sendSticker(it.tag); });
     return b;
   }
   function buildPicker(items) {
@@ -6756,32 +6833,17 @@ box.focus();
     add.addEventListener("click", function () { addFile.value = ""; addFile.click(); });
     g.appendChild(add);
     items.filter(function (it) { return it.mine; }).concat(items.filter(function (it) { return !it.mine; })).forEach(function (it) {
-      var b = document.createElement("button"); b.type = "button"; b.title = it.tag;
-      if (it.mine) b.className = "mine";
-      var img = document.createElement("img"); img.loading = "lazy"; img.alt = it.tag; img.src = "stickers/" + encodeURIComponent(it.file);
-      b.appendChild(img);
-      var held = false, t = 0;
-      if (it.mine) {
-        var arm = function () { held = false; clearTimeout(t); t = setTimeout(function () {
-          held = true;
-          if (confirm("删掉这张贴纸吗?删了就找不回来了。")) {
-            fetch("api/stickers/mine/" + encodeURIComponent(it.id), { method: "DELETE" }).then(function () { loadStickers(); });
-          }
-        }, 550); };
-        b.addEventListener("touchstart", arm, { passive: true });
-        b.addEventListener("mousedown", arm);
-        ["touchend", "touchmove", "mouseup", "mouseleave"].forEach(function (ev) { b.addEventListener(ev, function () { clearTimeout(t); }); });
-        b.addEventListener("contextmenu", function (e) { e.preventDefault(); });
-      }
-      b.addEventListener("click", function () { if (held) { held = false; return; } sendSticker(it.tag); });
-      g.appendChild(b);
+      g.appendChild(stkButton(it));                           // ~~自制的长按 = 删~~ 2026-10-19 起长按 = 放大预览,删 / 改名在预览里
     });
   }
   addFile.addEventListener("change", function () {
     var f = addFile.files && addFile.files[0];
     if (!f) return;
     var done = function (dataUrl) {
-      fetch("api/stickers/mine", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dataUrl: dataUrl }) })
+      /* 先起名再入库(2026-10-19):名字就是记录里「〔贴纸：名字〕」那个字、也是交给他时的名字;空着 = 自动「自制N」,以后长按还能改 */
+      var name = prompt("给这张贴纸起个名字(可以空着,以后长按还能改)", "");
+      if (name == null) return;                                 // 点了取消 = 不加
+      fetch("api/stickers/mine", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dataUrl: dataUrl, name: name }) })
         .then(function (r) { return r.json(); })
         .then(function (d) { if (!d.ok) throw new Error(d.why || ""); loadStickers(); note("（加好了,在贴纸面板最前面）"); })
         .catch(function (e) { note("（没加上:" + (e.message || "再试一次") + "）", "err"); });
