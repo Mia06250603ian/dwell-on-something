@@ -5986,6 +5986,10 @@ box.focus();
     border-radius: calc(var(--imfs) * 1.275) !important; box-shadow: none !important; max-width: 77%; }   /* 截图里一行到 279.3pt 还没折,75% 在这台宽度只有 277.5 */
   html[data-chatstyle="tg"][data-imsg] .gu:not(.stkonly), html[data-chatstyle="tg"][data-imsg] .tgb:not(.stkonly) { background: var(--tg-him) !important; color: var(--tg-him-ink) !important; }
   html[data-chatstyle="tg"][data-imsg] .row.me .bubble:not(.stkonly) { background: var(--imc, var(--tg-me)) !important; color: #fff !important; }
+  /* 她挑了自己的气泡色:纯色、字跟着配,不随屏幕高低变色 */
+  html[data-chatstyle="tg"][data-imsg][data-imme] .row.me .bubble:not(.stkonly) { background: var(--tg-me) !important; color: var(--tg-me-ink) !important; }
+  html[data-chatstyle="tg"][data-imsg][data-imme] .row.me { animation: none !important; }
+  html[data-chatstyle="tg"][data-imsg][data-imme] .row.me.tgend.tgend > .bubble:not(.stkonly)::before { background: var(--tg-me); }
   @keyframes imgrad { from { --imc: rgb(48, 126, 245); } to { --imc: rgb(118, 196, 246); } }
   @supports (animation-timeline: view()) {
     html[data-chatstyle="tg"][data-imsg] .row.me { animation: imgrad linear both; animation-timeline: view(); }
@@ -6110,7 +6114,17 @@ box.focus();
     if (/^\d{2}(\.5)?$/.test(prefs.chatFont || "")) set("--tg-fs", prefs.chatFont + "px");
     /* 仿 iMessage(2026-10-19 深夜):颜色照 iMessage 1:1 写死在 CSS(html[data-imsg] 那段),不跟皮肤、不吃她挑的气泡色和壁纸;
        深浅照旧跟皮肤底色走(和 TG 版同一个判断)。 */
-    if (prefs.chatStyle === "imsg") { if (P && P.dark) root.setAttribute("data-tgdark", ""); root.setAttribute("data-tgmeink", "light"); return; }
+    root.removeAttribute("data-imme");
+    if (prefs.chatStyle === "imsg") {
+      if (P && P.dark) root.setAttribute("data-tgdark", "");
+      /* 10-19 她:「想能和 TG 改气泡颜色一样能自己改」—— 挑过的气泡色照用(字黑白按亮度配,同 TG);没挑 = iMessage 原装的灰 / 渐变蓝。
+         她的泡换了色就是纯色(data-imme 关掉随屏幕高低变色那条)。壁纸仍不吃(iMessage 是白底)。 */
+      var hb = prefs.himBubble || "", mb = prefs.meBubble || "";
+      if (hb) { set("--tg-him", hb); set("--tg-him-ink", lum(hb) > 0.45 ? "#000000" : "#ffffff"); }
+      if (mb) { set("--tg-me", mb); set("--tg-me-ink", lum(mb) > 0.45 ? "#000000" : "#ffffff"); root.setAttribute("data-imme", ""); }
+      root.setAttribute("data-tgmeink", mb && lum(mb) > 0.45 ? "dark" : "light");
+      return;
+    }
     if (P) {
       if (P.dark) root.setAttribute("data-tgdark", "");
       set("--tg-page", P.top); set("--tg-page2", P.bot); set("--text", P.ink); set("--bg", P.top);
