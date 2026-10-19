@@ -2377,6 +2377,7 @@ function addMe(text) {
   const b = document.createElement('div');
   b.className = 'bubble';
   b.textContent = text;
+  b._raw0 = text;                // 原文:删这颗时按它认(2026-10-19,刚发的泡还不知道 seq)
   r.appendChild(b);
   renderRich(b);
   scroll(true);
@@ -4269,10 +4270,15 @@ box.focus();
         var b = row.querySelector(':scope > .bubble'), g = row.querySelector(':scope > .gu');
         if (row.classList.contains('me') && b) {
           var m = me[i++]; if (m && m.at) b.dataset.at = m.at;
+          if (m && m.seq) b.dataset.seq = m.seq;                                            /* 删消息要用(2026-10-19) */
           if (m) b._raw0 = m.text;                                                         /* 回应要按原文认泡(2026-10-10) */
           if (m && m.voice) { b.dataset.voice = m.voice; b.dataset.dur = m.dur || ""; }   /* 她的录音(2026-10-10) */
         }
-        else if (g) { var n = gu[j++]; if (n && n.at) g.dataset.at = n.at; }
+        else if (g) {
+          var n = gu[j++]; if (n && n.at) g.dataset.at = n.at;
+          if (n && n.seq) g.dataset.seq = n.seq;
+          if (n && n.hide && n.hide.length) g.dataset.hide = n.hide.join(",");              /* 这段回复里删过的那几颗(第几颗),拆泡时跳过 */
+        }
       });
     } catch (e) {}
     return out;
@@ -5302,6 +5308,23 @@ box.focus();
   .tgrmenu .list .it { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 46px; padding: 0 20px; border: 0; background: none; cursor: pointer;
                        font: 400 17px/1.2 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; color: var(--text); text-align: left; }
   .tgrmenu .list .it:active { background: color-mix(in srgb, var(--text) 8%, transparent); }
+  .tgrmenu .list .it.danger { color: #ff3b30; }   /* 删消息那一项(2026-10-19):iOS 的删除红 */
+  .row.tghidrow { display: none !important; }        /* 他那段回复一颗颗删光了 */
+  /* 删消息的确认表(2026-10-19):照「他」页那张 iOS 操作表的样子 */
+  .tgdel[hidden] { display: none; }
+  .tgdel .dbg { position: fixed; inset: 0; z-index: 80; background: rgba(0,0,0,.28); animation: tgfade .2s ease; }
+  .tgdel .dact { position: fixed; left: 10px; right: 10px; z-index: 81; bottom: calc(8px + var(--dw-sab, env(safe-area-inset-bottom)));
+                 animation: pactin .38s cubic-bezier(.32,.72,0,1); }
+  .tgdel .dg { border-radius: 14px; overflow: hidden; margin-top: 8px; background: rgba(250,250,250,.92);
+               -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); }
+  html[data-tgdark] .tgdel .dg { background: rgba(44,44,46,.92); }
+  .tgdel .dg:first-child { margin-top: 0; }
+  .tgdel .dttl { padding: 13px 16px 12px; text-align: center; font-size: 13px; line-height: 1.45; color: #8a8a8e; }
+  .tgdel button { display: block; width: 100%; min-height: 56px; border: 0; background: none; color: var(--text, #000);
+                  font: 400 19px/1.2 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; border-top: .5px solid rgba(60,60,67,.2); cursor: pointer; }
+  .tgdel button:active { background: rgba(60,60,67,.12); }
+  .tgdel .dok { color: #ff3b30; }
+  .tgdel .dno { font-weight: 600; border-top: 0; }
   .tgrmenu .list .ic { display: grid; place-items: center; width: 24px; }
   .tgheld-hide { visibility: hidden; }
   /* 右上角:搜索替掉他的头像 / 那两颗官端按钮 */
@@ -7472,6 +7495,9 @@ box.focus();
     }
   }
   function growSet(el, lines, t, live) {
+    /* 删过的那几颗(2026-10-19,el.dataset.hide = 第几颗)先从这串里拿掉 —— 尾巴照旧落在剩下的最后一颗;每颗记下自己原来是第几颗(data-part),删的时候报给后台 */
+    var hid = el.dataset.hide ? el.dataset.hide.split(",").map(Number) : null, parts = null;
+    if (hid && hid.length) { parts = []; lines = lines.filter(function (l, i) { if (hid.indexOf(i) >= 0) return false; parts.push(i); return true; }); }
     var set = el.nextElementSibling && el.nextElementSibling.classList.contains("tgset") ? el.nextElementSibling : null;
     if (!set) { set = document.createElement("div"); set.className = "tgset"; el.after(set); }
     if (!set._lines) set._lines = [];
@@ -7490,6 +7516,8 @@ box.focus();
     });
     while (set.children.length > lines.length) set.lastElementChild.remove();
     set._lines.length = set.children.length;
+    Array.prototype.forEach.call(set.children, function (c, k) { c.dataset.part = parts ? parts[k] : k; });
+    var hrow = el.closest(".row"); if (hrow) hrow.classList.toggle("tghidrow", !lines.length);   // 一段全删光了:整行收起来
     el.classList.add("tg-split");
     return set;
   }
@@ -7870,7 +7898,8 @@ box.focus();
   var IC = {
     copy: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2.6"/><path d="M15.5 8.5V6.6A2.6 2.6 0 0 0 12.9 4H6.6A2.6 2.6 0 0 0 4 6.6v6.3a2.6 2.6 0 0 0 2.6 2.6h1.9"/></svg>',
     text: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 6.5h16M4 11.5h16M4 16.5h10"/></svg>',
-    hide: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 6.5h16M4 11.5h9"/><path d="m15.5 15 4 4m0-4-4 4"/></svg>'
+    hide: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 6.5h16M4 11.5h9"/><path d="m15.5 15 4 4m0-4-4 4"/></svg>',
+    del: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 6.5h15M9.5 6.5V4.8c0-.7.6-1.3 1.3-1.3h2.4c.7 0 1.3.6 1.3 1.3v1.7M6.5 6.5l.8 12.2c.1 1 .9 1.8 1.9 1.8h5.6c1 0 1.8-.8 1.9-1.8l.8-12.2M10.2 10.5v6M13.8 10.5v6"/></svg>'
   };
   var menu = document.createElement("div");
   menu.className = "tgrmenu";
@@ -7910,6 +7939,11 @@ box.focus();
     if (textOf(b)) item(IC.copy, "Copy", function (v) {
       try { navigator.clipboard.writeText(textOf(v)).then(function () { note("（复制好了）"); }); } catch (x) {}
     });
+    /* 删消息(2026-10-19 深夜,她要的;**只是网页上不显示**,存档留着原话、晏那边照样记得):还在发 / 转写中的那颗不给删 */
+    if (!b.closest(".tgvpend, .tgsending") && (b.closest(".row.me") || b.classList.contains("tgb") || b.classList.contains("gu"))) {
+      item(IC.del, "Delete", function (v) { askDel(v); });
+      mList.lastElementChild.classList.add("danger");
+    }
     /* 克隆那颗泡,包一层同样的行,放到原位置 */
     var wrap = document.createElement("div");
     wrap.className = mine ? "row me" : "row";
@@ -7941,6 +7975,48 @@ box.focus();
     if (menu._b) menu._b.classList.remove("tgheld-hide");
     menu._b = null; mClone.innerHTML = "";
   }
+  /* ── 删一颗泡:iOS 操作表确认 → POST api/hide → 原地收起来 ── */
+  var dsheet = document.createElement("div");
+  dsheet.className = "tgdel"; dsheet.hidden = true;
+  dsheet.innerHTML = '<div class="dbg"></div><div class="dact"><div class="dg"><div class="dttl">只从网页上删掉这条。<br>晏那边看过的照样记得,服务器存档也留着原话。</div>' +
+    '<button type="button" class="dok">删除消息</button></div><div class="dg"><button type="button" class="dno">取消</button></div></div>';
+  document.body.appendChild(dsheet);
+  var delTarget = null;
+  function askDel(v) { delTarget = v; dsheet.hidden = false; }
+  function shutDel() { dsheet.hidden = true; delTarget = null; }
+  dsheet.querySelector(".dbg").addEventListener("click", shutDel);
+  dsheet.querySelector(".dno").addEventListener("click", shutDel);
+  dsheet.querySelector(".dok").addEventListener("click", function () { var v = delTarget; shutDel(); if (v) doDel(v); });
+  function doDel(v) {
+    var row = v.closest(".row"); if (!row) return;
+    var mine = row.classList.contains("me");
+    var set = v.closest(".tgset"), gu = mine ? null : (v.classList.contains("gu") ? v : (set && set.previousElementSibling));
+    var holder = mine ? v : gu; if (!holder) return;
+    var text = mine ? (v._raw0 != null ? v._raw0 : v.textContent) : (gu._raw != null ? gu._raw : gu.textContent);
+    var part = -1, ptext = "";
+    if (!mine && set && v.classList.contains("tgb") && v.dataset.part != null) {
+      part = +v.dataset.part;
+      var k = Array.prototype.indexOf.call(set.children, v); ptext = (set._lines && set._lines[k]) || v.textContent || "";
+    }
+    fetch("api/hide", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ seq: holder.dataset.seq ? +holder.dataset.seq : null, kind: mine ? "me" : "gu", text: text, part: part, ptext: ptext }) })
+      .then(function (r) { return r.json(); }).then(function (d) {
+        if (!d || !d.ok) { note("（没删掉:" + ((d && d.error) || "服务器没收") + "）"); return; }
+        if (d.seq && !holder.dataset.seq) holder.dataset.seq = d.seq;
+        var go = function () {
+          if (part >= 0 && gu) {
+            var h = gu.dataset.hide ? gu.dataset.hide.split(",") : []; h.push(String(part)); gu.dataset.hide = h.join(",");
+            gu._tgRaw = null;                                   // guPass 见正文没变会跳过(el._tgRaw === raw),清掉它逼这一段重拆
+            if (window.__tgGrow) window.__tgGrow(gu);
+          } else row.remove();
+        };
+        if (v.animate && !calm) {
+          var a = v.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(.86)" }], { duration: 220, easing: "cubic-bezier(.32,.72,0,1)", fill: "forwards" });
+          a.onfinish = function () { go(); try { a.cancel(); } catch (e) {} };
+        } else go();
+      }).catch(function () { note("（没删掉:连不上服务器）"); });
+  }
+
   log.addEventListener("scroll", closeMenu, { passive: true });
   var press = null;
   log.addEventListener("touchstart", function (e) {
