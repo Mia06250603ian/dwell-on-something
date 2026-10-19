@@ -5948,6 +5948,80 @@ box.focus();
     box-shadow: inset 0 0 0 .5px rgba(0,0,0,.075), inset .67px 0 0 rgba(0,0,0,.15), inset -.67px 0 0 rgba(0,0,0,.15) !important;
   }
 </style>
+
+<style>
+  /* ══ 仿 iMessage(2026-10-19 深夜,她:「聊天界面再做一种主题,仿 iMessage 的这种 UI,右上角的视频依旧是搜索聊天记录,气泡 UI 保持 1:1 复刻」)══
+     **骑在 TG 版上**:设置里选 iMessage = `data-chatstyle="tg"` + `data-imsg`,拆泡 / 弹动画 / 思考行 / 长按菜单 / 搜索全照 TG 那套走,这里只换样子。
+     数是从她 iMessage 截图量的(1206px = 402pt@3x;那张图正文约 13.2pt,所以气泡的留白 / 圆角都按「字号 × 倍数」写,她调字号整体等比放大):
+     - 一行泡高 38pt = 上下留白 .79em + 行高 1.3;左右留白 1.12 / 1.17em;圆角 = 半个泡高(1.44em),**四角一样圆**(iMessage 同一串不收角);
+     - 他的泡 #E9E9EA 黑字;她的泡蓝、**越靠屏幕上面越浅**(iOS 26 iMessage 本来就这样:截图里同一屏上下两颗差 16 个色阶),
+       用滚动驱动动画按泡在屏上的位置取色(底 rgb(48,126,245) → 顶 rgb(118,196,246),两点从截图反推);不认 animation-timeline 的浏览器退回中间色;
+     - 同一串隔 4pt、换人隔 10pt;离屏幕左右 16pt;**没有时间、没有对勾**(iMessage 泡上本来没有);
+     - 尾巴 = 从她截图抠的(--im-r / --im-l,101×70px@3x,往泡底下垂 6.3pt),和 TG 尾巴同一个做法:遮罩只画泡身(按 25pt 大圆角算)外面那部分;
+     - 顶栏:左返回圆钮、正中他的头像 58pt、下面压一颗「名字 ›」胶囊、右边视频圆钮 = 搜索聊天记录(她要的);
+     - 输入栏:「+」圆钮(照旧是添加照片)、胶囊里写 iMessage、右端波形 = 语音(照旧按住说话那颗,只是挪进胶囊里);贴纸那颗留着(iMessage 没有,但她用得上)。 */
+  @property --imc { syntax: "<color>"; inherits: true; initial-value: rgb(84, 162, 245); }
+  html[data-chatstyle="tg"][data-imsg] {
+    --tg-page: #fff; --tg-page2: #fff; --bg: #fff; --text: #000; --dim: #8e8e93; --card: #fff; --line: rgba(60,60,67,.14);
+    --tg-him: #e9e9ea; --tg-him-ink: #000; --tg-me: rgb(84, 162, 245); --tg-me-ink: #fff;
+    --im-r: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGUAAABGCAYAAADVRFpXAAADKUlEQVR42u2cXYhMYRjHf7MzviIbKZvJDUpKkSK1V5RcSCk35EIpceVm5ZZys0rKtkruNhcuuaF8FbWRonyWxYopWSayzexqtxnHxXtOTdMYMzvnnPdZ/v96L+arqf/vvM/zvM95z5tB8q2g7vVElzwxp7GcPPCuX3WvC5opflVt8N6ooNjTi4w8MJPgI20RFFuhaxLIK3zZ0hugrOrLVugaBhAUG2VwpBtNPpMSniWNRhFYAqCcYiNsATwExgXFlq7KAjthKwC+Avnoi0r0/pM7wE1gTBalv1D806gA22WRrdD1HFhU+2Uler8VF8BFXHtFMjBDAmAE6Kn/kRJ9snnkb6vzS+GiUTIyS94BK2WTHSBV4BiQlVU2gAS4bvByWWUHSBnYpcrXFpSh+nWJ5BfIK2CDZokdICXggJK7HSABcB5YLLvsALkPrFHYsgNkBNimsGUHSBHYD8yRZTaAlIA+YKEsswHkJ3ASWCbL/MMIgCmgnwYteckPkMkQSF6Vlg0gJeCUgNiAEW0ROoHr/AqIASAjwCFgqYDYAHIP14ZfIOv8w6gCV4BeLQz9wwhwm+cuAOvVOvEPIwIyCKxW/rABJAAuo26vGRjRZoeNCln+QUTjB7AbmCtL/cOIxmC4DpE8g6hdrW9OM2zl/gEQSesOMErjwwgEJSUI9bpGyo8q5AShqSaAZ8D0/wIlmAUzs4Bryad64IDPRVCmzfGF9E9jKKaZSyxAaVc9wDngQ4pGlT1cCLNudXobtx8XYBUwL+H/e487dEDPJLaow7gnaysJrlEeoQ0QbasX1yQsJQTlEzUnQUjt6TjwMQEoFWCrcsrM9AB4HYaaFTGW+l1hXhnWdd+Z+sNSNq7Z8kR5JR7tAx7HVARMA3sVvjrXyxBKFlhLZ/dBsuFMua7SOD4dBJ52OGumgCOyMl5tAgaA7x2AeQusk5Xxaw9wN7zyZ7LXawjolo3JqA+33bTaJpgycFT2JauzuNu97YAp4G4Pq/pKSLfCKq2Ka3DOb+E33bi9w1EYlBLUTlwfbZzWemI68CZF7cAdjvatCZTPguJPp3H3b+oLgjNJ/ulvVtmhPAJzfgIAAAAASUVORK5CYII=");
+    --im-l: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGUAAABGCAYAAADVRFpXAAACNElEQVR42u2cL0/DUBRHfyzIfYChkYh9ACQCj0QgEYDGTSARBDWBnEFNoUaCnEGQDIEqJCQIcJAUQTIBAkgIYaNrX9+9D85J6pq97J7df802SepKev12gSENSTeEwZ+UW8KQRqZQwhyQ01d8ZYokXZIt/qScEwp/Ui4IhT9aksY/9BVKmDFDpPgqX5J0MuEexBjSnpApZIwxI6T4Kl+SdDzlXsQYTmE52eKPPr3FH6tISWtnQYwha79IQYzD8RgxZAt8ZYAYf7Q1+ekxYgzpFpCCGIMt/w4pPhdKyphDDihj/mgW3F0QYzCN5YjxuVSOEeOPTkEpiInMEWJ8Nv4+YtIXgxzEIKaHmPSnMuREZH2GBRMxkTf/DDH+aOn3b8Ugx2gAGJQQg5wIYs5KikFOzaUsQ4zP5p9XEIOcmtirKAVBNfWX+4Bi/qScRuTzniUdBn5NsidQ0x8HzpY/lUENgzMfFOcfLpKV1DA699LgzGQkzRude+XgvRcRM/efMuXJqGzOzXj9q/L1ElnGtqQFZqzprEeYvsZ6/8VAK7XgWPWUugN1LWlH0imf/+L0asyQ/seTA5iRrAYZuaRNQluOdg1CRpIWCW15ugrbzPcJafUGnwcSkklaJqQ+suRz1KWZB+oleYDsWCGU4Riq2mS1RwjD0qkgZCBpiRCGZblk2cr0/lM+CEyzxKL4KGmX0NXH1ox9g50jAr2CMg6U4NPcVJn2Pa/7jwEADDb40TcZQ0kbhGYybzWjxOsQk40HAAAAAElFTkSuQmCC");
+  }
+  html[data-chatstyle="tg"][data-imsg][data-tgdark] { --tg-page: #000; --tg-page2: #000; --bg: #000; --text: #fff; --card: #1c1c1e; --line: rgba(84,84,88,.6);
+    --tg-him: #262628; --tg-him-ink: #fff; }
+  html[data-chatstyle="tg"][data-imsg] body { background: var(--tg-page) !important; }
+  html[data-chatstyle="tg"][data-imsg] #log { padding-left: 16px; padding-right: 16px; padding-top: calc(100px + var(--dw-sat, env(safe-area-inset-top))); }
+  /* 气泡 */
+  html[data-chatstyle="tg"][data-imsg] .row.me .bubble:not(.stkonly), html[data-chatstyle="tg"][data-imsg] .gu:not(.stkonly), html[data-chatstyle="tg"][data-imsg] .tgb:not(.stkonly) {
+    font-size: var(--tg-fs, 14.5px); line-height: calc(var(--tg-fs, 14.5px) * 1.3);
+    padding: calc(var(--tg-fs, 14.5px) * .79) calc(var(--tg-fs, 14.5px) * 1.17) calc(var(--tg-fs, 14.5px) * .79) calc(var(--tg-fs, 14.5px) * 1.12);
+    border-radius: calc(var(--tg-fs, 14.5px) * 1.44) !important; box-shadow: none !important; max-width: 75%; }
+  html[data-chatstyle="tg"][data-imsg] .gu:not(.stkonly), html[data-chatstyle="tg"][data-imsg] .tgb:not(.stkonly) { background: var(--tg-him) !important; color: var(--tg-him-ink) !important; }
+  html[data-chatstyle="tg"][data-imsg] .row.me .bubble:not(.stkonly) { background: var(--imc, var(--tg-me)) !important; color: #fff !important; }
+  @keyframes imgrad { from { --imc: rgb(48, 126, 245); } to { --imc: rgb(118, 196, 246); } }
+  @supports (animation-timeline: view()) {
+    html[data-chatstyle="tg"][data-imsg] .row.me { animation: imgrad linear both; animation-timeline: view(); }
+  }
+  html[data-chatstyle="tg"][data-imsg] .tgset { gap: 4px; }
+  html[data-chatstyle="tg"][data-imsg] .row.me.tgcont.tgcont { margin-top: -6px; }
+  html[data-chatstyle="tg"][data-imsg] [data-tgt]::after { content: none !important; }
+  /* 尾巴:一串最后一颗 */
+  html[data-chatstyle="tg"][data-imsg] .gu:not(.tg-split):not(.stkonly)::before,
+  html[data-chatstyle="tg"][data-imsg] .tgset .tgb:last-child:not(.stkonly)::before,
+  html[data-chatstyle="tg"][data-imsg] .row.me.tgend.tgend > .bubble:not(.stkonly)::before {
+    width: 33.667px; height: 23.333px; bottom: -6.333px; left: 0; right: auto; background: var(--tg-him);
+    -webkit-mask: var(--im-l) no-repeat center / 100% 100%; mask: var(--im-l) no-repeat center / 100% 100%; }
+  html[data-chatstyle="tg"][data-imsg] .row.me.tgend.tgend > .bubble:not(.stkonly)::before {
+    left: auto; right: 0; background: var(--imc, var(--tg-me));
+    -webkit-mask-image: var(--im-r); mask-image: var(--im-r); }
+  /* 顶栏 */
+  html[data-chatstyle="tg"][data-imsg] .tgav { display: block !important; position: absolute; left: 50%; top: calc(1px + var(--dw-sat, env(safe-area-inset-top)));
+    width: 58px; height: 58px; margin: 0; transform: translateX(-50%); border-radius: 50%; z-index: 1;
+    box-shadow: none !important; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  html[data-chatstyle="tg"][data-imsg] .tgav:active { transform: translateX(-50%) scale(.94); }
+  html[data-chatstyle="tg"][data-imsg] .tgname { top: calc(54px + var(--dw-sat, env(safe-area-inset-top))); height: 33px !important; min-width: 0 !important;
+    padding: 0 12px 0 15px !important; flex-direction: row; gap: 4px; z-index: 2; }
+  html[data-chatstyle="tg"][data-imsg] .tgname .tgst { display: none; }
+  html[data-chatstyle="tg"][data-imsg] .tgname .tgnm { font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
+  html[data-chatstyle="tg"][data-imsg] .tgname::after { content: ""; width: 7px; height: 11px; background: var(--dim);
+    -webkit-mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 14' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 2l5 5-5 5'/%3E%3C/svg%3E"); mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 14' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 2l5 5-5 5'/%3E%3C/svg%3E"); }
+  html[data-chatstyle="tg"][data-imsg] .tgsrch::before { width: 29px; height: 21px;
+    -webkit-mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2.5' y='6' width='14' height='12' rx='3'/%3E%3Cpath d='m16.5 10.2 5-3v9.6l-5-3'/%3E%3C/svg%3E"); mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2.5' y='6' width='14' height='12' rx='3'/%3E%3Cpath d='m16.5 10.2 5-3v9.6l-5-3'/%3E%3C/svg%3E"); }
+  html[data-chatstyle="tg"][data-imsg] header::before { height: calc(118px + var(--dw-sat, env(safe-area-inset-top))) !important; }
+  /* 输入栏 */
+  html[data-chatstyle="tg"][data-imsg] #plusBtn::before { width: 18px; height: 18px;
+    -webkit-mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 4.5v15M4.5 12h15'/%3E%3C/svg%3E"); mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 4.5v15M4.5 12h15'/%3E%3C/svg%3E"); }
+  html[data-chatstyle="tg"][data-imsg] #box { font-size: 17px; padding-left: 16px; padding-right: 82px; }
+  html[data-chatstyle="tg"][data-imsg] #box::placeholder { color: #8e8e93; }
+  html[data-chatstyle="tg"][data-imsg] #micBtn { position: relative; z-index: 3; margin-left: -45px; margin-right: 4px; background: transparent !important;
+    box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; color: var(--dim) !important; }
+  html[data-chatstyle="tg"][data-imsg][data-tghas] #micBtn { margin-left: 0; margin-right: 0; }
+  html[data-chatstyle="tg"][data-imsg] #micBtn .ic { display: none; }
+  html[data-chatstyle="tg"][data-imsg]:not([data-tgrec]) #micBtn::before { content: ""; width: 22px; height: 22px; background: currentColor;
+    -webkit-mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 10.5v3M7.5 8v8M11 5v14M14.5 8.5v7M18 6.5v11M21.5 10.5v3'/%3E%3C/svg%3E"); mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 10.5v3M7.5 8v8M11 5v14M14.5 8.5v7M18 6.5v11M21.5 10.5v3'/%3E%3C/svg%3E"); }
+  html[data-chatstyle="tg"][data-imsg] #send:not(.stop) { background: rgb(64, 142, 245) !important; color: #fff !important; }
+</style>
+
 <script>
 (function () {
   "use strict";
@@ -5978,12 +6052,15 @@ box.focus();
   var LOOK_VARS = ["--tg-fs", "--tg-page", "--tg-page2", "--tg-him", "--tg-him-ink", "--tg-me", "--tg-me-ink", "--text", "--bg", "--dim", "--card", "--line", "--tg-wall"];
   /* TG 版的颜色:底 / 卡片 / 字跟皮肤;气泡色她自己挑的优先;字的黑白按气泡亮度配。官端时全部撤掉。 */
   function applyLook() {
-    var tg = prefs.chatStyle === "tg", P = prefs.palette;
+    var tg = prefs.chatStyle === "tg" || prefs.chatStyle === "imsg", P = prefs.palette;
     LOOK_VARS.forEach(function (v) { root.style.removeProperty(v); });
     root.removeAttribute("data-tgdark"); root.removeAttribute("data-tgwall");
     if (!tg) return;
     var set = function (k, v) { if (v) root.style.setProperty(k, v); };
     if (/^\d{2}(\.5)?$/.test(prefs.chatFont || "")) set("--tg-fs", prefs.chatFont + "px");
+    /* 仿 iMessage(2026-10-19 深夜):颜色照 iMessage 1:1 写死在 CSS(html[data-imsg] 那段),不跟皮肤、不吃她挑的气泡色和壁纸;
+       深浅照旧跟皮肤底色走(和 TG 版同一个判断)。 */
+    if (prefs.chatStyle === "imsg") { if (P && P.dark) root.setAttribute("data-tgdark", ""); root.setAttribute("data-tgmeink", "light"); return; }
     if (P) {
       if (P.dark) root.setAttribute("data-tgdark", "");
       set("--tg-page", P.top); set("--tg-page2", P.bot); set("--text", P.ink); set("--bg", P.top);
@@ -5998,8 +6075,10 @@ box.focus();
   }
   function applyPrefs() {
     applyLook();
-    if (prefs.chatStyle === "tg") root.setAttribute("data-chatstyle", "tg");
+    /* 仿 iMessage 骑在 TG 版那套上(拆泡 / 弹动画 / 思考行 / 搜索 / 长按菜单全照用),只多一个 data-imsg 换样子 */
+    if (prefs.chatStyle === "tg" || prefs.chatStyle === "imsg") root.setAttribute("data-chatstyle", "tg");
     else root.removeAttribute("data-chatstyle");
+    if (prefs.chatStyle === "imsg") root.setAttribute("data-imsg", ""); else root.removeAttribute("data-imsg");
     root.setAttribute("data-avmode", prefs.avatarMode === "each" ? "each" : "top");
     ["me", "him"].forEach(function (w) {
       var v = prefs.avatars && prefs.avatars[w];
@@ -6041,7 +6120,7 @@ box.focus();
   function syncComposer() {
     if (!box) return;
     var tg = root.getAttribute("data-chatstyle") === "tg";
-    var want = tg ? "Message" : origPh;
+    var want = tg ? (root.hasAttribute("data-imsg") ? "iMessage" : "Message") : origPh;
     if (box.getAttribute("placeholder") !== want) box.setAttribute("placeholder", want);
     var n = 0; try { n = (typeof attachments !== "undefined" && attachments) ? attachments.length : 0; } catch (e) {}
     var has = !!(box.value || "").trim() || n > 0 || (sendBtn && sendBtn.classList.contains("stop"));

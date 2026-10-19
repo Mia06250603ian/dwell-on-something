@@ -1539,9 +1539,10 @@
         <div class="seg list" id="chatStyle">
             <button data-v="official" aria-pressed="true">官端</button>
             <button data-v="tg">Telegram</button>
+            <button data-v="imsg">iMessage</button>
           </div>
       </section>
-      <p class="hint">官端:照 Claude App 的样子。Telegram:双方都在气泡里,他一段话一个气泡</p>
+      <p class="hint">官端:照 Claude App 的样子。Telegram:双方都在气泡里,他一段话一个气泡。iMessage:照 iPhone 信息的样子,其余和 Telegram 版一样</p>
       </div>
 
       <!-- 2026-10-09 所有者:「最好有一个可以换气泡颜色和壁纸的功能」。只作用在 Telegram 版;存在 dwell-bridge 的 /data。 -->
@@ -2156,7 +2157,7 @@
     var live = [
       ["当前皮肤", (SKINS.filter(function (s) { return s.id === state.skin; })[0] || {}).name],
       ["外观", { system: "跟随系统", light: "浅色", dark: "夜间" }[state.appearance]],
-      ["聊天样式", state.chatStyle === "tg" ? "Telegram" : "官端"],
+      ["聊天样式", state.chatStyle === "tg" ? "Telegram" : state.chatStyle === "imsg" ? "iMessage" : "官端"],
       ["卡片透明度", state.opacity + "%"],
       ["页面底(上)", cs.getPropertyValue("--paper-top").trim()],
       ["页面底(下)", cs.getPropertyValue("--paper-bot").trim()],
