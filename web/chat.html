@@ -5443,6 +5443,51 @@ box.focus();
     box-shadow: inset 0 .5px 0 rgba(255,255,255,.11), 0 1px 1px rgba(0,0,0,.06), 0 4px 12px -4px rgba(0,0,0,.12); }
   html[data-chatstyle="tg"][data-tgdark] .gu:not(.stkonly), html[data-chatstyle="tg"][data-tgdark] .tgb:not(.stkonly) {
     box-shadow: 0 0 0 .5px rgba(255,255,255,.05), 0 4px 12px -4px rgba(0,0,0,.35); }
+  /* ══ 比例照 TG 1:1(10-19 第四轮,她:「气泡做的太胖了,根据 TG 气泡比例 1:1 复刻,包括形状、时间字体大小、发送成功的对号大小」)══
+     量的是她 TG 截图(1206px = 402pt@3x,正文 15 / 时间 9),只量和字体无关的几何(容器里没有苹方,字号不拿本机量):
+     - 圆角:大角 ~~18~~ → 16(一行高 33,等于两头半圆),小角 ~~6~~ → 8;带尾巴那颗见下面「尾巴也照 TG 1:1」;
+     - 左右内边距 ~~12~~ → 10.5:字墨离泡左边 10.7pt(我们 12.3)—— 胖主要胖在这,外加下面时间那块;
+     - 上下 ~~7~~ → 6.5:她的 TG 一行泡高 33pt(正文 15);
+     - 时间:字墨离泡右边 11.3pt、离泡底 8.7pt(我们高了约 2pt)、和字隔 7.3pt(我们 9.3);字号本来就对(正文 × .6),没动;
+     - 对勾:墨 11.7 × 6.7pt(我们的盒子画出来 ≈ 12 × 6.7,大小本来就对)、**纯白不是灰**(时间是 65% 灰,勾是白的)、
+       离时间 4pt、勾尾离泡右边 7.3pt(我们 11)—— 所以她的泡时间那块整体往右挪 3.8px。
+     ⚠️ 时间格式(TG 是 24 小时 04:06)**没跟着改**:12 小时 AM / PM 是她 10-09 定的(见 hhmm 那条注释),要改先问她。 */
+  html[data-chatstyle="tg"] .row.me .bubble:not(.stkonly), html[data-chatstyle="tg"] .gu:not(.stkonly), html[data-chatstyle="tg"] .tgb:not(.stkonly) {
+    padding: 6.5px 10.5px; }
+  html[data-chatstyle="tg"] .row.me .bubble:not(.stkonly), html[data-chatstyle="tg"] .gu:not(.stkonly), html[data-chatstyle="tg"] .tgb:not(.stkonly) { border-radius: 16px; }
+  html[data-chatstyle="tg"] .gu:not(.tg-split):not(.stkonly),
+  html[data-chatstyle="tg"] .tgset .tgb:not(.stkonly) { border-bottom-left-radius: 8px; }
+  html[data-chatstyle="tg"] .tgset .tgb:not(:first-child):not(.stkonly) { border-top-left-radius: 8px; }
+  html[data-chatstyle="tg"] .row.me:not(.tgend):not(.tgend) > .bubble:not(.stkonly) { border-bottom-right-radius: 8px; }
+  html[data-chatstyle="tg"] .row.me.tgcont.tgcont > .bubble:not(.stkonly) { border-top-right-radius: 8px; }
+  /* 尾巴也照 TG 1:1(同轮她:「气泡的形状也 1:1 做吧」):~~10-19 第三轮那条手画的软尾巴(--tg-tail2,12×8.4)~~ 换成
+     **直接从她 TG 截图里抠出来的那一角**(她的泡右下,82×53px@3x = 27.3×17.7pt,外伸 5.3pt;他的左右镜像),当遮罩用、颜色照旧取气泡底色。
+     带尾巴那颗的那个角 ~~6px~~ 改回大圆 16:遮罩只画泡身外面那部分(泡身盖得住的地方是透明的,
+     不然她那颗上亮下暗的渐变上会看出一块方印),泡和尾巴之间那道小凹口也是截图里本来就有的。
+     ⚠️ 遮罩是 PNG 不是 SVG:TG 那条弧不是规整曲线,描成路径就不是 1:1 了。要换形状先在这里换图,别回去调 --tg-tail2。 */
+  html[data-chatstyle="tg"] {
+    --tg-tail3-r: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFIAAAA1CAYAAADS3bx5AAABsElEQVR42u3YMUtWURzH8Y9aFkI9BUI6KFENkdRSmxBN4dDg5BsQFJraGnoZLY1BLyCquaEagsAMwWoIBAmhxaJFVESXKxRYqPdce56n3xf+3OFyz4Hv/Z3zPxxCCCGEEEIIh2W77gC9cViGiIzIiIzIEJER2QlHn4hMIiMyIrM/RmQSGZH/2bJOIiOyvdKYREZke6Uxifydnogsk8ZTEVmG0xFZZm9sRWSZBnMxIsswFpFljjtjydLfJe63lqOrvsTdupKlXYaJKKifxm3MRV19ibt14zCT9uVCYs/t7kWSWL/WcT4Cy9TjSCxTW7gWiWVqDse6udl8xxf043KD8wxjE6+7MYVPMfhLd72PjQZTuY7xbhK4hFt/eHcdCw3K/IbRThe4jJl9bEG9mMZKQzLn1bxB/5cJnMWJA343gLv41IDMt50k8xkmC1ym9OA2nuBHYZmtdpX3Bvcw1ND4/biDR/hcQOZHXNrrzx01i3iHV3iO1SOe/xxuVk3qalUjBxxjFVN42bTIparbrVUH26/4gPf42YarooULVXceqZ5DOIOzVbVwEser6sNDPMDGDv2kPaBEdONmAAAAAElFTkSuQmCC");
+    --tg-tail3-l: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFIAAAA1CAYAAADS3bx5AAABr0lEQVR42u3azysEYRzH8belFWW3NsVBIk6UhFwcKCUHSfkTFKWUm4ur/8FRubnIv8DBaVMUTpQtcVpufqRx+aptIzs7z8zOznw+9TSXbWZ69f0+zzMzC4qiKIqiKIrSmHgigIwIBClIQSqCFGTKID1BKoIUpCA1T6oiBZlOSE+QSuwgPUEqsYP0BOkvLapFN5Bdqko3kDnVohvIvOZKN5BDWnjcQI6qqaOF1J8I/smDIdU6lF8y4hMx0ZhBWntRteQmxTorUi1ekakAiInErLe1N/RiI3gGgHcHFZn6Nj9wiJha0DHgKyTI1GC2BVyphWnZjQDxGFgFyklFnHG8wFSPD2CnYhfRbaiJSj/wHCLiJTD5x7XngPskIOaAi5AAH4G1GvayrcC6vSBpWsTzEABvgE2g0+f9tNuDQFNVaN4x4gtwCCwQ/MtjBlgBTuKOOAxcO8C7BfaBJSAb0r32AtvAWaPRqqtjHjgCCj7PUwKubBSBU1ugokwBWAZmgWki/gzyA5kF9oAte3L5tPEGvNq+rmwt+mQTf8mOd/abOM7xE8A40Gc7gw6gBxh0fbFvOc1Y1CK5+T8AAAAASUVORK5CYII="); }
+  html[data-chatstyle="tg"] .gu:not(.tg-split):not(.stkonly),
+  html[data-chatstyle="tg"] .tgset .tgb:last-child:not(.stkonly) { border-bottom-left-radius: 16px; }
+  html[data-chatstyle="tg"] .row.me.tgend.tgend > .bubble:not(.stkonly) { border-bottom-right-radius: 16px; }
+  html[data-chatstyle="tg"] .gu:not(.tg-split):not(.stkonly)::before,
+  html[data-chatstyle="tg"] .tgset .tgb:last-child:not(.stkonly)::before,
+  html[data-chatstyle="tg"] .row.me.tgend.tgend > .bubble:not(.stkonly)::before {
+    width: 27.333px; height: 17.667px; left: -5.333px; bottom: 0;
+    -webkit-mask: var(--tg-tail3-l) no-repeat center / 100% 100%; mask: var(--tg-tail3-l) no-repeat center / 100% 100%; }
+  html[data-chatstyle="tg"] .row.me.tgend.tgend > .bubble:not(.stkonly)::before {
+    left: auto; right: -5.333px; -webkit-mask-image: var(--tg-tail3-r); mask-image: var(--tg-tail3-r); }
+  html[data-chatstyle="tg"] :is(.row.me .bubble, .gu, .tgb):not(.stkonly):not(.tgtw)[data-tgt]::after { margin-top: 9px; }
+  html[data-chatstyle="tg"] :is(.row.me .bubble, .gu, .tgb):not(.stkonly)[data-tgt]::after { margin-left: 6px; margin-right: 0; }
+  html[data-chatstyle="tg"] .row.me .bubble:not(.stkonly)[data-tgck]::after { margin-right: -3.8px; }
+  /* 时间掉行时泡要把它包住(同轮顺手修,main 上就有):拆开的 .tgb 是 flex 子项、本来就包得住;**没拆的单颗 .gu 不是**,
+     浮动的时间掉到下一行会挂在泡底外面半截。flow-root 让泡把浮动算进高度,宽度不变(fit-content 照旧)。 */
+  html[data-chatstyle="tg"] :is(.row.me .bubble, .gu, .tgb).tgtw:not(.stkonly) { display: flow-root; }
+  html[data-chatstyle="tg"] {
+    --tgck1: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 17 11' fill='none' stroke='white' stroke-width='1.35' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.2 5.9 4.5 9.1 10.8 1.9'/%3E%3C/svg%3E");
+    --tgck2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 17 11' fill='none' stroke='white' stroke-width='1.35' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8.2 8.1 9.2 9.1 15.5 1.9'/%3E%3C/svg%3E");
+  }
 
   /* ══ iOS 手感第三轮(2026-10-10,她:「动画不够丝滑、要高刷感 / 页面动画按 iOS App 的质感 / 去安卓化」)══
      ① 曲线换成真弹簧:CSS linear() 把弹簧方程逐点写出来(iOS 17 / Safari 17.2 起认;不认的退回原来的 cubic-bezier)。
