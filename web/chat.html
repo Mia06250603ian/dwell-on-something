@@ -5170,7 +5170,7 @@ box.focus();
   .tgfold { display: none; }
   html[data-chatstyle="tg"] .tgfold { display: block; margin: 5px 0 4px 6px; padding: 1px 0 1px 12px; max-width: 86%;
     border-left: 1.5px solid color-mix(in srgb, var(--text) 16%, transparent);
-    font-size: 12px; line-height: 1.55;   /* 10-10 她:「thinking 内容和工具内容字号调小一号」(~~13~~) */ color: color-mix(in srgb, var(--text) 58%, transparent);
+    font-size: 11.5px; line-height: 1.55;   /* 10-10 她:「thinking 内容和工具内容字号调小一号」(~~13~~);10-19 又「缩小一点点」(~~12~~) */ color: color-mix(in srgb, var(--text) 58%, transparent);
     white-space: pre-wrap; word-break: break-word; animation: tgunfold .26s cubic-bezier(.32,.72,0,1); }
   @keyframes tgunfold { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
   html[data-chatstyle="tg"] .tgfold .tn { display: block; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px;   /* 10-10 小一号(~~12.5~~) */
@@ -5413,16 +5413,24 @@ box.focus();
   html[data-chatstyle="tg"] .gu:not(.tg-split):not(.stkonly)::before,
   html[data-chatstyle="tg"] .tgset .tgb:last-child:not(.stkonly)::before,
   html[data-chatstyle="tg"] .row.me.tgend.tgend > .bubble:not(.stkonly)::before { content: none; }
+  /* 形状照 TG(10-19 她发 TG 截图:「只是参考气泡的形状」):四角大圆(18);**发送那一侧,和同一串相邻的那个角收到 6px**,
+     一串看着是一摞 —— 第一颗上角大、下角小,中间的上下都小,最后一颗上角小、下角小(~~原来只有最后一颗下角收小~~)。
+     他的:拆成一串的 .tgset .tgb 按位置;单颗的 .gu 下角小。她的:脚本记 .tgcont(前面紧挨着的也是她的泡,见 tailMark)。 */
   html[data-chatstyle="tg"] .gu:not(.tg-split):not(.stkonly),
-  html[data-chatstyle="tg"] .tgset .tgb:last-child:not(.stkonly) { border-bottom-left-radius: 6px; }
-  html[data-chatstyle="tg"] .row.me.tgend.tgend > .bubble:not(.stkonly) { border-bottom-right-radius: 6px; }
+  html[data-chatstyle="tg"] .tgset .tgb:not(.stkonly) { border-bottom-left-radius: 6px; }
+  html[data-chatstyle="tg"] .tgset .tgb:not(:first-child):not(.stkonly) { border-top-left-radius: 6px; }
+  html[data-chatstyle="tg"] .row.me.tgend.tgend > .bubble:not(.stkonly),
+  html[data-chatstyle="tg"] .row.me:not(.tgend):not(.tgend) > .bubble:not(.stkonly) { border-bottom-right-radius: 6px; }
+  html[data-chatstyle="tg"] .row.me.tgcont.tgcont > .bubble:not(.stkonly) { border-top-right-radius: 6px; }
+  html[data-chatstyle="tg"] .row.me.tgcont.tgcont { margin-top: -8px; }   /* 她连发的也像他那串一样只隔约 2px(原来隔 10px,角收小了反而散) */
+  /* 立体感(10-19 第二版,她:「阴影挺好的但是想让你调柔和一版本」):落影更淡更散、她那颗的上下亮差收小 */
   html[data-chatstyle="tg"] .gu:not(.stkonly), html[data-chatstyle="tg"] .tgb:not(.stkonly) {
-    box-shadow: 0 0 0 .5px rgba(0,0,0,.05), 0 1px 1px rgba(0,0,0,.05), 0 3px 10px -2px rgba(0,0,0,.07); }
+    box-shadow: 0 0 0 .5px rgba(0,0,0,.035), 0 1px 1px rgba(0,0,0,.025), 0 4px 12px -4px rgba(0,0,0,.06); }
   html[data-chatstyle="tg"] .row.me .bubble:not(.stkonly) {
-    background: linear-gradient(to bottom, color-mix(in srgb, var(--tg-me) 84%, #fff), var(--tg-me) 60%);
-    box-shadow: inset 0 .5px 0 rgba(255,255,255,.16), 0 1px 1px rgba(0,0,0,.10), 0 3px 10px -2px rgba(0,0,0,.16); }
+    background: linear-gradient(to bottom, color-mix(in srgb, var(--tg-me) 90%, #fff), var(--tg-me) 65%);
+    box-shadow: inset 0 .5px 0 rgba(255,255,255,.11), 0 1px 1px rgba(0,0,0,.06), 0 4px 12px -4px rgba(0,0,0,.12); }
   html[data-chatstyle="tg"][data-tgdark] .gu:not(.stkonly), html[data-chatstyle="tg"][data-tgdark] .tgb:not(.stkonly) {
-    box-shadow: 0 0 0 .5px rgba(255,255,255,.06), 0 3px 10px -2px rgba(0,0,0,.4); }
+    box-shadow: 0 0 0 .5px rgba(255,255,255,.05), 0 4px 12px -4px rgba(0,0,0,.35); }
 
   /* ══ iOS 手感第三轮(2026-10-10,她:「动画不够丝滑、要高刷感 / 页面动画按 iOS App 的质感 / 去安卓化」)══
      ① 曲线换成真弹簧:CSS linear() 把弹簧方程逐点写出来(iOS 17 / Safari 17.2 起认;不认的退回原来的 cubic-bezier)。
@@ -7075,10 +7083,12 @@ box.focus();
     if (!r || r.nodeType !== 1 || !r.classList.contains("row") || !r.classList.contains("me")) return;
     var n = r.nextElementSibling, end = !(n && n.classList.contains("row") && n.classList.contains("me"));
     if (r.classList.contains("tgend") !== end) r.classList.toggle("tgend", end);
+    var p = r.previousElementSibling, cont = !!(p && p.classList.contains("row") && p.classList.contains("me"));   // 10-19:前面紧挨着的也是她的 = 上角收小
+    if (r.classList.contains("tgcont") !== cont) r.classList.toggle("tgcont", cont);
   }
   function tailPass(all) {
     if (all) Array.prototype.forEach.call(log.querySelectorAll(":scope > .row.me"), tailMark);
-    else tails.forEach(function (r) { if (r.isConnected) { tailMark(r); tailMark(r.previousElementSibling); } });
+    else tails.forEach(function (r) { if (r.isConnected) { tailMark(r); tailMark(r.previousElementSibling); tailMark(r.nextElementSibling); } });
     tails.clear();
   }
   function rowOf(n) {
