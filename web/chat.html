@@ -5405,6 +5405,25 @@ box.focus();
     -webkit-mask-image: var(--tg-tail-r); mask-image: var(--tg-tail-r);
   }
 
+  /* ══ 气泡样子(2026-10-19,她:「气泡尾巴我不太喜欢,还有感觉气泡很扁平」)══
+     出了三版(a 角收小 + 柔和立体 / b 全圆 + 柔和立体 / c iMessage 圆尾巴 + 光泽)给她看图,她选 **a**。所以:
+     ~~TG 小尾巴(上面「① 尾巴」的 ::before)~~ 不画了 —— 一串最后一颗只把那个角收到 6px(他的左下、她的右下),看得出是谁的、哪串到头了;
+     ~~平的气泡(「② 平的气泡」)~~ 改成柔和立体:他的白泡 = 半像素描边 + 很淡的落影;她的泡 = 上亮下暗 + 顶上一道细亮线。
+     ⚠️ 选择器照抄「① 尾巴」那几条,特异性才压得住(第一次只写 `.row.me > .bubble::before`,尾巴照样在)。要调深浅只动下面两组 box-shadow 的透明度。 */
+  html[data-chatstyle="tg"] .gu:not(.tg-split):not(.stkonly)::before,
+  html[data-chatstyle="tg"] .tgset .tgb:last-child:not(.stkonly)::before,
+  html[data-chatstyle="tg"] .row.me.tgend.tgend > .bubble:not(.stkonly)::before { content: none; }
+  html[data-chatstyle="tg"] .gu:not(.tg-split):not(.stkonly),
+  html[data-chatstyle="tg"] .tgset .tgb:last-child:not(.stkonly) { border-bottom-left-radius: 6px; }
+  html[data-chatstyle="tg"] .row.me.tgend.tgend > .bubble:not(.stkonly) { border-bottom-right-radius: 6px; }
+  html[data-chatstyle="tg"] .gu:not(.stkonly), html[data-chatstyle="tg"] .tgb:not(.stkonly) {
+    box-shadow: 0 0 0 .5px rgba(0,0,0,.05), 0 1px 1px rgba(0,0,0,.05), 0 3px 10px -2px rgba(0,0,0,.07); }
+  html[data-chatstyle="tg"] .row.me .bubble:not(.stkonly) {
+    background: linear-gradient(to bottom, color-mix(in srgb, var(--tg-me) 84%, #fff), var(--tg-me) 60%);
+    box-shadow: inset 0 .5px 0 rgba(255,255,255,.16), 0 1px 1px rgba(0,0,0,.10), 0 3px 10px -2px rgba(0,0,0,.16); }
+  html[data-chatstyle="tg"][data-tgdark] .gu:not(.stkonly), html[data-chatstyle="tg"][data-tgdark] .tgb:not(.stkonly) {
+    box-shadow: 0 0 0 .5px rgba(255,255,255,.06), 0 3px 10px -2px rgba(0,0,0,.4); }
+
   /* ══ iOS 手感第三轮(2026-10-10,她:「动画不够丝滑、要高刷感 / 页面动画按 iOS App 的质感 / 去安卓化」)══
      ① 曲线换成真弹簧:CSS linear() 把弹簧方程逐点写出来(iOS 17 / Safari 17.2 起认;不认的退回原来的 cubic-bezier)。
         列表滑动 = 临界阻尼、response .42s(UIKit .smooth 那条,不回弹);泡弹出 = 阻尼 .78、response .40s(过冲约 2%)。
