@@ -5736,6 +5736,41 @@ box.focus();
   .tgprof .hdet { margin: 6px 0 0; font-size: 11px; color: var(--p2); min-height: 0; text-align: center; }
   .tgprof .hdet:empty { display: none; }
 
+  /* ══ 「他」页 SERVER(2026-10-19,所有者:「想要之前在 Zeabur 的那种可视化,搬家了不是没有了嘛」)══
+     同日她看完第一版:「有点太冗余了,能不能做成现在这种点一下能看到详细信息的」→ 照 HEALTH 那排点的样子:
+     点开只有两排格子(机器四格 + 服务一格一个),点一格才在下面一行出线和细节,再点收起。三档深浅、圆体数字、零彩色 */
+  .tgprof .svcard { padding: 0; }
+  .tgprof .svhead b { font-family: var(--rnd); font-weight: 500; margin-left: 4px; font-variant-numeric: tabular-nums; }
+  .tgprof .svhead .sep { color: var(--p3); margin: 0 6px; }
+  .tgprof .svsum.bad { color: var(--p1); }
+  .tgprof .svfold { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .42s cubic-bezier(.32,.72,0,1); }
+  .tgprof.svopen .svfold { grid-template-rows: 1fr; }
+  .tgprof .svin { min-height: 0; overflow: hidden; padding: 0 18px; }
+  .tgprof.svopen .svin { padding-bottom: 12px; }
+  .tgprof .svchev svg { transition: transform .32s cubic-bezier(.32,.72,0,1); }
+  .tgprof.svopen .svchev svg { transform: rotate(90deg); }
+  .tgprof:not(.svopen) .svnote { display: none; }
+  @media (prefers-reduced-motion: reduce) { .tgprof .svfold, .tgprof .svchev svg { transition: none; } }
+  .tgprof .svg4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 4px; padding: 12px 0 2px; border-top: .5px solid var(--hair); }
+  .tgprof .svg4 + .svg4 { padding-top: 10px; }
+  .tgprof .svt { display: flex; flex-direction: column; align-items: center; gap: 3px; border: 0; background: none; padding: 6px 0 5px; color: var(--p2); font: inherit; font-size: 10.5px; cursor: pointer; border-radius: 10px; min-width: 0; }
+  .tgprof .svt b { font-family: var(--rnd); font-size: 15px; font-weight: 500; color: var(--p1); font-variant-numeric: tabular-nums; letter-spacing: -.01em; white-space: nowrap; }
+  .tgprof .svt b small { font-size: 10px; font-weight: 400; color: var(--p2); margin-left: 1px; }
+  .tgprof .svt.sv b { font-size: 12.5px; }
+  .tgprof .svt > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tgprof .svt.bad b { color: var(--p3); font-weight: 400; }
+  .tgprof .svt.bad > span { color: var(--p1); }
+  .tgprof .svt.on { background: var(--hair); }
+  .tgprof .svdet { margin: 6px 0 0; text-align: center; }
+  .tgprof .svdet[hidden] { display: none; }
+  .tgprof .svdet svg { display: block; width: 100%; height: 44px; overflow: visible; }
+  .tgprof .svdet p { margin: 6px 0 0; font-size: 11px; color: var(--p2); }
+  .tgprof .harea { fill: var(--p1); opacity: .07; stroke: none; }
+  .tgprof .hline.tx { stroke-dasharray: 3 3; opacity: .7; }
+  .tgprof .svseg { display: inline-flex; gap: 2px; margin-top: 6px; }
+  .tgprof .svseg button { border: 0; background: none; font: inherit; font-size: 10.5px; color: var(--p3); padding: 3px 10px; border-radius: 999px; cursor: pointer; }
+  .tgprof .svseg button[aria-checked="true"] { background: var(--hair); color: var(--p1); font-weight: 500; }
+
   /* ══ 输入栏 1:1 第四版(2026-10-16,所有者发了 Telegram iOS 三张截图:贴纸面板开 / 空着 / 有字,「我要一模一样的」)══
      量法:她的截图 1206px = 402pt@3x,和本页同一坐标系;本地 402×874@3x 渲染、页底临时换白,同一段代码量墨迹框和描边作差(见 dwell 手册《输入栏 1:1 第四版》)。
      ~~10-10 第三版(左右留边 15.7pt 等)~~ 是照**旧版** TG 截图量的;这一版的 TG 是 iOS 26 那套,留边窄得多。下面全是量出来的 pt:
@@ -5976,6 +6011,15 @@ box.focus();
       '<div class="hlrow"><span>Last error</span><span class="v herr">—</span></div>' +
       '<div class="hsv" role="list"></div><p class="hdet" aria-live="polite"></p></div></div></div>' +
     '<p class="foot hnote"></p>' +
+    /* 2026-10-19 所有者:「想要之前在 Zeabur 的那种可视化,搬家了不是没有了嘛」—— 机器体征来自 dwell-bridge 的 /api/server(机器上每分钟采一次,只读) */
+    '<div class="sect">Server</div>' +
+    '<div class="card glass svcard"><button class="it svhead" type="button" aria-expanded="false"><span class="grow"><span class="t">CPU <b class="svcpu">—</b><span class="sep">·</span>Memory <b class="svmem">—</b></span></span>' +
+      '<span class="tr svsum"></span><span class="chev svchev">' + CHEV + '</span></button>' +
+      '<div class="svfold"><div class="svin">' +
+      '<div class="svg4 svm" role="list"></div><div class="svdet svmdet" aria-live="polite" hidden></div>' +
+      '<div class="svg4 svs" role="list"></div><div class="svdet svsdet" aria-live="polite" hidden></div>' +
+      '</div></div></div>' +
+    '<p class="foot svnote"></p>' +
     /* 2026-10-12 深夜她选 A:~~单独一个「MODEL」分区 + 一张卡~~ 并进 More settings 那张卡,做成 iOS 设置页那种一行:
        左「Model」、右灰字 = 现在的型号(或「→ 下一句要换的」),点了照旧往下展开清单。.pmcur / .pmeng 留着(藏起来)只为脚本不用改两处。 */
     '<div class="card glass pmcard">' +
@@ -6004,7 +6048,7 @@ box.focus();
     closeProf(); var d = document.getElementById("dotsBtn"); if (d) setTimeout(function () { d.click(); }, 280);
   });
   function closeProf() { if (nameIn && !nameIn.hidden) nameIn.blur(); closeAct(); prof.classList.remove("open"); topTint(null); }
-  function openProf() { prof.classList.add("open"); foldModels(false); foldHealth(false); paintCover(); loadProf(); }
+  function openProf() { prof.classList.add("open"); foldModels(false); foldHealth(false); foldServer(false); paintCover(); loadProf(); }
 
   /* ── 背景(2026-10-10 第六版,所有者「我也想要这种能换背景的」)──
      存法同聊天壁纸:长边压到 1600px 的 JPEG → POST api/avatar/cover(本层上限 1.5MB,和壁纸同一档)。
@@ -6145,6 +6189,9 @@ box.focus();
   var hlHead = prof.querySelector(".hlhead");
   function foldHealth(open) { prof.classList.toggle("hlopen", !!open); hlHead.setAttribute("aria-expanded", String(!!open)); }
   hlHead.addEventListener("click", function () { foldHealth(!prof.classList.contains("hlopen")); });
+  var svHead = prof.querySelector(".svhead");
+  function foldServer(open) { prof.classList.toggle("svopen", !!open); svHead.setAttribute("aria-expanded", String(!!open)); }
+  svHead.addEventListener("click", function () { foldServer(!prof.classList.contains("svopen")); });
 
   /* ── 在这页直接换他的头像 / 改他的名字(2026-10-10 所有者要的;原来只能去外壳的设置里)──
      存法和设置里那份一模一样:头像裁正方、压 256px JPEG → POST api/avatar/him;名字 → POST api/prefs { himName }
@@ -6306,6 +6353,7 @@ box.focus();
       gnote.textContent = d.at ? "Updated " + whenSeen(d.at) : "";
     }).catch(function () { setMeter("5h", null, null, "Unavailable"); setMeter("7d", null, null, "Unavailable"); });
     loadHealth();
+    loadServer();
   }
   /* ── Health(2026-10-16)── 缓存命中(最近一轮 + 24 小时那条线)/ 这个窗口压缩过几次 / 最近一次报错 / 八个服务好不好 */
   var hDet = "";
@@ -6351,6 +6399,130 @@ box.focus();
       q(".hlsum").textContent = bad.length ? bad.length + (bad.length > 1 ? " issues" : " issue") : "All " + n + " up";   // 收着时右边那句:有坏的收着也看得出来
       q(".hlsum").classList.toggle("bad", !!bad.length);
     }).catch(function () { q(".hnote").textContent = "Health unavailable — server unreachable."; q(".hlsum").textContent = "Unavailable"; });
+  }
+  /* ── Server(2026-10-19)── 点开:机器四格(CPU / 内存 / 磁盘 / 网络)+ 服务一格一个;点一格,下面一行出那格的线和细节,再点收起。
+     线的范围 1H / 24H / 7D 只在机器那格的细节里换(记在本机)。纵轴:CPU / 网络从 0 起、上沿取这段最高再留两成;内存在最低 / 最高外各留 5 个点 */
+  var SV_KEY = "dwell-server-range", svRange = "24h", svPick = "", svSvc = "", svLast = null;
+  try { var _r = localStorage.getItem(SV_KEY); if (_r === "1h" || _r === "24h" || _r === "7d") svRange = _r; } catch (e) {}
+  function fmtB(n, rate) {
+    if (n == null) return "—";
+    var u = ["B", "KB", "MB", "GB", "TB"], i = 0;
+    while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
+    return (n >= 100 || i === 0 ? Math.round(n) : Math.round(n * 10) / 10) + " " + u[i] + (rate ? "/s" : "");
+  }
+  function fmtUp(sec) {
+    if (sec == null) return "";
+    var d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60);
+    return d ? d + "d " + h + "h" : h ? h + "h " + m + "m" : m + "m";
+  }
+  /* 一串数(null = 那段没数,断开不连)→ 线和线下的面 */
+  function svPath(vals, lo, hi, W, H) {
+    var n = vals.length, line = "", area = "", seg = [];
+    function flush() {
+      if (!seg.length) return;
+      line += seg.map(function (p, j) { return (j ? "L" : "M") + p[0] + " " + p[1]; }).join("");
+      area += "M" + seg[0][0] + " " + H + seg.map(function (p) { return "L" + p[0] + " " + p[1]; }).join("") + "L" + seg[seg.length - 1][0] + " " + H + "Z";
+      seg = [];
+    }
+    vals.forEach(function (v, i) {
+      if (v == null) { flush(); return; }
+      var x = n > 1 ? i / (n - 1) * W : W, y = H - 2 - (Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo || 1) * (H - 4);
+      seg.push([x.toFixed(1), y.toFixed(1)]);
+    });
+    flush();
+    return { line: line, area: area };
+  }
+  function svScale(vals, kind) {
+    var xs = vals.filter(function (v) { return v != null; });
+    if (xs.length < 2) return null;
+    var mx = Math.max.apply(null, xs), mn = Math.min.apply(null, xs);
+    if (kind === "mem") return [Math.max(0, mn - 5), Math.min(100, mx + 5)];
+    if (kind === "bytes") return [Math.max(0, mn - (mx - mn) * .3 - 1), mx + (mx - mn) * .3 + 1];
+    return [0, Math.max(kind === "cpu" ? 2 : 1024, mx * 1.2)];
+  }
+  function svChart(a, b, kind) {           // 没攒够两个点就不画(如实空着)
+    var sc = svScale((a || []).concat(b || []), kind);
+    if (!sc || (a || []).filter(function (v) { return v != null; }).length < 2) return "";
+    var p = svPath(a, sc[0], sc[1], 120, 40);
+    return '<svg viewBox="0 0 120 40" preserveAspectRatio="none" aria-hidden="true"><path class="harea" d="' + p.area + '"/><path class="hline" d="' + p.line + '"/>' +
+      (b ? '<path class="hline tx" d="' + svPath(b, sc[0], sc[1], 120, 40).line + '"/>' : "") + "</svg>";
+  }
+  function svTile(cls, key, label, big, small, bad) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "svt " + cls + (bad ? " bad" : ""); b.setAttribute("role", "listitem"); b.setAttribute("data-k", key);
+    b.innerHTML = "<span></span><b></b>";
+    b.querySelector("span").textContent = label;
+    b.querySelector("b").textContent = big;
+    if (small) { var s = document.createElement("small"); s.textContent = small; b.querySelector("b").appendChild(s); }
+    return b;
+  }
+  function svPaint() {
+    var d = svLast; if (!d) return;
+    var c = d.cur, rl = d.range;
+    Array.prototype.forEach.call(prof.querySelectorAll(".svm .svt"), function (t) { t.classList.toggle("on", t.getAttribute("data-k") === svPick); });
+    Array.prototype.forEach.call(prof.querySelectorAll(".svs .svt"), function (t) { t.classList.toggle("on", t.getAttribute("data-k") === svSvc); });
+    var md = prof.querySelector(".svmdet"), sd = prof.querySelector(".svsdet");
+    md.hidden = !svPick; sd.hidden = true;
+    if (svPick) {
+      var memPct = c.memTotal ? Math.round(c.memUsed / c.memTotal * 100) : null, html = "", txt = "";
+      if (svPick === "cpu") { html = svChart(d.series.cpu, null, "cpu"); txt = (c.ncpu ? c.ncpu + " cores" : "") + (c.load ? " · load " + c.load[0].toFixed(2) : "") + (d.peak.cpu != null ? " · " + rl + " peak " + Math.round(d.peak.cpu) + "%" : ""); }
+      if (svPick === "mem") { html = svChart(d.series.mem, null, "mem"); txt = fmtB(c.memUsed) + " of " + fmtB(c.memTotal) + (c.swapTotal ? " · swap " + fmtB(c.swapUsed) : "") + (d.peak.mem != null ? " · " + rl + " peak " + Math.round(d.peak.mem) + "%" : ""); }
+      if (svPick === "disk") { txt = fmtB(c.diskUsed) + " of " + fmtB(c.diskTotal) + " used"; }
+      if (svPick === "net") { html = svChart(d.series.rx, d.series.tx, "net"); txt = "↓ " + fmtB(c.rx, true) + " · ↑ " + fmtB(c.tx, true) + " · " + rl + " " + fmtB(d.totals.rx) + " in / " + fmtB(d.totals.tx) + " out"; }
+      md.innerHTML = html + "<p></p>" + (svPick === "disk" ? "" : '<div class="svseg" role="radiogroup" aria-label="Range"><button type="button" role="radio" data-r="1h">1H</button><button type="button" role="radio" data-r="24h">24H</button><button type="button" role="radio" data-r="7d">7D</button></div>');
+      md.querySelector("p").textContent = txt;
+      Array.prototype.forEach.call(md.querySelectorAll(".svseg button"), function (b) {
+        b.setAttribute("aria-checked", String(b.getAttribute("data-r") === svRange));
+        b.addEventListener("click", function () { svRange = b.getAttribute("data-r"); try { localStorage.setItem(SV_KEY, svRange); } catch (e) {} loadServer(); });
+      });
+    }
+    var s = null; d.services.forEach(function (x) { if (x.key === svSvc) s = x; });
+    if (s) {
+      sd.hidden = false;
+      var run = s.state === "running";
+      sd.innerHTML = (run ? svChart(s.series.mem, null, "bytes") : "") + "<p></p>";
+      sd.querySelector("p").textContent = s.name + " — " + (run ? fmtB(s.mem) + " · CPU " + s.cpu + "% · " : "") + (s.status || s.state) + (s.limit ? " · limit " + fmtB(s.limit) : "");
+    }
+  }
+  function loadServer() {
+    var q = function (c) { return prof.querySelector(c); };
+    fetch("api/server?range=" + svRange, { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d || !d.ok) {
+        q(".svsum").textContent = d && d.why === "Not set up" ? "Not set up" : "No data";
+        q(".svnote").textContent = d && d.why === "Not set up" ? "The server isn't reporting yet." : "No samples yet — they arrive once a minute.";
+        return;
+      }
+      svLast = d;
+      var c = d.cur, memPct = c.memTotal ? Math.round(c.memUsed / c.memTotal * 100) : null;
+      q(".svcpu").textContent = c.cpu == null ? "—" : Math.round(c.cpu) + "%";
+      q(".svmem").textContent = memPct == null ? "—" : memPct + "%";
+      var m = q(".svm"); m.innerHTML = "";
+      var rx = fmtB(c.rx, true);
+      [["cpu", "CPU", c.cpu == null ? "—" : String(c.cpu < 10 ? c.cpu : Math.round(c.cpu)), c.cpu == null ? "" : "%"],
+       ["mem", "Memory", memPct == null ? "—" : String(memPct), memPct == null ? "" : "%"],
+       ["disk", "Disk", c.diskTotal ? String(Math.round(c.diskUsed / c.diskTotal * 100)) : "—", c.diskTotal ? "%" : ""],
+       ["net", "Network", c.rx == null ? "—" : rx.replace(/ .*$/, ""), c.rx == null ? "" : rx.replace(/^[\d.]+ /, "")]   // 收的速率;发的在点开那行
+      ].forEach(function (t) {
+        var b = svTile("", t[0], t[1], t[2], t[3]);
+        b.addEventListener("click", function () { svPick = svPick === t[0] ? "" : t[0]; svPaint(); });
+        m.appendChild(b);
+      });
+      var box = q(".svs"); box.innerHTML = "";
+      var down = [];
+      d.services.forEach(function (s) {
+        var run = s.state === "running", v = run ? fmtB(s.mem) : (s.state || "stopped");
+        var b = svTile("sv", s.key, s.name, run ? v.replace(/ .*$/, "") : v, run ? v.replace(/^[\d.]+ /, "").charAt(0) : "", !run);
+        b.setAttribute("aria-label", s.name + ": " + (run ? fmtB(s.mem) + " memory" : s.state));
+        b.addEventListener("click", function () { svSvc = svSvc === s.key ? "" : s.key; svPaint(); });
+        box.appendChild(b);
+        if (!run) down.push(s.name);
+      });
+      svPaint();
+      q(".svsum").textContent = d.stale ? "Stale" : down.length ? down.length + " down" : "Up " + fmtUp(c.up);
+      q(".svsum").classList.toggle("bad", !!(d.stale || down.length));
+      q(".svnote").textContent = (down.length ? down.join(", ") + (down.length > 1 ? " aren't" : " isn't") + " running · " : "") +
+        (d.stale ? "No new sample since " : "Sampled every minute · updated ") + whenSeen(d.at);
+    }).catch(function () { q(".svsum").textContent = "Unavailable"; q(".svnote").textContent = "Server stats unavailable — server unreachable."; });
   }
   function paintDet(d) {
     var el = prof.querySelector(".hdet"), s = null;
