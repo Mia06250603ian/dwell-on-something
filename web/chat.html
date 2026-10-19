@@ -4981,6 +4981,24 @@ box.focus();
   .tgpick button:active { background: color-mix(in srgb, var(--text) 8%, transparent); }
   .tgpick img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
   .tgpick .empty { text-align: center; color: var(--dim); font-size: 14px; padding: 30px 0; }
+  /* 最近用过(2026-10-19,她点头的「最近用过一排」):最多 8 张、两行四列,下面一条细线和全部那一格隔开;没用过就不出 */
+  .tgpick .sec[hidden] { display: none; }
+  /* 长按放大预览(2026-10-19,照 TG):背后压暗 + 模糊,中间一张大图 + 名字;按着拖到别的格子上换那一张,松手停住,出「发送 / 改名 / 删除」(后两个只有她自制的有)。点空白处收起 */
+  .stkpv { position: fixed; inset: 0; z-index: 70; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+           background: rgba(0,0,0,.28); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); opacity: 0; transition: opacity .18s; }
+  .stkpv.on { opacity: 1; }
+  .stkpv { pointer-events: none; } .stkpv.pinned { pointer-events: auto; }   /* 按着拖的时候让手指底下取到的是格子,不是这层;松手停住才接点击 */
+  .stkpv[hidden] { display: none; }
+  .stkpv img { width: min(62vw, 240px); height: min(62vw, 240px); object-fit: contain; transform: scale(.86); transition: transform .26s cubic-bezier(.32,.72,0,1); pointer-events: none;
+               -webkit-touch-callout: none; user-select: none; }
+  .stkpv.on img { transform: none; }
+  .stkpv .nm { font-size: 15px; font-weight: 500; color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,.35); max-width: 80vw; text-align: center; }
+  .stkpv .pvacts { display: flex; gap: 8px; visibility: hidden; }
+  .stkpv.pinned .pvacts { visibility: visible; }
+  .stkpv .pvacts button { border: 0; border-radius: 999px; padding: 9px 18px; font: inherit; font-size: 14px; color: var(--text); background: var(--card); box-shadow: 0 4px 14px rgba(0,0,0,.12); }
+  .stkpv .pvacts button.pvdel { color: #e5484d; }
+  .stkpv .pvacts button[hidden] { display: none; }
+  @media (prefers-reduced-motion: reduce) { .stkpv, .stkpv img { transition: none; } }
 
   /* .acts 藏了,但它还在行里 —— 别让它把头像顶上去 */
   html[data-chatstyle="tg"][data-avmode="each"] .row:has(> .gu) > .acts { display: none; }
@@ -5672,9 +5690,16 @@ box.focus();
   .tgprof[data-cover] .pcimg { -webkit-mask: none; mask: none; }
   /* 照片顶上从照片自己的顶色化开 48px(她选的第三种),换过背景且取到色时才有;状态栏那条由外壳涂成同一个色。
      返回键下移到 16px:外壳抬上来的那条 .topcap(12px)会切掉它上沿。 */
-  .tgprof[data-cover] .pcover::after { display: block; height: calc(48px + var(--dw-sat, env(safe-area-inset-top)));
-    background: linear-gradient(to bottom, var(--pc-tint, transparent) 0, var(--pc-tint, transparent) var(--dw-sat, env(safe-area-inset-top)), transparent 100%);
-    -webkit-mask: none; mask: none; }
+  /* ~~照片顶上从照片自己的顶色化开 + 外壳把状态栏涂成同色~~ —— 2026-10-19 她真机截图:状态栏仍是 243,242,241(皮肤的 --paper-top),
+     照片从 62pt 处一刀切开 = 「顶部和状态栏分层」。iOS 只在打开 App 时取那条的色,之后涂色 / 闪一帧都不认(10-10、10-12、10-19 三次真机)。
+     所以反过来:**照片顶上从状态栏那个色化开**(--pc-top = 外壳 .topcap 的实际底色,随皮肤),缓动 56px;
+     有没有换过背景都一样(没换过时是他头像放大的海报,同一条缝)。⚠️ 别超过 90px —— 那是她说「一层灰雾」的第一版 */
+  .tgprof .pcover::after { display: block; height: calc(56px + var(--dw-sat, env(safe-area-inset-top)));
+    background: linear-gradient(to bottom, var(--pc-top, var(--bg)) 0, var(--pc-top, var(--bg)) var(--dw-sat, env(safe-area-inset-top)),
+      color-mix(in srgb, var(--pc-top, var(--bg)) 72%, transparent) calc(14px + var(--dw-sat, env(safe-area-inset-top))),
+      color-mix(in srgb, var(--pc-top, var(--bg)) 34%, transparent) calc(30px + var(--dw-sat, env(safe-area-inset-top))),
+      color-mix(in srgb, var(--pc-top, var(--bg)) 10%, transparent) calc(44px + var(--dw-sat, env(safe-area-inset-top))), transparent 100%);
+    -webkit-mask: none; mask: none; pointer-events: none; }
   .tgprof[data-cover] .pcover .pback { top: calc(16px + var(--dw-sat, env(safe-area-inset-top))); }
   /* Model 一行并进 More settings 那张卡:展开的清单夹在两行中间,More settings 上沿补一条分隔线;脚注只在有待换的模型时出现 */
   .tgprof .pmcard .pmore { position: relative; }
@@ -5705,6 +5730,8 @@ box.focus();
      服务那排:好的 = 实心点,不好的 = 空心圈(不用红绿灯,这页零彩色);点一颗在下面一行写细节,再点收起 */
   .tgprof .hlcard { padding: 0; }
   .tgprof .hlhead .hpct { font-family: var(--rnd); font-weight: 500; margin-left: 4px; font-variant-numeric: tabular-nums; }
+  .tgprof .hlhead .hcpu b { font-family: var(--rnd); font-weight: 500; margin-left: 4px; font-variant-numeric: tabular-nums; }
+  .tgprof .hlhead .hcpu .sep { color: var(--p3); margin: 0 6px; }   /* 收着那行带上 CPU(2026-10-19 她选的),机器没在报就不出 */
   .tgprof .hlsum.bad { color: var(--p1); }
   .tgprof .hlfold { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .42s cubic-bezier(.32,.72,0,1); }
   .tgprof.hlopen .hlfold { grid-template-rows: 1fr; }
@@ -5733,30 +5760,19 @@ box.focus();
   .tgprof .hs.bad i { background: none; box-shadow: inset 0 0 0 1.3px var(--p2); }
   .tgprof .hs.bad span { color: var(--p1); }
   .tgprof .hs.on { background: var(--hair); }
+  .tgprof .hs small { margin-top: -3px; font-family: var(--rnd); font-size: 10px; color: var(--p3); font-variant-numeric: tabular-nums; }
+  .tgprof .hs small:empty { display: none; }
   .tgprof .hdet { margin: 6px 0 0; font-size: 11px; color: var(--p2); min-height: 0; text-align: center; }
   .tgprof .hdet:empty { display: none; }
+  .tgprof .hdet svg { display: block; width: 100%; height: 36px; overflow: visible; margin-bottom: 6px; }
 
-  /* ══ 「他」页 SERVER(2026-10-19,所有者:「想要之前在 Zeabur 的那种可视化,搬家了不是没有了嘛」)══
-     同日她看完第一版:「有点太冗余了,能不能做成现在这种点一下能看到详细信息的」→ 照 HEALTH 那排点的样子:
-     点开只有两排格子(机器四格 + 服务一格一个),点一格才在下面一行出线和细节,再点收起。三档深浅、圆体数字、零彩色 */
-  .tgprof .svcard { padding: 0; }
-  .tgprof .svhead b { font-family: var(--rnd); font-weight: 500; margin-left: 4px; font-variant-numeric: tabular-nums; }
-  .tgprof .svhead .sep { color: var(--p3); margin: 0 6px; }
-  .tgprof .svsum.bad { color: var(--p1); }
-  .tgprof .svfold { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .42s cubic-bezier(.32,.72,0,1); }
-  .tgprof.svopen .svfold { grid-template-rows: 1fr; }
-  .tgprof .svin { min-height: 0; overflow: hidden; padding: 0 18px; }
-  .tgprof.svopen .svin { padding-bottom: 12px; }
-  .tgprof .svchev svg { transition: transform .32s cubic-bezier(.32,.72,0,1); }
-  .tgprof.svopen .svchev svg { transform: rotate(90deg); }
-  .tgprof:not(.svopen) .svnote { display: none; }
-  @media (prefers-reduced-motion: reduce) { .tgprof .svfold, .tgprof .svchev svg { transition: none; } }
-  .tgprof .svg4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 4px; padding: 12px 0 2px; border-top: .5px solid var(--hair); }
-  .tgprof .svg4 + .svg4 { padding-top: 10px; }
+  /* ══ 「他」页 HEALTH 里的机器体征(2026-10-19,所有者:「想要之前在 Zeabur 的那种可视化,搬家了不是没有了嘛」)══
+     ~~第一版单独一块 SERVER 卡(长列表 → 两排格子)~~ 她看完:「有点丑,能和健康结合吗」→ 并进 HEALTH:
+     点开后多一排机器四格(CPU / 内存 / 磁盘 / 网络),服务那排点下面多一行小字 = 各占多少内存;点一格 / 一颗才在下面出线和细节。零彩色 */
+  .tgprof .svg4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 4px; padding: 10px 0 2px; border-top: .5px solid var(--hair); }
   .tgprof .svt { display: flex; flex-direction: column; align-items: center; gap: 3px; border: 0; background: none; padding: 6px 0 5px; color: var(--p2); font: inherit; font-size: 10.5px; cursor: pointer; border-radius: 10px; min-width: 0; }
-  .tgprof .svt b { font-family: var(--rnd); font-size: 15px; font-weight: 500; color: var(--p1); font-variant-numeric: tabular-nums; letter-spacing: -.01em; white-space: nowrap; }
+  .tgprof .svt b { font-family: var(--rnd); font-size: 14px; font-weight: 500; color: var(--p1); font-variant-numeric: tabular-nums; letter-spacing: -.01em; white-space: nowrap; }
   .tgprof .svt b small { font-size: 10px; font-weight: 400; color: var(--p2); margin-left: 1px; }
-  .tgprof .svt.sv b { font-size: 12.5px; }
   .tgprof .svt > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tgprof .svt.bad b { color: var(--p3); font-weight: 400; }
   .tgprof .svt.bad > span { color: var(--p1); }
@@ -5770,6 +5786,33 @@ box.focus();
   .tgprof .svseg { display: inline-flex; gap: 2px; margin-top: 6px; }
   .tgprof .svseg button { border: 0; background: none; font: inherit; font-size: 10.5px; color: var(--p3); padding: 3px 10px; border-radius: 999px; cursor: pointer; }
   .tgprof .svseg button[aria-checked="true"] { background: var(--hair); color: var(--p1); font-weight: 500; }
+
+  /* ══ 贴纸面板照 TG iOS(2026-10-19,她发 TG 贴纸页截图:「太扁平安卓啦」)══
+     量(她截图 1206px = 402pt@3x):面板近白(252)、顶上大圆角约 32pt、只有一道极淡的边;没有拉手。
+     分区标题居中、全大写、约 13pt、灰(≈180)、字距放开;「最近用过」标题右边一颗 ×(清空)。
+     一行 5 张:格 66pt、间距 11pt、左右各留 10pt;照片圆角约 10pt、裸图不加格子底;
+     「Create Sticker」= 66pt 的浅灰(242)圆角方块 + 灰「+」+ 两行灰字(不是虚线框)。
+     分区:Recently Used(用过才出)→ My Stickers(Create + 她自制的)→ Stickers(他那 59 张)。只在 TG 版 */
+  html[data-chatstyle="tg"] .tgpick { background: color-mix(in srgb, var(--card) 96%, var(--text) 1%); -webkit-backdrop-filter: none; backdrop-filter: none;
+    border-radius: 32px 32px 0 0; box-shadow: 0 -.5px 0 color-mix(in srgb, var(--text) 7%, transparent), 0 -8px 28px rgba(0,0,0,.05);
+    padding: 4px 10px calc(14px + var(--dw-sab, env(safe-area-inset-bottom))); scrollbar-width: thin; }
+  html[data-chatstyle="tg"] .tgpick .grab { display: none; }
+  html[data-chatstyle="tg"] .tgpick .sec[hidden] { display: none; }
+  html[data-chatstyle="tg"] .tgpick .hd { position: relative; text-align: center; padding: 15px 0 10px; font-size: 12.5px; font-weight: 500; letter-spacing: .06em;
+    text-transform: uppercase; color: color-mix(in srgb, var(--text) 34%, transparent); }
+  html[data-chatstyle="tg"] .tgpick .hd .clr { position: absolute; right: 4px; top: 50%; translate: 0 -38%; width: 28px; height: 28px; aspect-ratio: auto; padding: 0; border-radius: 50%;
+    display: grid; place-items: center; color: color-mix(in srgb, var(--text) 30%, transparent); }
+  html[data-chatstyle="tg"] .tgpick .hd .clr svg { width: 11px; height: 11px; }
+  html[data-chatstyle="tg"] .tgpick .grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 11px; padding: 0; }
+  html[data-chatstyle="tg"] .tgpick .grid button { padding: 0; border-radius: 10px; }
+  html[data-chatstyle="tg"] .tgpick .grid img { border-radius: 10px; }
+  html[data-chatstyle="tg"] .tgpick .mine::after { display: none; }
+  html[data-chatstyle="tg"] .tgpick .stkadd { border: 0 !important; border-radius: 16px; background: color-mix(in srgb, var(--text) 5%, var(--card));
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: color-mix(in srgb, var(--text) 32%, transparent); }
+  html[data-chatstyle="tg"] .tgpick .stkadd::before { content: none; }
+  html[data-chatstyle="tg"] .tgpick .stkadd svg { width: 19px; height: 19px; }
+  html[data-chatstyle="tg"] .tgpick .stkadd span { font-size: 11px; line-height: 1.2; text-align: center; }
+  html[data-chatstyle="tg"] .tgpick .empty { grid-column: 1 / -1; }
 
   /* ══ 输入栏 1:1 第四版(2026-10-16,所有者发了 Telegram iOS 三张截图:贴纸面板开 / 空着 / 有字,「我要一模一样的」)══
      量法:她的截图 1206px = 402pt@3x,和本页同一坐标系;本地 402×874@3x 渲染、页底临时换白,同一段代码量墨迹框和描边作差(见 dwell 手册《输入栏 1:1 第四版》)。
@@ -6003,23 +6046,15 @@ box.focus();
     /* 2026-10-16 所有者:「加一个 Health?缓存命中、健不健康的东西做一个可视化」—— 数据来自 dwell-bridge 的 /api/vitals(只读汇总,不碰晏) */
     '<div class="sect">Health</div>' +
     /* 同日她:「能做成折叠、点开才看见各个项目嘛」—— 平时一行(命中率 + 几个服务好),点开才展开;同 Model 那行的折法,每次打开这页都收着 */
-    '<div class="card glass hlcard"><button class="it hlhead" type="button" aria-expanded="false"><span class="grow"><span class="t">Cache hit <b class="hpct">—</b></span></span>' +
+    '<div class="card glass hlcard"><button class="it hlhead" type="button" aria-expanded="false"><span class="grow"><span class="t">Cache hit <b class="hpct">—</b><span class="hcpu" hidden><span class="sep">·</span>CPU <b></b></span></span></span>' +
       '<span class="tr hlsum"></span><span class="chev hlchev">' + CHEV + '</span></button>' +
       '<div class="hlfold"><div class="hlin"><div class="hlead"><div class="hsub"></div>' +
       '<svg class="hspark" viewBox="0 0 120 40" preserveAspectRatio="none" aria-hidden="true"><path class="hline" d=""/></svg></div>' +
       '<div class="hlrow"><span>Compactions</span><span class="v hcomp">—</span></div>' +
       '<div class="hlrow"><span>Last error</span><span class="v herr">—</span></div>' +
-      '<div class="hsv" role="list"></div><p class="hdet" aria-live="polite"></p></div></div></div>' +
+      '<div class="svg4 svm" role="list" hidden></div><div class="svdet svmdet" aria-live="polite" hidden></div>' +   // 机器四格(2026-10-19 并进来的)
+      '<div class="hsv" role="list"></div><div class="hdet" aria-live="polite"></div></div></div></div>' +
     '<p class="foot hnote"></p>' +
-    /* 2026-10-19 所有者:「想要之前在 Zeabur 的那种可视化,搬家了不是没有了嘛」—— 机器体征来自 dwell-bridge 的 /api/server(机器上每分钟采一次,只读) */
-    '<div class="sect">Server</div>' +
-    '<div class="card glass svcard"><button class="it svhead" type="button" aria-expanded="false"><span class="grow"><span class="t">CPU <b class="svcpu">—</b><span class="sep">·</span>Memory <b class="svmem">—</b></span></span>' +
-      '<span class="tr svsum"></span><span class="chev svchev">' + CHEV + '</span></button>' +
-      '<div class="svfold"><div class="svin">' +
-      '<div class="svg4 svm" role="list"></div><div class="svdet svmdet" aria-live="polite" hidden></div>' +
-      '<div class="svg4 svs" role="list"></div><div class="svdet svsdet" aria-live="polite" hidden></div>' +
-      '</div></div></div>' +
-    '<p class="foot svnote"></p>' +
     /* 2026-10-12 深夜她选 A:~~单独一个「MODEL」分区 + 一张卡~~ 并进 More settings 那张卡,做成 iOS 设置页那种一行:
        左「Model」、右灰字 = 现在的型号(或「→ 下一句要换的」),点了照旧往下展开清单。.pmcur / .pmeng 留着(藏起来)只为脚本不用改两处。 */
     '<div class="card glass pmcard">' +
@@ -6048,7 +6083,7 @@ box.focus();
     closeProf(); var d = document.getElementById("dotsBtn"); if (d) setTimeout(function () { d.click(); }, 280);
   });
   function closeProf() { if (nameIn && !nameIn.hidden) nameIn.blur(); closeAct(); prof.classList.remove("open"); topTint(null); }
-  function openProf() { prof.classList.add("open"); foldModels(false); foldHealth(false); foldServer(false); paintCover(); loadProf(); }
+  function openProf() { readTopColor(); prof.classList.add("open"); foldModels(false); foldHealth(false); paintCover(); loadProf(); }
 
   /* ── 背景(2026-10-10 第六版,所有者「我也想要这种能换背景的」)──
      存法同聊天壁纸:长边压到 1600px 的 JPEG → POST api/avatar/cover(本层上限 1.5MB,和壁纸同一档)。
@@ -6076,6 +6111,14 @@ box.focus();
     img.onerror = function () { cb(null); };
     img.src = url;
   }
+  /* 状态栏那条的实际色 = 外壳 .topcap 的底色(随皮肤;iOS 打开 App 时取的就是它)。单独打开聊天页时没有外壳,退回本页底色 */
+  function readTopColor() {
+    try {
+      var cap = window.parent !== window && window.parent.document.querySelector(".topcap");
+      var c = cap && window.parent.getComputedStyle(cap).backgroundColor;
+      if (c && !/rgba\(0, 0, 0, 0\)|transparent/.test(c)) prof.style.setProperty("--pc-top", c); else prof.style.removeProperty("--pc-top");
+    } catch (e) { prof.style.removeProperty("--pc-top"); }
+  }
   function topTint(c) { try { if (window.parent !== window && typeof window.parent.__dwTopTint === "function") window.parent.__dwTopTint(c); } catch (e) {} }
   function paintCover() {
     if (!prof) return;
@@ -6084,13 +6127,7 @@ box.focus();
     prof.querySelector(".pa-del").hidden = !u;
     if (!u) { prof.style.removeProperty("--pc-img"); prof.style.removeProperty("--pc-tint"); tintNow = null; if (prof.classList.contains("open")) topTint(null); return; }
     prof.style.setProperty("--pc-img", 'url("' + u + '")');
-    if (tintNow && prof.classList.contains("open")) topTint(tintNow);
-    sampleTop(u, function (c) {
-      if (coverUrl() !== u) return;              // 等的时候又换了一张
-      tintNow = c;
-      if (c) prof.style.setProperty("--pc-tint", c); else prof.style.removeProperty("--pc-tint");
-      if (prof.classList.contains("open")) topTint(c);
-    });
+    /* ~~取照片顶色 → --pc-tint + 外壳 __dwTopTint 涂状态栏~~ —— 2026-10-19 撤:iOS 不认(见上面 .pcover::after 那段),现在照片顶上从状态栏色化开 */
   }
   var actBg = prof.querySelector(".psheetbg"), act = prof.querySelector(".pact");
   function openAct() { actBg.hidden = false; act.hidden = false; }
@@ -6189,9 +6226,6 @@ box.focus();
   var hlHead = prof.querySelector(".hlhead");
   function foldHealth(open) { prof.classList.toggle("hlopen", !!open); hlHead.setAttribute("aria-expanded", String(!!open)); }
   hlHead.addEventListener("click", function () { foldHealth(!prof.classList.contains("hlopen")); });
-  var svHead = prof.querySelector(".svhead");
-  function foldServer(open) { prof.classList.toggle("svopen", !!open); svHead.setAttribute("aria-expanded", String(!!open)); }
-  svHead.addEventListener("click", function () { foldServer(!prof.classList.contains("svopen")); });
 
   /* ── 在这页直接换他的头像 / 改他的名字(2026-10-10 所有者要的;原来只能去外壳的设置里)──
      存法和设置里那份一模一样:头像裁正方、压 256px JPEG → POST api/avatar/him;名字 → POST api/prefs { himName }
@@ -6356,7 +6390,7 @@ box.focus();
     loadServer();
   }
   /* ── Health(2026-10-16)── 缓存命中(最近一轮 + 24 小时那条线)/ 这个窗口压缩过几次 / 最近一次报错 / 八个服务好不好 */
-  var hDet = "";
+  var hDet = "", hLast = null;
   function kfmt(n) { return n >= 1000 ? (Math.round(n / 100) / 10) + "k" : String(n); }
   function loadHealth() {
     var q = function (c) { return prof.querySelector(c); };
@@ -6381,28 +6415,12 @@ box.focus();
       q(".hcomp").textContent = w.compactions == null ? "—" : w.compactions + " this window";
       q(".herr").textContent = d.lastErr ? d.lastErr.kind + (d.lastErr.at ? " · " + whenSeen(Date.parse(d.lastErr.at) / 1000) : "") : "None";
       q(".herr").classList.toggle("na", !d.lastErr);
-      var box = q(".hsv"); box.innerHTML = "";
-      var bad = [];
-      (d.services || []).forEach(function (s) {
-        var b = document.createElement("button");
-        b.type = "button"; b.className = "hs" + (s.ok ? "" : " bad"); b.setAttribute("role", "listitem");
-        b.innerHTML = "<i></i><span></span>";
-        b.querySelector("span").textContent = s.name;
-        b.setAttribute("aria-label", s.name + ": " + (s.ok ? "OK" : "needs attention") + (s.detail ? ", " + s.detail : ""));
-        b.addEventListener("click", function () { hDet = hDet === s.key ? "" : s.key; paintDet(d); });
-        box.appendChild(b);
-        if (!s.ok) bad.push(s.name);
-      });
-      paintDet(d);
-      var n = (d.services || []).length;
-      q(".hnote").textContent = (bad.length ? bad.length + " need" + (bad.length > 1 ? "" : "s") + " attention: " + bad.join(", ") : "All " + n + " services up") + (d.at ? " · checked " + whenSeen(d.at) : "");
-      q(".hlsum").textContent = bad.length ? bad.length + (bad.length > 1 ? " issues" : " issue") : "All " + n + " up";   // 收着时右边那句:有坏的收着也看得出来
-      q(".hlsum").classList.toggle("bad", !!bad.length);
+      hLast = d; paintSvc();
     }).catch(function () { q(".hnote").textContent = "Health unavailable — server unreachable."; q(".hlsum").textContent = "Unavailable"; });
   }
   /* ── Server(2026-10-19)── 点开:机器四格(CPU / 内存 / 磁盘 / 网络)+ 服务一格一个;点一格,下面一行出那格的线和细节,再点收起。
      线的范围 1H / 24H / 7D 只在机器那格的细节里换(记在本机)。纵轴:CPU / 网络从 0 起、上沿取这段最高再留两成;内存在最低 / 最高外各留 5 个点 */
-  var SV_KEY = "dwell-server-range", svRange = "24h", svPick = "", svSvc = "", svLast = null;
+  var SV_KEY = "dwell-server-range", svRange = "24h", svPick = "", svLast = null;
   try { var _r = localStorage.getItem(SV_KEY); if (_r === "1h" || _r === "24h" || _r === "7d") svRange = _r; } catch (e) {}
   function fmtB(n, rate) {
     if (n == null) return "—";
@@ -6460,9 +6478,8 @@ box.focus();
     var d = svLast; if (!d) return;
     var c = d.cur, rl = d.range;
     Array.prototype.forEach.call(prof.querySelectorAll(".svm .svt"), function (t) { t.classList.toggle("on", t.getAttribute("data-k") === svPick); });
-    Array.prototype.forEach.call(prof.querySelectorAll(".svs .svt"), function (t) { t.classList.toggle("on", t.getAttribute("data-k") === svSvc); });
-    var md = prof.querySelector(".svmdet"), sd = prof.querySelector(".svsdet");
-    md.hidden = !svPick; sd.hidden = true;
+    var md = prof.querySelector(".svmdet");
+    md.hidden = !svPick;
     if (svPick) {
       var memPct = c.memTotal ? Math.round(c.memUsed / c.memTotal * 100) : null, html = "", txt = "";
       if (svPick === "cpu") { html = svChart(d.series.cpu, null, "cpu"); txt = (c.ncpu ? c.ncpu + " cores" : "") + (c.load ? " · load " + c.load[0].toFixed(2) : "") + (d.peak.cpu != null ? " · " + rl + " peak " + Math.round(d.peak.cpu) + "%" : ""); }
@@ -6476,27 +6493,15 @@ box.focus();
         b.addEventListener("click", function () { svRange = b.getAttribute("data-r"); try { localStorage.setItem(SV_KEY, svRange); } catch (e) {} loadServer(); });
       });
     }
-    var s = null; d.services.forEach(function (x) { if (x.key === svSvc) s = x; });
-    if (s) {
-      sd.hidden = false;
-      var run = s.state === "running";
-      sd.innerHTML = (run ? svChart(s.series.mem, null, "bytes") : "") + "<p></p>";
-      sd.querySelector("p").textContent = s.name + " — " + (run ? fmtB(s.mem) + " · CPU " + s.cpu + "% · " : "") + (s.status || s.state) + (s.limit ? " · limit " + fmtB(s.limit) : "");
-    }
   }
   function loadServer() {
     var q = function (c) { return prof.querySelector(c); };
     fetch("api/server?range=" + svRange, { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
-      if (!d || !d.ok) {
-        q(".svsum").textContent = d && d.why === "Not set up" ? "Not set up" : "No data";
-        q(".svnote").textContent = d && d.why === "Not set up" ? "The server isn't reporting yet." : "No samples yet — they arrive once a minute.";
-        return;
-      }
+      if (!d || !d.ok) { svLast = null; q(".hcpu").hidden = true; q(".svm").hidden = true; q(".svmdet").hidden = true; paintSvc(); return; }   // 机器没在报:那排格子不出,服务照只有体检的样子
       svLast = d;
       var c = d.cur, memPct = c.memTotal ? Math.round(c.memUsed / c.memTotal * 100) : null;
-      q(".svcpu").textContent = c.cpu == null ? "—" : Math.round(c.cpu) + "%";
-      q(".svmem").textContent = memPct == null ? "—" : memPct + "%";
-      var m = q(".svm"); m.innerHTML = "";
+      var m = q(".svm"); m.innerHTML = ""; m.hidden = false;
+      q(".hcpu b").textContent = c.cpu == null ? "—" : Math.round(c.cpu) + "%"; q(".hcpu").hidden = d.stale || c.cpu == null;
       var rx = fmtB(c.rx, true);
       [["cpu", "CPU", c.cpu == null ? "—" : String(c.cpu < 10 ? c.cpu : Math.round(c.cpu)), c.cpu == null ? "" : "%"],
        ["mem", "Memory", memPct == null ? "—" : String(memPct), memPct == null ? "" : "%"],
@@ -6507,28 +6512,65 @@ box.focus();
         b.addEventListener("click", function () { svPick = svPick === t[0] ? "" : t[0]; svPaint(); });
         m.appendChild(b);
       });
-      var box = q(".svs"); box.innerHTML = "";
-      var down = [];
-      d.services.forEach(function (s) {
-        var run = s.state === "running", v = run ? fmtB(s.mem) : (s.state || "stopped");
-        var b = svTile("sv", s.key, s.name, run ? v.replace(/ .*$/, "") : v, run ? v.replace(/^[\d.]+ /, "").charAt(0) : "", !run);
-        b.setAttribute("aria-label", s.name + ": " + (run ? fmtB(s.mem) + " memory" : s.state));
-        b.addEventListener("click", function () { svSvc = svSvc === s.key ? "" : s.key; svPaint(); });
-        box.appendChild(b);
-        if (!run) down.push(s.name);
-      });
-      svPaint();
-      q(".svsum").textContent = d.stale ? "Stale" : down.length ? down.length + " down" : "Up " + fmtUp(c.up);
-      q(".svsum").classList.toggle("bad", !!(d.stale || down.length));
-      q(".svnote").textContent = (down.length ? down.join(", ") + (down.length > 1 ? " aren't" : " isn't") + " running · " : "") +
-        (d.stale ? "No new sample since " : "Sampled every minute · updated ") + whenSeen(d.at);
-    }).catch(function () { q(".svsum").textContent = "Unavailable"; q(".svnote").textContent = "Server stats unavailable — server unreachable."; });
+      svPaint(); paintSvc();
+    }).catch(function () { svLast = null; q(".hcpu").hidden = true; q(".svm").hidden = true; q(".svmdet").hidden = true; paintSvc(); });
   }
-  function paintDet(d) {
+  /* 服务那排:体检的八个(好不好)+ 机器上的容器(各占多少内存);体检口没有的三个(网页本身 / 飞行棋 / 大门)按「容器在不在跑」算 */
+  var HV_HOST = { ian: "kelivo-shim", memory: "ombre-brain", telegram: "telegram-bridge", imessage: "imessage-bridge",
+                  mail: "gmail-mcp", browser: "browser-hands", music: "netease-mcp", ears: "ears" };
+  function svcList() {
+    var host = {}, used = {}, out = [];
+    ((svLast && svLast.services) || []).forEach(function (h) { host[h.key] = h; });
+    ((hLast && hLast.services) || []).forEach(function (s) {
+      var h = host[HV_HOST[s.key]]; if (h) used[h.key] = 1;
+      out.push({ key: s.key, name: s.name, ok: s.ok && (!h || h.state === "running"), detail: s.detail, host: h || null });
+    });
+    ((svLast && svLast.services) || []).forEach(function (h) {
+      if (used[h.key]) return;
+      var run = h.state === "running";
+      out.push({ key: "c:" + h.key, name: h.name, ok: run, detail: run ? "" : (h.state || "stopped"), host: h });
+    });
+    return out;
+  }
+  function paintSvc() {
+    var q = function (c) { return prof.querySelector(c); };
+    var list = svcList(), box = q(".hsv"), bad = [];
+    box.innerHTML = "";
+    list.forEach(function (s) {
+      var b = document.createElement("button"), h = s.host, mem = h && h.state === "running" ? fmtB(h.mem) : "";
+      b.type = "button"; b.className = "hs" + (s.ok ? "" : " bad"); b.setAttribute("role", "listitem");
+      b.innerHTML = "<i></i><span></span><small></small>";
+      b.querySelector("span").textContent = s.name;
+      b.querySelector("small").textContent = mem.replace(/ ([KMGT])B$/, "$1");
+      b.setAttribute("aria-label", s.name + ": " + (s.ok ? "OK" : "needs attention") + (s.detail ? ", " + s.detail : "") + (mem ? ", " + mem : ""));
+      b.addEventListener("click", function () { hDet = hDet === s.key ? "" : s.key; paintDet(list); });
+      box.appendChild(b);
+      if (!s.ok) bad.push(s.name);
+    });
+    paintDet(list);
+    if (!hLast && !svLast) return;
+    var n = list.length, c = svLast && svLast.cur;
+    q(".hnote").textContent = (bad.length ? bad.length + " need" + (bad.length > 1 ? "" : "s") + " attention: " + bad.join(", ") : "All " + n + " services up") +
+      (svLast && svLast.stale ? " · server stats stale" : "") + (hLast && hLast.at ? " · checked " + whenSeen(hLast.at) : "");
+    q(".hlsum").textContent = bad.length ? bad.length + (bad.length > 1 ? " issues" : " issue") : "All " + n + " up";   // 收着时右边那句:有坏的收着也看得出来
+    q(".hlsum").classList.toggle("bad", !!bad.length);
+  }
+  function paintDet(list) {
     var el = prof.querySelector(".hdet"), s = null;
-    (d.services || []).forEach(function (x) { if (x.key === hDet) s = x; });
-    Array.prototype.forEach.call(prof.querySelectorAll(".hsv .hs"), function (b, i) { b.classList.toggle("on", !!s && d.services[i] === s); });
-    el.textContent = s ? s.name + " — " + (s.ok ? "OK" : "Needs attention") + (s.detail ? " · " + s.detail : "") : "";
+    list.forEach(function (x) { if (x.key === hDet) s = x; });
+    Array.prototype.forEach.call(prof.querySelectorAll(".hsv .hs"), function (b, i) { b.classList.toggle("on", !!s && list[i] === s); });
+    if (!s) { el.innerHTML = ""; return; }
+    var h = s.host, run = h && h.state === "running";
+    el.innerHTML = (run ? svChart(h.series.mem, null, "bytes") : "") + "<span></span>";
+    /* 一行写完(2026-10-19 她选的):名字不重复(那颗已经高亮着)、CPU 不到 1% 不写、开机时长缩成 up 30h */
+    el.querySelector("span").textContent = [s.ok ? "OK" : "Needs attention", s.detail,
+      run ? fmtB(h.mem) + (h.limit ? " / " + fmtB(h.limit) : "") : "", run && h.cpu >= 1 ? "CPU " + h.cpu + "%" : "", upShort(h && h.status)]
+      .filter(Boolean).join(" · ");
+  }
+  function upShort(st) {                   // docker 的「Up 30 hours」/「Up About an hour」/「Up 5 minutes」→ up 30h / up 1h / up 5m;别的(Exited…)原样
+    var m = /^Up (?:About )?(an?|\d+) (second|minute|hour|day|week|month)s?/.exec(st || "");
+    if (!m) return st || "";
+    return "up " + (/^an?$/.test(m[1]) ? 1 : m[1]) + { second: "s", minute: "m", hour: "h", day: "d", week: "w", month: "mo" }[m[2]];
   }
   function whenSeen(sec) {
     var m = Math.round((Date.now() / 1000 - sec) / 60);
@@ -6553,7 +6595,7 @@ box.focus();
   function loadStickers() {
     fetch("api/stickers", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
       if (!d || !d.ok) return;
-      STK = {}; d.items.forEach(function (it) { STK[it.tag] = it.file; });
+      STK = {}; d.items.forEach(function (it) { STK[it.tag] = it.file; (it.aka || []).forEach(function (a) { if (!STK[a]) STK[a] = it.file; }); });   // 改过名的自制贴纸:记录里的旧名照样出图
       buildPicker(d.items); schedule();
     }).catch(function () {});
   }
@@ -6632,7 +6674,10 @@ box.focus();
   var comp = document.querySelector(".composer");
   if (comp) comp.appendChild(stkBtn);
   var pick = document.createElement("div");
-  pick.className = "tgpick"; pick.innerHTML = '<div class="grab"></div><div class="grid"><div class="empty">贴纸还没装上</div></div>';
+  pick.className = "tgpick"; pick.innerHTML = '<div class="grab"></div>' +
+    '<div class="sec rsec" hidden><div class="hd"><span>Recently Used</span><button type="button" class="clr" aria-label="清空最近用过"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9"/></svg></button></div><div class="grid recent"></div></div>' +
+    '<div class="sec msec"><div class="hd"><span>My Stickers</span></div><div class="grid mineg"></div></div>' +
+    '<div class="sec"><div class="hd"><span>Stickers</span></div><div class="grid all"><div class="empty">贴纸还没装上</div></div></div>';
   document.body.appendChild(pick);
   /* 照 TG:面板在下、输入栏被顶到面板上方(不然面板盖住输入栏,图标再也点不到、关不上 —— 10-09 测出来的) */
   var footEl = document.querySelector("footer");
@@ -6729,45 +6774,135 @@ box.focus();
   addFile.type = "file"; addFile.accept = "image/*"; addFile.hidden = true;
   addFile.addEventListener("click", function (e) { e.stopPropagation(); });   // 它在面板外,点击冒到 document 会把面板关掉(10-10 测出来的)
   document.body.appendChild(addFile);
+  /* 最近用过:只存这台手机(丢了不心疼),按标签记、最近的在前、最多 8 张;删掉的自制贴纸自然不再出现 */
+  var RECENT_KEY = "dwell-stk-recent", stkItems = [];
+  function recentTags() { try { var a = JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+  function pushRecent(tag) {
+    var a = recentTags().filter(function (t) { return t !== tag; }); a.unshift(tag);
+    try { localStorage.setItem(RECENT_KEY, JSON.stringify(a.slice(0, 8))); } catch (e) {}
+    if (stkItems.length) buildPicker(stkItems);
+  }
+  /* ── 长按放大预览(2026-10-19)── 按住 400ms 出大图;不松手拖到别的格子 = 换那一张;松手 = 停住出按钮;点空白收起。
+     按住前手指挪了 8px 以上 = 她在滚面板,不算长按 */
+  var pv = document.createElement("div"); pv.className = "stkpv"; pv.hidden = true;
+  pv.innerHTML = '<img alt=""><div class="nm"></div><div class="pvacts"><button type="button" class="pvsend">Send</button><button type="button" class="pvren">Rename</button><button type="button" class="pvdel">Delete</button></div>';
+  document.body.appendChild(pv);
+  var pvIt = null, pvHeld = false, pvPinAt = 0;
+  function showPv(it) {
+    pvIt = it;
+    pv.querySelector("img").src = "stickers/" + encodeURIComponent(it.file);
+    pv.querySelector(".nm").textContent = it.tag;
+    pv.querySelector(".pvren").hidden = pv.querySelector(".pvdel").hidden = !it.mine;
+    if (pv.hidden) { pv.classList.remove("pinned"); pv.hidden = false; requestAnimationFrame(function () { pv.classList.add("on"); }); }
+  }
+  function hidePv() { pv.classList.remove("on", "pinned"); pvIt = null; setTimeout(function () { if (!pv.classList.contains("on")) pv.hidden = true; }, 180); }
+  pv.addEventListener("click", function (e) {
+    e.stopPropagation();                                       // 别冒到 document(那边点空白会把贴纸面板也关了)
+    if (!pv.classList.contains("pinned")) return;
+    var it = pvIt; if (!it) return;
+    if (e.target.closest(".pvsend")) { hidePv(); sendSticker(it.tag); return; }
+    if (e.target.closest(".pvren")) { renameSticker(it); return; }
+    if (e.target.closest(".pvdel")) {
+      if (confirm("删掉这张贴纸吗?删了就找不回来了。")) { hidePv(); fetch("api/stickers/mine/" + encodeURIComponent(it.id), { method: "DELETE" }).then(function () { loadStickers(); }); }
+      return;
+    }
+    if (!e.target.closest(".pvacts") && Date.now() - pvPinAt > 450) hidePv();   // 原地松手时浏览器补的那一下 click 会落在这层上,别当成「点空白收起」
+  });
+  function renameSticker(it) {
+    var n = prompt("给这张贴纸改个名字(他和聊天记录里看到的就是这个名字)", it.tag);
+    if (n == null || !n.trim() || n.trim() === it.tag) return;
+    fetch("api/stickers/mine/" + encodeURIComponent(it.id) + "/name", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: n }) })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d.ok) throw new Error(d.why || "");
+        try { localStorage.setItem(RECENT_KEY, JSON.stringify(recentTags().map(function (t) { return t === it.tag ? d.item.tag : t; }))); } catch (e) {}
+        it.tag = d.item.tag; pv.querySelector(".nm").textContent = it.tag;
+        loadStickers();
+      })
+      .catch(function (e) { note("（没改上:" + (e.message || "再试一次") + "）", "err"); });
+  }
+  function itemAt(x, y) {
+    var el = document.elementFromPoint(x, y), b = el && el.closest && el.closest(".tgpick button[data-tag]");
+    if (!b) return null;
+    for (var i = 0; i < stkItems.length; i++) if (stkItems[i].tag === b.getAttribute("data-tag")) return stkItems[i];
+    return null;
+  }
+  pick.querySelector(".rsec .clr").addEventListener("click", function (e) {
+    e.stopPropagation();
+    if (!confirm("清空最近用过的贴纸?(贴纸本身不会删)")) return;
+    try { localStorage.removeItem(RECENT_KEY); } catch (er) {}
+    if (stkItems.length) buildPicker(stkItems);
+  });
+  function stkButton(it) {
+    var b = document.createElement("button"); b.type = "button"; b.title = it.tag; b.setAttribute("data-tag", it.tag);
+    if (it.mine) b.className = "mine";
+    var img = document.createElement("img"); img.loading = "lazy"; img.alt = it.tag; img.src = "stickers/" + encodeURIComponent(it.file);
+    b.appendChild(img);
+    var t = 0, x0 = 0, y0 = 0;
+    function arm(x, y) { pvHeld = false; x0 = x; y0 = y; clearTimeout(t); t = setTimeout(function () { pvHeld = true; showPv(it); try { navigator.vibrate && navigator.vibrate(8); } catch (e) {} }, 400); }
+    function move(x, y, e) {
+      if (!pvHeld) { if (Math.abs(x - x0) > 8 || Math.abs(y - y0) > 8) clearTimeout(t); return; }
+      if (e && e.cancelable) e.preventDefault();               // 预览出来以后手指再动 = 换贴纸,不滚面板
+      var o = itemAt(x, y); if (o && o !== pvIt) showPv(o);
+    }
+    function up() { clearTimeout(t); if (pvHeld && pvIt) { pv.classList.add("pinned"); pvPinAt = Date.now(); } }
+    b.addEventListener("touchstart", function (e) { var p = e.touches[0]; arm(p.clientX, p.clientY); }, { passive: true });
+    b.addEventListener("touchmove", function (e) { var p = e.touches[0]; move(p.clientX, p.clientY, e); }, { passive: false });
+    b.addEventListener("touchend", up); b.addEventListener("touchcancel", function () { clearTimeout(t); });
+    b.addEventListener("mousedown", function (e) { arm(e.clientX, e.clientY); });
+    b.addEventListener("mousemove", function (e) { if (e.buttons) move(e.clientX, e.clientY); });
+    b.addEventListener("mouseup", up); b.addEventListener("mouseleave", function () { if (!pvHeld) clearTimeout(t); });
+    b.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+    b.addEventListener("click", function () { if (pvHeld) { pvHeld = false; return; } sendSticker(it.tag); });
+    return b;
+  }
   function buildPicker(items) {
-    var g = pick.querySelector(".grid"); g.innerHTML = "";
+    stkItems = items;
+    var byTag = {}; items.forEach(function (it) { byTag[it.tag] = it; });
+    var rec = recentTags().filter(function (t) { return byTag[t]; }), rg = pick.querySelector(".recent");
+    rg.innerHTML = ""; rec.forEach(function (t) { rg.appendChild(stkButton(byTag[t])); });
+    pick.querySelector(".rsec").hidden = !rec.length;
+    var mg = pick.querySelector(".grid.mineg"), g = pick.querySelector(".grid.all"); mg.innerHTML = ""; g.innerHTML = "";
     var add = document.createElement("button"); add.type = "button"; add.className = "stkadd"; add.title = "加一张自己的贴纸";
+    add.innerHTML = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10 2.5v15M2.5 10h15"/></svg><span>Create<br>Sticker</span>';
     add.addEventListener("click", function () { addFile.value = ""; addFile.click(); });
-    g.appendChild(add);
-    items.filter(function (it) { return it.mine; }).concat(items.filter(function (it) { return !it.mine; })).forEach(function (it) {
-      var b = document.createElement("button"); b.type = "button"; b.title = it.tag;
-      if (it.mine) b.className = "mine";
-      var img = document.createElement("img"); img.loading = "lazy"; img.alt = it.tag; img.src = "stickers/" + encodeURIComponent(it.file);
-      b.appendChild(img);
-      var held = false, t = 0;
-      if (it.mine) {
-        var arm = function () { held = false; clearTimeout(t); t = setTimeout(function () {
-          held = true;
-          if (confirm("删掉这张贴纸吗?删了就找不回来了。")) {
-            fetch("api/stickers/mine/" + encodeURIComponent(it.id), { method: "DELETE" }).then(function () { loadStickers(); });
-          }
-        }, 550); };
-        b.addEventListener("touchstart", arm, { passive: true });
-        b.addEventListener("mousedown", arm);
-        ["touchend", "touchmove", "mouseup", "mouseleave"].forEach(function (ev) { b.addEventListener(ev, function () { clearTimeout(t); }); });
-        b.addEventListener("contextmenu", function (e) { e.preventDefault(); });
-      }
-      b.addEventListener("click", function () { if (held) { held = false; return; } sendSticker(it.tag); });
-      g.appendChild(b);
+    mg.appendChild(add);                                      // 2026-10-19 照 TG:她的那一区以「Create Sticker」打头
+    items.forEach(function (it) {
+      (it.mine ? mg : g).appendChild(stkButton(it));          // ~~自制的长按 = 删~~ 2026-10-19 起长按 = 放大预览,删 / 改名在预览里
     });
   }
   addFile.addEventListener("change", function () {
     var f = addFile.files && addFile.files[0];
     if (!f) return;
     var done = function (dataUrl) {
-      fetch("api/stickers/mine", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dataUrl: dataUrl }) })
+      /* 先起名再入库(2026-10-19):名字就是记录里「〔贴纸：名字〕」那个字、也是交给他时的名字;空着 = 自动「自制N」,以后长按还能改 */
+      var name = prompt("给这张贴纸起个名字(可以空着,以后长按还能改)", "");
+      if (name == null) return;                                 // 点了取消 = 不加
+      fetch("api/stickers/mine", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dataUrl: dataUrl, name: name }) })
         .then(function (r) { return r.json(); })
         .then(function (d) { if (!d.ok) throw new Error(d.why || ""); loadStickers(); note("（加好了,在贴纸面板最前面）"); })
         .catch(function (e) { note("（没加上:" + (e.message || "再试一次") + "）", "err"); });
     };
+    /* 会动的图原样上传(canvas 一画就只剩第一帧):GIF,还有动态 WebP(文件里有 ANIM 块)/ APNG(PNG 里有 acTL 块)。
+       2026-10-19 补:原来只放过 GIF,另两种被压成了静图。本层收 PNG / WebP / GIF,上限 1.5MB */
+    var animated = function (cb) {
+      if (f.type === "image/gif") return cb(true);
+      if (!/^image\/(png|webp|apng)$/.test(f.type) || !f.slice) return cb(false);
+      var fr = new FileReader();
+      fr.onload = function () {
+        var u = new Uint8Array(fr.result), hay = "";
+        for (var i = 0; i < u.length; i++) hay += String.fromCharCode(u[i]);
+        cb(/ANIM/.test(hay) && /^RIFF/.test(hay) || /acTL/.test(hay.split("IDAT")[0]));
+      };
+      fr.onerror = function () { cb(false); };
+      fr.readAsArrayBuffer(f.slice(0, 65536));
+    };
     var rd = new FileReader();
     rd.onload = function () {
-      if (f.type === "image/gif") return done(rd.result);
+      if (rd.isAnim) {
+        if (f.size > 1.5 * 1024 * 1024) { note("（这张动图超过 1.5MB 了，换一张小一点的）", "err"); return; }
+        return done(String(rd.result).replace(/^data:image\/apng/, "data:image/png"));   // 本层按 PNG 收(APNG 文件头就是 PNG)
+      }
       var img = new Image();
       img.onload = function () {
         var k = Math.min(1, 320 / Math.max(img.width, img.height)), c = document.createElement("canvas");
@@ -6778,11 +6913,13 @@ box.focus();
       img.onerror = function () { note("（这张图读不出来）", "err"); };
       img.src = rd.result;
     };
-    rd.readAsDataURL(f);
+    animated(function (yes) { rd.isAnim = yes; rd.readAsDataURL(f); });
   });
   function sendSticker(tag) {
     setPick(false);
     try { if (guBusy) { note("（他还在说上一句，等他说完再发）"); return; } } catch (e) {}
+    pushRecent(tag);
+    if (typeof window.__tgPendSticker === "function" && window.__tgPendSticker(tag)) return;   // TG 版:按下就落进聊天(同文字的按下就飞)
     try { stickBottom = true; setBusy(true); } catch (e) {}
     fetch("api/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sticker: tag }) })
       .then(function (r) { if (!r.ok) throw 0; })
@@ -7337,7 +7474,8 @@ box.focus();
     note("（" + (why || "没送出去,再试一次") + "）", "err");
   }
   function postText(r, text, wasBusy) {
-    fetch("api/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: text }) })
+    var body = r && r._pendSticker ? { sticker: r._pendSticker } : { text: text };   // 贴纸那颗认的是标签,不是显示的字
+    fetch("api/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
       .then(function (res) { return res.json().catch(function () { return {}; }).then(function (d) { if (!res.ok || !d.ok) throw new Error(d.why || ""); }); })
       .then(function () { sentOk(r); })
       .catch(function (e) { sendFail(r, e && e.message, wasBusy); });
@@ -7358,6 +7496,16 @@ box.focus();
     };
     sendBtn.onclick = function () { window.send(); };          // 原来那条直接绑着旧函数,换成走包装
   }
+  /* 贴纸也按下就飞(2026-10-19,她点头):先画「〔贴纸：标签〕」那颗(贴纸那一趟会换成图),回声里是同一串字,照样认领、送到打勾、失败点「!」重发。
+     官端不走这里(返回 false,照原路等回声) */
+  window.__tgPendSticker = function (tag) {
+    if (!isTg()) return false;
+    stickBottom = true; setBusy(true);
+    var text = "〔贴纸：" + tag + "〕", r = pendMe(text);
+    if (r) r._pendSticker = tag;
+    postText(r, text, false);
+    return true;
+  };
   /* 点失败那颗的红「!」= 重发(TG 那颗也是点了重发)。他还在说的时候不重发,免得又是 409 */
   log.addEventListener("click", function (e) {
     var r = e.target.closest && e.target.closest(".row.me.tgfail");
@@ -7366,10 +7514,11 @@ box.focus();
     if (b && b.contains(e.target)) return;                     // 只认点在「!」上(泡本身照旧能长按复制)
     e.preventDefault(); e.stopPropagation();
     if (guBusy) { note("（他还在说上一句,等他说完再点重发）"); return; }
-    var text = r._pendText; if (!text) return;
+    var text = r._pendText, tag = r._pendSticker; if (!text) return;
     r.remove();
     stickBottom = true; setBusy(true);
-    postText(pendMe(text), text, false);
+    var r2 = pendMe(text); if (r2 && tag) r2._pendSticker = tag;
+    postText(r2, text, false);
   });
   /* 回声来了:有在等的同一句,就认领那一颗(handle 里画泡那一步换成「交出那颗」),别的照原路走 */
   var _hdP = window.handle;
