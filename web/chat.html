@@ -4981,6 +4981,10 @@ box.focus();
   .tgpick button:active { background: color-mix(in srgb, var(--text) 8%, transparent); }
   .tgpick img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
   .tgpick .empty { text-align: center; color: var(--dim); font-size: 14px; padding: 30px 0; }
+  /* 最近用过(2026-10-19,她点头的「最近用过一排」):最多 8 张、两行四列,下面一条细线和全部那一格隔开;没用过就不出 */
+  .tgpick .rlab { font-size: 11px; color: var(--dim); margin: 0 4px 4px; letter-spacing: .04em; }
+  .tgpick .recent { padding-bottom: 8px; margin-bottom: 8px; border-bottom: .5px solid var(--line); }
+  .tgpick .rlab[hidden], .tgpick .recent[hidden] { display: none; }
 
   /* .acts 藏了,但它还在行里 —— 别让它把头像顶上去 */
   html[data-chatstyle="tg"][data-avmode="each"] .row:has(> .gu) > .acts { display: none; }
@@ -6629,7 +6633,7 @@ box.focus();
   var comp = document.querySelector(".composer");
   if (comp) comp.appendChild(stkBtn);
   var pick = document.createElement("div");
-  pick.className = "tgpick"; pick.innerHTML = '<div class="grab"></div><div class="grid"><div class="empty">贴纸还没装上</div></div>';
+  pick.className = "tgpick"; pick.innerHTML = '<div class="grab"></div><div class="rlab" hidden>Recent</div><div class="grid recent" hidden></div><div class="grid all"><div class="empty">贴纸还没装上</div></div>';
   document.body.appendChild(pick);
   /* 照 TG:面板在下、输入栏被顶到面板上方(不然面板盖住输入栏,图标再也点不到、关不上 —— 10-09 测出来的) */
   var footEl = document.querySelector("footer");
@@ -6726,8 +6730,28 @@ box.focus();
   addFile.type = "file"; addFile.accept = "image/*"; addFile.hidden = true;
   addFile.addEventListener("click", function (e) { e.stopPropagation(); });   // 它在面板外,点击冒到 document 会把面板关掉(10-10 测出来的)
   document.body.appendChild(addFile);
+  /* 最近用过:只存这台手机(丢了不心疼),按标签记、最近的在前、最多 8 张;删掉的自制贴纸自然不再出现 */
+  var RECENT_KEY = "dwell-stk-recent", stkItems = [];
+  function recentTags() { try { var a = JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+  function pushRecent(tag) {
+    var a = recentTags().filter(function (t) { return t !== tag; }); a.unshift(tag);
+    try { localStorage.setItem(RECENT_KEY, JSON.stringify(a.slice(0, 8))); } catch (e) {}
+    if (stkItems.length) buildPicker(stkItems);
+  }
+  function stkButton(it) {
+    var b = document.createElement("button"); b.type = "button"; b.title = it.tag;
+    var img = document.createElement("img"); img.loading = "lazy"; img.alt = it.tag; img.src = "stickers/" + encodeURIComponent(it.file);
+    b.appendChild(img);
+    b.addEventListener("click", function () { sendSticker(it.tag); });
+    return b;
+  }
   function buildPicker(items) {
-    var g = pick.querySelector(".grid"); g.innerHTML = "";
+    stkItems = items;
+    var byTag = {}; items.forEach(function (it) { byTag[it.tag] = it; });
+    var rec = recentTags().filter(function (t) { return byTag[t]; }), rg = pick.querySelector(".recent");
+    rg.innerHTML = ""; rec.forEach(function (t) { rg.appendChild(stkButton(byTag[t])); });
+    rg.hidden = !rec.length; pick.querySelector(".rlab").hidden = !rec.length;
+    var g = pick.querySelector(".grid.all"); g.innerHTML = "";
     var add = document.createElement("button"); add.type = "button"; add.className = "stkadd"; add.title = "加一张自己的贴纸";
     add.addEventListener("click", function () { addFile.value = ""; addFile.click(); });
     g.appendChild(add);
@@ -6762,9 +6786,26 @@ box.focus();
         .then(function (d) { if (!d.ok) throw new Error(d.why || ""); loadStickers(); note("（加好了,在贴纸面板最前面）"); })
         .catch(function (e) { note("（没加上:" + (e.message || "再试一次") + "）", "err"); });
     };
+    /* 会动的图原样上传(canvas 一画就只剩第一帧):GIF,还有动态 WebP(文件里有 ANIM 块)/ APNG(PNG 里有 acTL 块)。
+       2026-10-19 补:原来只放过 GIF,另两种被压成了静图。本层收 PNG / WebP / GIF,上限 1.5MB */
+    var animated = function (cb) {
+      if (f.type === "image/gif") return cb(true);
+      if (!/^image\/(png|webp|apng)$/.test(f.type) || !f.slice) return cb(false);
+      var fr = new FileReader();
+      fr.onload = function () {
+        var u = new Uint8Array(fr.result), hay = "";
+        for (var i = 0; i < u.length; i++) hay += String.fromCharCode(u[i]);
+        cb(/ANIM/.test(hay) && /^RIFF/.test(hay) || /acTL/.test(hay.split("IDAT")[0]));
+      };
+      fr.onerror = function () { cb(false); };
+      fr.readAsArrayBuffer(f.slice(0, 65536));
+    };
     var rd = new FileReader();
     rd.onload = function () {
-      if (f.type === "image/gif") return done(rd.result);
+      if (rd.isAnim) {
+        if (f.size > 1.5 * 1024 * 1024) { note("（这张动图超过 1.5MB 了，换一张小一点的）", "err"); return; }
+        return done(String(rd.result).replace(/^data:image\/apng/, "data:image/png"));   // 本层按 PNG 收(APNG 文件头就是 PNG)
+      }
       var img = new Image();
       img.onload = function () {
         var k = Math.min(1, 320 / Math.max(img.width, img.height)), c = document.createElement("canvas");
@@ -6775,11 +6816,13 @@ box.focus();
       img.onerror = function () { note("（这张图读不出来）", "err"); };
       img.src = rd.result;
     };
-    rd.readAsDataURL(f);
+    animated(function (yes) { rd.isAnim = yes; rd.readAsDataURL(f); });
   });
   function sendSticker(tag) {
     setPick(false);
     try { if (guBusy) { note("（他还在说上一句，等他说完再发）"); return; } } catch (e) {}
+    pushRecent(tag);
+    if (typeof window.__tgPendSticker === "function" && window.__tgPendSticker(tag)) return;   // TG 版:按下就落进聊天(同文字的按下就飞)
     try { stickBottom = true; setBusy(true); } catch (e) {}
     fetch("api/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sticker: tag }) })
       .then(function (r) { if (!r.ok) throw 0; })
@@ -7334,7 +7377,8 @@ box.focus();
     note("（" + (why || "没送出去,再试一次") + "）", "err");
   }
   function postText(r, text, wasBusy) {
-    fetch("api/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: text }) })
+    var body = r && r._pendSticker ? { sticker: r._pendSticker } : { text: text };   // 贴纸那颗认的是标签,不是显示的字
+    fetch("api/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
       .then(function (res) { return res.json().catch(function () { return {}; }).then(function (d) { if (!res.ok || !d.ok) throw new Error(d.why || ""); }); })
       .then(function () { sentOk(r); })
       .catch(function (e) { sendFail(r, e && e.message, wasBusy); });
@@ -7355,6 +7399,16 @@ box.focus();
     };
     sendBtn.onclick = function () { window.send(); };          // 原来那条直接绑着旧函数,换成走包装
   }
+  /* 贴纸也按下就飞(2026-10-19,她点头):先画「〔贴纸：标签〕」那颗(贴纸那一趟会换成图),回声里是同一串字,照样认领、送到打勾、失败点「!」重发。
+     官端不走这里(返回 false,照原路等回声) */
+  window.__tgPendSticker = function (tag) {
+    if (!isTg()) return false;
+    stickBottom = true; setBusy(true);
+    var text = "〔贴纸：" + tag + "〕", r = pendMe(text);
+    if (r) r._pendSticker = tag;
+    postText(r, text, false);
+    return true;
+  };
   /* 点失败那颗的红「!」= 重发(TG 那颗也是点了重发)。他还在说的时候不重发,免得又是 409 */
   log.addEventListener("click", function (e) {
     var r = e.target.closest && e.target.closest(".row.me.tgfail");
@@ -7363,10 +7417,11 @@ box.focus();
     if (b && b.contains(e.target)) return;                     // 只认点在「!」上(泡本身照旧能长按复制)
     e.preventDefault(); e.stopPropagation();
     if (guBusy) { note("（他还在说上一句,等他说完再点重发）"); return; }
-    var text = r._pendText; if (!text) return;
+    var text = r._pendText, tag = r._pendSticker; if (!text) return;
     r.remove();
     stickBottom = true; setBusy(true);
-    postText(pendMe(text), text, false);
+    var r2 = pendMe(text); if (r2 && tag) r2._pendSticker = tag;
+    postText(r2, text, false);
   });
   /* 回声来了:有在等的同一句,就认领那一颗(handle 里画泡那一步换成「交出那颗」),别的照原路走 */
   var _hdP = window.handle;
