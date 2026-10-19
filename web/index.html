@@ -1114,6 +1114,51 @@
   .stack.ios .spage.back { animation: spin-back .38s var(--spring-ui, cubic-bezier(.32,.72,0,1)); }
   @media (prefers-reduced-motion: reduce) { .stack.ios .spage.fwd, .stack.ios .spage.back { animation: none; } }
 
+  /* ══ 同夜第二版:照 iPhone 原生「设置」(iOS 26)══ 她看完第一版:「ui 你按 iPhone 原生 ui 优化一下」。照系统那几样换:
+     ① 每行图标 = 30pt 圆角方块(圆角 7)+ 白色符号 —— 系统是彩色方块,我们**用深浅不同的灰**(整页零彩色照旧);分隔线从字那里起(16+30+12=58);
+     ② 行高 52、字 17 / 值 17 灰(iOS 26 的数;~~15.5 / 46~~ 第一版缩过头,她要原生);组标题回到中文小灰字、不大写(系统的样子);
+     ③ 顶上那排:返回 / 完成 = iOS 26 的玻璃圆钮(44pt,返回是 ‹、完成是 ✓ 实心深色),二级页标题居中 17 粗;
+     ④ 头像那行照「Apple 账户」:头像 56、名字 21 中粗、下面一行小灰字。大标题仍是首页那套衬线(她定的)。 */
+  #settings .sheethead { min-height: 56px; padding: 6px 0 4px; }
+  #settings .gbtn { flex: none; width: 44px; height: 44px; padding: 0; border-radius: 50%; display: grid; place-items: center;
+    border: 0; cursor: pointer; color: var(--ink); background: color-mix(in srgb, var(--card) 72%, transparent);
+    -webkit-backdrop-filter: blur(14px) saturate(1.6); backdrop-filter: blur(14px) saturate(1.6);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 0 0 .5px color-mix(in srgb, var(--ink) 9%, transparent), 0 4px 14px -6px rgba(0,0,0,.18);
+    transition: transform .15s; }
+  #settings .gbtn:active { transform: scale(.92); opacity: 1; }
+  #settings .gbtn svg { width: 17px; height: 17px; }
+  #settings .sback.gbtn { margin: 0; padding: 0; }
+  #settings .sback.gbtn svg { width: 11px; height: 18px; margin-left: -2px; }
+  #settings .done.gbtn { background: var(--ink); color: var(--card); padding: 0; font-size: 0; }
+  #settings .done.gbtn svg { width: 18px; height: 15px; }
+  #settings .stitle { font-size: 17px; font-weight: 600; }
+  #settings .sheethead .title { font-size: 32px; line-height: 38px; }
+  .stack.ios .ghead { margin: 22px 20px 7px; font-family: inherit; font-size: 13px; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--dim); }
+  .stack.ios .spage > .hint { margin: 8px 20px 0; font-size: 13px; line-height: 18px; }
+  .stack.ios .card.group { border-radius: 26px; }
+  .stack.ios .t, .stack.ios .srow .t { font-size: 17px; line-height: 22px; letter-spacing: -.01em; }
+  .stack.ios .srow .s { font-size: 13px; line-height: 18px; }
+  .stack.ios .group > .srow, .stack.ios .group > .gcell { padding: 11px 16px; min-height: 52px; }
+  .stack.ios .datum, .stack.ios .nameinput { font-size: 17px; }
+  .stack.ios .srow.nav .dval { font-size: 17px; letter-spacing: -.01em; }
+  .stack.ios .srow.nav .chev { width: 8px; height: 13px; color: color-mix(in srgb, var(--ink) 26%, transparent); }
+  /* 图标方块:灰阶分三档(深 / 中 / 浅灰底深符号),一组里错开,不上彩色 */
+  .stack.ios .srow.nav .sic { box-sizing: border-box; width: 30px; height: 30px; padding: 5px; border-radius: 7px; color: #fff; stroke-width: 1.9;
+    background: #4a4946; }
+  .stack.ios .srow.nav[data-go="mode"] .sic, .stack.ios .srow.nav[data-go="bubble"] .sic, .stack.ios .srow.nav[data-go="voice"] .sic { background: #807e79; }
+  .stack.ios .srow.nav[data-go="card"] .sic, .stack.ios .srow.nav[data-go="font"] .sic { background: #a5a39d; }
+  .stack.ios .srow.nav[data-go="spec"] .sic { background: #8e8d88; }
+  .stack.ios .group > * + .srow.nav:not(.sprof)::before { left: 58px; }
+  .stack.ios .seg.list button { min-height: 52px; padding: 11px 16px; font-size: 17px; }
+  .stack.ios .sprof { padding-top: 14px !important; padding-bottom: 14px !important; gap: 14px; }
+  .stack.ios .spair { width: 80px; height: 56px; }
+  .stack.ios .spair .hav { width: 56px; height: 56px; box-shadow: 0 0 0 2.5px var(--card); }
+  .stack.ios .spair .hav + .hav { left: 24px; }
+  .stack.ios .sprof .pn { font-size: 21px; font-weight: 600; line-height: 26px; letter-spacing: -.01em; }
+  .stack.ios .sprof .s { font-size: 13px; margin-top: 2px; }
+  .stack.ios .swatch { width: 44px; height: 44px; }
+  .stack.ios .skin .nm { font-size: 12px; }
+
 
   .speclist { font-size: 13.5px; line-height: 1.85; }
   .speclist div { display: flex; gap: 12px; }
@@ -1374,10 +1419,10 @@
   <!-- 设置页最后一段也要躲开 Home Indicator,所以底部留白把安全区算进去 -->
   <div class="phone" style="padding-bottom:calc(60px + var(--sab))">
     <div class="sheethead">
-      <button class="sback" id="sBack" type="button" hidden><svg viewBox="0 0 12 20" width="12" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2 2 10l8 8"/></svg><span>Settings</span></button>
+      <button class="sback gbtn" id="sBack" type="button" aria-label="返回" hidden><svg viewBox="0 0 12 20" width="12" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2 2 10l8 8"/></svg></button>
       <h1 class="title grow" style="margin:0">Settings</h1>
       <h2 class="stitle" id="sTitle" hidden></h2>
-      <button class="done" id="closeSettings">完成</button>
+      <button class="done gbtn" id="closeSettings" aria-label="完成"><svg viewBox="0 0 20 16" width="20" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8.5 7.2 13.5 18 2.5"/></svg></button>
     </div>
 
     <!-- 2026-10-10 所有者:「这个界面能用 TG 的 UI 设计优化一下吗」—— 改成 iOS / Telegram 设置页的「分组列表」:
@@ -1397,13 +1442,13 @@
             <svg class="chev" viewBox="0 0 8 13" width="8" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 1.5 6.5 6.5l-5 5"/></svg>
           </button>
         </section>
-        <h3 class="ghead">Appearance</h3>
+        <h3 class="ghead">外观</h3>
         <section class="card group">
           <button type="button" class="srow nav" data-go="skin"><svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg><span class="grow t">皮肤</span><span class="dval" data-sum="skin"></span><svg class="chev" viewBox="0 0 8 13" width="8" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 1.5 6.5 6.5l-5 5"/></svg></button>
           <button type="button" class="srow nav" data-go="mode"><svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 14.6A8 8 0 1 1 9.4 4.5a6.4 6.4 0 0 0 10.1 10.1z"/></svg><span class="grow t">浅色与深色</span><span class="dval" data-sum="mode"></span><svg class="chev" viewBox="0 0 8 13" width="8" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 1.5 6.5 6.5l-5 5"/></svg></button>
           <button type="button" class="srow nav" data-go="card"><svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.8" y="5.5" width="16.4" height="13" rx="3.4"/><path d="M3.8 10h16.4"/></svg><span class="grow t">卡片</span><span class="dval" data-sum="card"></span><svg class="chev" viewBox="0 0 8 13" width="8" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 1.5 6.5 6.5l-5 5"/></svg></button>
         </section>
-        <h3 class="ghead">Chat</h3>
+        <h3 class="ghead">聊天</h3>
         <section class="card group">
           <button type="button" class="srow nav" data-go="style"><svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11.5C4 7.4 7.6 4.5 12 4.5s8 2.9 8 7-3.6 7-8 7c-1 0-2-.1-2.9-.4L5 19.5l1.1-3.3C4.8 14.9 4 13.3 4 11.5z"/></svg><span class="grow t">聊天样式</span><span class="dval" data-sum="style"></span><svg class="chev" viewBox="0 0 8 13" width="8" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 1.5 6.5 6.5l-5 5"/></svg></button>
           <button type="button" class="srow nav" data-go="bubble"><svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.8" y="5" width="16.4" height="14" rx="3.2"/><circle cx="9" cy="10" r="1.5"/><path d="m4.5 17 4.4-4.3 3.4 3.3 2.6-2.5 4.6 4.4"/></svg><span class="grow t">气泡与壁纸</span><span class="dval" data-sum="bubble"></span><svg class="chev" viewBox="0 0 8 13" width="8" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 1.5 6.5 6.5l-5 5"/></svg></button>
@@ -1411,7 +1456,7 @@
           <button type="button" class="srow nav" data-go="avpos"><svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.6" r="3.6"/><path d="M5 19.5c1.2-3.3 4-5 7-5s5.8 1.7 7 5"/></svg><span class="grow t">头像位置</span><span class="dval" data-sum="avpos"></span><svg class="chev" viewBox="0 0 8 13" width="8" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 1.5 6.5 6.5l-5 5"/></svg></button>
           <button type="button" class="srow nav" data-go="voice"><svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 10v4M8.5 7v10M12 4.5v15M15.5 8v8M19 10.5v3"/></svg><span class="grow t">语音文字</span><span class="dval" data-sum="voice"></span><svg class="chev" viewBox="0 0 8 13" width="8" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 1.5 6.5 6.5l-5 5"/></svg></button>
         </section>
-        <h3 class="ghead">Other</h3>
+        <h3 class="ghead">其他</h3>
         <section class="card group">
           <button type="button" class="srow nav" data-go="spec"><svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7.5h9.5M18 7.5h1.5M4.5 16.5H6M10 16.5h9.5"/><circle cx="16" cy="7.5" r="2"/><circle cx="8" cy="16.5" r="2"/></svg><span class="grow t">设计参数</span><span class="dval" data-sum="spec"></span><svg class="chev" viewBox="0 0 8 13" width="8" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 1.5 6.5 6.5l-5 5"/></svg></button>
         </section>
