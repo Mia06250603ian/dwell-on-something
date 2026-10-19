@@ -5705,6 +5705,8 @@ box.focus();
      服务那排:好的 = 实心点,不好的 = 空心圈(不用红绿灯,这页零彩色);点一颗在下面一行写细节,再点收起 */
   .tgprof .hlcard { padding: 0; }
   .tgprof .hlhead .hpct { font-family: var(--rnd); font-weight: 500; margin-left: 4px; font-variant-numeric: tabular-nums; }
+  .tgprof .hlhead .hcpu b { font-family: var(--rnd); font-weight: 500; margin-left: 4px; font-variant-numeric: tabular-nums; }
+  .tgprof .hlhead .hcpu .sep { color: var(--p3); margin: 0 6px; }   /* 收着那行带上 CPU(2026-10-19 她选的),机器没在报就不出 */
   .tgprof .hlsum.bad { color: var(--p1); }
   .tgprof .hlfold { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .42s cubic-bezier(.32,.72,0,1); }
   .tgprof.hlopen .hlfold { grid-template-rows: 1fr; }
@@ -5992,7 +5994,7 @@ box.focus();
     /* 2026-10-16 所有者:「加一个 Health?缓存命中、健不健康的东西做一个可视化」—— 数据来自 dwell-bridge 的 /api/vitals(只读汇总,不碰晏) */
     '<div class="sect">Health</div>' +
     /* 同日她:「能做成折叠、点开才看见各个项目嘛」—— 平时一行(命中率 + 几个服务好),点开才展开;同 Model 那行的折法,每次打开这页都收着 */
-    '<div class="card glass hlcard"><button class="it hlhead" type="button" aria-expanded="false"><span class="grow"><span class="t">Cache hit <b class="hpct">—</b></span></span>' +
+    '<div class="card glass hlcard"><button class="it hlhead" type="button" aria-expanded="false"><span class="grow"><span class="t">Cache hit <b class="hpct">—</b><span class="hcpu" hidden><span class="sep">·</span>CPU <b></b></span></span></span>' +
       '<span class="tr hlsum"></span><span class="chev hlchev">' + CHEV + '</span></button>' +
       '<div class="hlfold"><div class="hlin"><div class="hlead"><div class="hsub"></div>' +
       '<svg class="hspark" viewBox="0 0 120 40" preserveAspectRatio="none" aria-hidden="true"><path class="hline" d=""/></svg></div>' +
@@ -6441,10 +6443,11 @@ box.focus();
   function loadServer() {
     var q = function (c) { return prof.querySelector(c); };
     fetch("api/server?range=" + svRange, { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
-      if (!d || !d.ok) { svLast = null; q(".svm").hidden = true; q(".svmdet").hidden = true; paintSvc(); return; }   // 机器没在报:那排格子不出,服务照只有体检的样子
+      if (!d || !d.ok) { svLast = null; q(".hcpu").hidden = true; q(".svm").hidden = true; q(".svmdet").hidden = true; paintSvc(); return; }   // 机器没在报:那排格子不出,服务照只有体检的样子
       svLast = d;
       var c = d.cur, memPct = c.memTotal ? Math.round(c.memUsed / c.memTotal * 100) : null;
       var m = q(".svm"); m.innerHTML = ""; m.hidden = false;
+      q(".hcpu b").textContent = c.cpu == null ? "—" : Math.round(c.cpu) + "%"; q(".hcpu").hidden = d.stale || c.cpu == null;
       var rx = fmtB(c.rx, true);
       [["cpu", "CPU", c.cpu == null ? "—" : String(c.cpu < 10 ? c.cpu : Math.round(c.cpu)), c.cpu == null ? "" : "%"],
        ["mem", "Memory", memPct == null ? "—" : String(memPct), memPct == null ? "" : "%"],
@@ -6456,7 +6459,7 @@ box.focus();
         m.appendChild(b);
       });
       svPaint(); paintSvc();
-    }).catch(function () { svLast = null; q(".svm").hidden = true; q(".svmdet").hidden = true; paintSvc(); });
+    }).catch(function () { svLast = null; q(".hcpu").hidden = true; q(".svm").hidden = true; q(".svmdet").hidden = true; paintSvc(); });
   }
   /* 服务那排:体检的八个(好不好)+ 机器上的容器(各占多少内存);体检口没有的三个(网页本身 / 飞行棋 / 大门)按「容器在不在跑」算 */
   var HV_HOST = { ian: "kelivo-shim", memory: "ombre-brain", telegram: "telegram-bridge", imessage: "imessage-bridge",
@@ -6505,8 +6508,15 @@ box.focus();
     if (!s) { el.innerHTML = ""; return; }
     var h = s.host, run = h && h.state === "running";
     el.innerHTML = (run ? svChart(h.series.mem, null, "bytes") : "") + "<span></span>";
-    el.querySelector("span").textContent = s.name + " — " + (s.ok ? "OK" : "Needs attention") + (s.detail ? " · " + s.detail : "") +
-      (run ? " · " + fmtB(h.mem) + " · CPU " + h.cpu + "%" + (h.limit ? " of " + fmtB(h.limit) + " limit" : "") : "") + (h && h.status ? " · " + h.status : "");
+    /* 一行写完(2026-10-19 她选的):名字不重复(那颗已经高亮着)、CPU 不到 1% 不写、开机时长缩成 up 30h */
+    el.querySelector("span").textContent = [s.ok ? "OK" : "Needs attention", s.detail,
+      run ? fmtB(h.mem) + (h.limit ? " / " + fmtB(h.limit) : "") : "", run && h.cpu >= 1 ? "CPU " + h.cpu + "%" : "", upShort(h && h.status)]
+      .filter(Boolean).join(" · ");
+  }
+  function upShort(st) {                   // docker 的「Up 30 hours」/「Up About an hour」/「Up 5 minutes」→ up 30h / up 1h / up 5m;别的(Exited…)原样
+    var m = /^Up (?:About )?(an?|\d+) (second|minute|hour|day|week|month)s?/.exec(st || "");
+    if (!m) return st || "";
+    return "up " + (/^an?$/.test(m[1]) ? 1 : m[1]) + { second: "s", minute: "m", hour: "h", day: "d", week: "w", month: "mo" }[m[2]];
   }
   function whenSeen(sec) {
     var m = Math.round((Date.now() / 1000 - sec) / 60);
