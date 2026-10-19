@@ -5672,9 +5672,16 @@ box.focus();
   .tgprof[data-cover] .pcimg { -webkit-mask: none; mask: none; }
   /* 照片顶上从照片自己的顶色化开 48px(她选的第三种),换过背景且取到色时才有;状态栏那条由外壳涂成同一个色。
      返回键下移到 16px:外壳抬上来的那条 .topcap(12px)会切掉它上沿。 */
-  .tgprof[data-cover] .pcover::after { display: block; height: calc(48px + var(--dw-sat, env(safe-area-inset-top)));
-    background: linear-gradient(to bottom, var(--pc-tint, transparent) 0, var(--pc-tint, transparent) var(--dw-sat, env(safe-area-inset-top)), transparent 100%);
-    -webkit-mask: none; mask: none; }
+  /* ~~照片顶上从照片自己的顶色化开 + 外壳把状态栏涂成同色~~ —— 2026-10-19 她真机截图:状态栏仍是 243,242,241(皮肤的 --paper-top),
+     照片从 62pt 处一刀切开 = 「顶部和状态栏分层」。iOS 只在打开 App 时取那条的色,之后涂色 / 闪一帧都不认(10-10、10-12、10-19 三次真机)。
+     所以反过来:**照片顶上从状态栏那个色化开**(--pc-top = 外壳 .topcap 的实际底色,随皮肤),缓动 56px;
+     有没有换过背景都一样(没换过时是他头像放大的海报,同一条缝)。⚠️ 别超过 90px —— 那是她说「一层灰雾」的第一版 */
+  .tgprof .pcover::after { display: block; height: calc(56px + var(--dw-sat, env(safe-area-inset-top)));
+    background: linear-gradient(to bottom, var(--pc-top, var(--bg)) 0, var(--pc-top, var(--bg)) var(--dw-sat, env(safe-area-inset-top)),
+      color-mix(in srgb, var(--pc-top, var(--bg)) 72%, transparent) calc(14px + var(--dw-sat, env(safe-area-inset-top))),
+      color-mix(in srgb, var(--pc-top, var(--bg)) 34%, transparent) calc(30px + var(--dw-sat, env(safe-area-inset-top))),
+      color-mix(in srgb, var(--pc-top, var(--bg)) 10%, transparent) calc(44px + var(--dw-sat, env(safe-area-inset-top))), transparent 100%);
+    -webkit-mask: none; mask: none; pointer-events: none; }
   .tgprof[data-cover] .pcover .pback { top: calc(16px + var(--dw-sat, env(safe-area-inset-top))); }
   /* Model 一行并进 More settings 那张卡:展开的清单夹在两行中间,More settings 上沿补一条分隔线;脚注只在有待换的模型时出现 */
   .tgprof .pmcard .pmore { position: relative; }
@@ -6031,7 +6038,7 @@ box.focus();
     closeProf(); var d = document.getElementById("dotsBtn"); if (d) setTimeout(function () { d.click(); }, 280);
   });
   function closeProf() { if (nameIn && !nameIn.hidden) nameIn.blur(); closeAct(); prof.classList.remove("open"); topTint(null); }
-  function openProf() { prof.classList.add("open"); foldModels(false); foldHealth(false); paintCover(); loadProf(); }
+  function openProf() { readTopColor(); prof.classList.add("open"); foldModels(false); foldHealth(false); paintCover(); loadProf(); }
 
   /* ── 背景(2026-10-10 第六版,所有者「我也想要这种能换背景的」)──
      存法同聊天壁纸:长边压到 1600px 的 JPEG → POST api/avatar/cover(本层上限 1.5MB,和壁纸同一档)。
@@ -6059,6 +6066,14 @@ box.focus();
     img.onerror = function () { cb(null); };
     img.src = url;
   }
+  /* 状态栏那条的实际色 = 外壳 .topcap 的底色(随皮肤;iOS 打开 App 时取的就是它)。单独打开聊天页时没有外壳,退回本页底色 */
+  function readTopColor() {
+    try {
+      var cap = window.parent !== window && window.parent.document.querySelector(".topcap");
+      var c = cap && window.parent.getComputedStyle(cap).backgroundColor;
+      if (c && !/rgba\(0, 0, 0, 0\)|transparent/.test(c)) prof.style.setProperty("--pc-top", c); else prof.style.removeProperty("--pc-top");
+    } catch (e) { prof.style.removeProperty("--pc-top"); }
+  }
   function topTint(c) { try { if (window.parent !== window && typeof window.parent.__dwTopTint === "function") window.parent.__dwTopTint(c); } catch (e) {} }
   function paintCover() {
     if (!prof) return;
@@ -6067,13 +6082,7 @@ box.focus();
     prof.querySelector(".pa-del").hidden = !u;
     if (!u) { prof.style.removeProperty("--pc-img"); prof.style.removeProperty("--pc-tint"); tintNow = null; if (prof.classList.contains("open")) topTint(null); return; }
     prof.style.setProperty("--pc-img", 'url("' + u + '")');
-    if (tintNow && prof.classList.contains("open")) topTint(tintNow);
-    sampleTop(u, function (c) {
-      if (coverUrl() !== u) return;              // 等的时候又换了一张
-      tintNow = c;
-      if (c) prof.style.setProperty("--pc-tint", c); else prof.style.removeProperty("--pc-tint");
-      if (prof.classList.contains("open")) topTint(c);
-    });
+    /* ~~取照片顶色 → --pc-tint + 外壳 __dwTopTint 涂状态栏~~ —— 2026-10-19 撤:iOS 不认(见上面 .pcover::after 那段),现在照片顶上从状态栏色化开 */
   }
   var actBg = prof.querySelector(".psheetbg"), act = prof.querySelector(".pact");
   function openAct() { actBg.hidden = false; act.hidden = false; }
