@@ -5954,8 +5954,10 @@ box.focus();
      又补:「所有的 UI 大小形状都 1:1 复刻,不要偷懒」)══
      **骑在 TG 版上**:设置里选 iMessage = `data-chatstyle="tg"` + `data-imsg`,拆泡 / 弹动画 / 思考行 / 长按菜单 / 搜索全照 TG 那套走,这里只换样子。
      **下面每个数都是从她 iMessage 截图量的**(1206px = 402pt@3x,和本页同一坐标系;本地 402×874@3x、安全区 62 / 34 渲染,同一段代码量框作差):
-     - 字:那张图正文 13.2pt(汉字墨高 36px,和 TG 那张 15pt 的 41px 比出来);这里 = 她挑的字号 × .9103,**默认档「标准」正好 13.2**,别的档等比;
-     - 泡:一行高 38pt = 上下留白 .79em + 行高 1.3;左右 1.12 / 1.17em(字墨离边 15.3 / 16.3pt);圆角 = 半个泡高,**四角一样圆**(iMessage 同一串不收角);
+     - 字:那张图正文 14.9pt —— **叠图拟合字宽量的**:同一句话成对比,泡宽 = 左右留白 + 字数 × 字宽,4~11 个字的五颗泡拟合出字宽 44.7px、留白共 84px(偏差 ≤1px);
+       ~~按墨高跟 TG 那张比出来的 13.2~~、~~按四个字墨宽估的 14.4~~ 都错了(叠图一比宽差 4~13px),**别再用墨高 / 单颗墨宽估字号**;
+       这里 = 她挑的字号 × 1.0276,**默认档「标准」正好 14.9**,别的档等比;
+     - 泡:一行高 38pt = 上下留白 .675em + 行高 1.2;左右各 .94em(14pt);圆角 = 半个泡高,**四角一样圆**(iMessage 同一串不收角);
        他的 #E9E9EA 黑字;她的蓝**越靠屏幕上面越浅**(iOS 26 本来就这样:同屏上下两颗差 16 个色阶),滚动驱动动画按泡在屏上的位置取色
        (底 rgb(48,126,245) → 顶 rgb(118,196,246),两点从截图反推;不认 animation-timeline 的退回中间色);同串隔 4、换人隔 10、离左右 16;
        **没有时间、没有对勾**;尾巴从她截图抠(--im-r / --im-l,101×70px@3x,往泡底下垂 6.33pt)、遮罩只画泡身(按 25pt 大圆角算)外面那部分;
@@ -5967,7 +5969,7 @@ box.focus();
        贴纸那颗留在波形左边(iMessage 没有,但她用得上)。离屏幕底 27.67 和 TG 版本来就一样。 */
   @property --imc { syntax: "<color>"; inherits: true; initial-value: rgb(84, 162, 245); }
   html[data-chatstyle="tg"][data-imsg] {
-    --imfs: calc(var(--tg-fs, 14.5px) * .9103);
+    --imfs: calc(var(--tg-fs, 14.5px) * 1.0276);
     --tg-page: #fff; --tg-page2: #fff; --bg: #fff; --text: #000; --dim: #8e8e93; --card: #fff; --line: rgba(60,60,67,.14);
     --tg-him: #e9e9ea; --tg-him-ink: #000; --tg-me: rgb(84, 162, 245); --tg-me-ink: #fff;
     --im-r: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGUAAABGCAYAAADVRFpXAAADKUlEQVR42u2cXYhMYRjHf7MzviIbKZvJDUpKkSK1V5RcSCk35EIpceVm5ZZys0rKtkruNhcuuaF8FbWRonyWxYopWSayzexqtxnHxXtOTdMYMzvnnPdZ/v96L+arqf/vvM/zvM95z5tB8q2g7vVElzwxp7GcPPCuX3WvC5opflVt8N6ooNjTi4w8MJPgI20RFFuhaxLIK3zZ0hugrOrLVugaBhAUG2VwpBtNPpMSniWNRhFYAqCcYiNsATwExgXFlq7KAjthKwC+Avnoi0r0/pM7wE1gTBalv1D806gA22WRrdD1HFhU+2Uler8VF8BFXHtFMjBDAmAE6Kn/kRJ9snnkb6vzS+GiUTIyS94BK2WTHSBV4BiQlVU2gAS4bvByWWUHSBnYpcrXFpSh+nWJ5BfIK2CDZokdICXggJK7HSABcB5YLLvsALkPrFHYsgNkBNimsGUHSBHYD8yRZTaAlIA+YKEsswHkJ3ASWCbL/MMIgCmgnwYteckPkMkQSF6Vlg0gJeCUgNiAEW0ROoHr/AqIASAjwCFgqYDYAHIP14ZfIOv8w6gCV4BeLQz9wwhwm+cuAOvVOvEPIwIyCKxW/rABJAAuo26vGRjRZoeNCln+QUTjB7AbmCtL/cOIxmC4DpE8g6hdrW9OM2zl/gEQSesOMErjwwgEJSUI9bpGyo8q5AShqSaAZ8D0/wIlmAUzs4Bryad64IDPRVCmzfGF9E9jKKaZSyxAaVc9wDngQ4pGlT1cCLNudXobtx8XYBUwL+H/e487dEDPJLaow7gnaysJrlEeoQ0QbasX1yQsJQTlEzUnQUjt6TjwMQEoFWCrcsrM9AB4HYaaFTGW+l1hXhnWdd+Z+sNSNq7Z8kR5JR7tAx7HVARMA3sVvjrXyxBKFlhLZ/dBsuFMua7SOD4dBJ52OGumgCOyMl5tAgaA7x2AeQusk5Xxaw9wN7zyZ7LXawjolo3JqA+33bTaJpgycFT2JauzuNu97YAp4G4Pq/pKSLfCKq2Ka3DOb+E33bi9w1EYlBLUTlwfbZzWemI68CZF7cAdjvatCZTPguJPp3H3b+oLgjNJ/ulvVtmhPAJzfgIAAAAASUVORK5CYII=");
@@ -5979,9 +5981,9 @@ box.focus();
   html[data-chatstyle="tg"][data-imsg] #log { padding-left: 16px; padding-right: 16px; padding-top: calc(97px + var(--dw-sat, env(safe-area-inset-top))); }
   /* 气泡 */
   html[data-chatstyle="tg"][data-imsg] .row.me .bubble:not(.stkonly), html[data-chatstyle="tg"][data-imsg] .gu:not(.stkonly), html[data-chatstyle="tg"][data-imsg] .tgb:not(.stkonly) {
-    font-size: var(--imfs); line-height: calc(var(--imfs) * 1.3);
-    padding: calc(var(--imfs) * .79) calc(var(--imfs) * 1.17) calc(var(--imfs) * .79) calc(var(--imfs) * 1.12);
-    border-radius: calc(var(--imfs) * 1.44) !important; box-shadow: none !important; max-width: 75%; }
+    font-size: var(--imfs); line-height: calc(var(--imfs) * 1.2);
+    padding: calc(var(--imfs) * .675) calc(var(--imfs) * .94);
+    border-radius: calc(var(--imfs) * 1.275) !important; box-shadow: none !important; max-width: 77%; }   /* 截图里一行到 279.3pt 还没折,75% 在这台宽度只有 277.5 */
   html[data-chatstyle="tg"][data-imsg] .gu:not(.stkonly), html[data-chatstyle="tg"][data-imsg] .tgb:not(.stkonly) { background: var(--tg-him) !important; color: var(--tg-him-ink) !important; }
   html[data-chatstyle="tg"][data-imsg] .row.me .bubble:not(.stkonly) { background: var(--imc, var(--tg-me)) !important; color: #fff !important; }
   @keyframes imgrad { from { --imc: rgb(48, 126, 245); } to { --imc: rgb(118, 196, 246); } }
