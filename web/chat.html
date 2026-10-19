@@ -6070,6 +6070,14 @@ box.focus();
   html[data-chatstyle="tg"][data-imsg][data-tgdark] .tgdots i { color: #8d8d93; }
   html[data-chatstyle="tg"][data-imsg] .tgdots i:nth-child(2) { animation-delay: .33s; }
   html[data-chatstyle="tg"][data-imsg] .tgdots i:nth-child(3) { animation-delay: .66s; }
+  /* 左滑看时间(脚本在 __tgKick 后面那段):只给开拖时看得见的泡(.imsw)生成时间;位置 = 屏幕右边(脚本量好的 --imd),她的泡自己往左走、时间用 --imsw 抵回来不动 */
+  html[data-chatstyle="tg"][data-imsg] #log { touch-action: pan-y; }
+  html[data-chatstyle="tg"][data-imsg] .row.me > .bubble, html[data-chatstyle="tg"][data-imsg] .tgb, html[data-chatstyle="tg"][data-imsg] .gu { position: relative; }
+  html[data-chatstyle="tg"][data-imsg] .imsw[data-tgt]::after { content: attr(data-tgt) !important; position: absolute; top: 50%; left: calc(100% + var(--imd, 0px));
+    float: none !important; margin: 0 !important; padding: 0 !important; background: none !important; transform: translate(-100%, -50%);
+    white-space: nowrap; font: 600 11.5px/1 -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; letter-spacing: .01em;
+    color: #86868a !important; opacity: var(--imp, 0); pointer-events: none; animation: none !important; }
+  html[data-chatstyle="tg"][data-imsg] .row.me > .imsw[data-tgt]::after { translate: var(--imsw, 0px) 0; }
   @keyframes imtypd { from { opacity: 1; } to { opacity: .5; } }
   @keyframes imtypb { from { transform: none; } to { transform: scale(1.04); } }
   @keyframes imtypc { from { transform: none; } to { transform: scale(1.1); } }
@@ -8047,6 +8055,82 @@ box.focus();
     if (!want) { if (bl) log.insertBefore(dots, bl); else log.appendChild(dots); try { scroll(); } catch (e) {} }
   }
   window.__tgKick = function () { full = true; schedule(); };
+  /* ── 仿 iMessage:左滑看时间(2026-10-19 深夜,她「好」)──
+     iMessage 泡上没有时间(这个主题照它去掉了),往左拖才露出来:她的泡跟着手指往左走、他的泡不动,每颗泡的时间在屏幕右边淡出来;松手弹回。
+     照开源 MessageKit 的 MessagesViewController+PanGesture.swift:横着拖才算(竖着照常滚)、松手 0.5s 阻尼 .7 的弹簧回到 0。
+     ~~MessageKit 整列一起挪、最多挪屏宽 35%~~ —— 照 iMessage 本身:只挪她的泡、跟手 72px 之后橡皮筋。
+     帧率:拖的时候**只碰屏幕里看得见的那几颗**(开拖时记下来,一般 ≤ 20 颗),时间那个伪元素也只给它们生成(.imsw);整页几百颗不动。 */
+  (function () {
+    if (!log || !window.PointerEvent) return;
+    var st = null, raf = 0;
+    function imsg() { return root.getAttribute("data-chatstyle") === "tg" && root.hasAttribute("data-imsg"); }
+    function grab() {
+      var lr = log.getBoundingClientRect(), right = lr.right - parseFloat(getComputedStyle(log).paddingRight || "16"), vh = innerHeight;
+      var bs = [], rows = [];
+      Array.prototype.forEach.call(log.querySelectorAll(".row.me > .bubble[data-tgt], .tgset > .tgb[data-tgt], .row > .gu[data-tgt]:not(.tg-split)"), function (b) {
+        var r = b.getBoundingClientRect();
+        if (r.bottom < -40 || r.top > vh + 40 || !r.height) return;
+        b.style.setProperty("--imd", (right - r.right) + "px");
+        b.classList.add("imsw"); bs.push(b);
+        var row = b.closest(".row.me"); if (row && rows.indexOf(row) < 0) rows.push(row);
+      });
+      return { bs: bs, rows: rows };
+    }
+    function paint(x) {
+      if (!st) return;
+      log.style.setProperty("--imsw", x + "px");
+      log.style.setProperty("--imp", Math.min(1, x / 56).toFixed(3));
+      for (var i = 0; i < st.rows.length; i++) st.rows[i].style.translate = (-x) + "px 0";
+    }
+    function done() {
+      if (!st) return;
+      st.bs.forEach(function (b) { b.classList.remove("imsw"); b.style.removeProperty("--imd"); });
+      st.rows.forEach(function (r) { r.style.translate = ""; });
+      log.style.removeProperty("--imsw"); log.style.removeProperty("--imp");
+      st = null;
+    }
+    function springBack(x0) {
+      /* UIView.animate(withDuration: .5, usingSpringWithDamping: .7):ζ = .7,ω 取「.5s 内收敛到千分之一」= ln1000 /(ζ·.5) */
+      var z = 0.7, w = Math.log(1000) / (z * 0.5), wd = w * Math.sqrt(1 - z * z), t0 = performance.now();
+      cancelAnimationFrame(raf);
+      (function step(now) {
+        var t = (now - t0) / 1000, x = x0 * Math.exp(-z * w * t) * (Math.cos(wd * t) + (z * w / wd) * Math.sin(wd * t));
+        if (t >= 0.6) { paint(0); done(); return; }
+        paint(x); raf = requestAnimationFrame(step);
+      })(t0);
+    }
+    var down = null;
+    log.addEventListener("pointerdown", function (e) {
+      if (!imsg() || (e.pointerType === "mouse" && e.button !== 0)) return;
+      if (e.clientX < 28) return;                       // 左边缘 24px 是「返回 Chats」那个手势,不抢
+      down = { x: e.clientX, y: e.clientY, id: e.pointerId, on: false };
+    }, { passive: true });
+    log.addEventListener("pointermove", function (e) {
+      if (!down || e.pointerId !== down.id) return;
+      var dx = e.clientX - down.x, dy = e.clientY - down.y;
+      if (!down.on) {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+        if (dx > 0 || Math.abs(dy) >= Math.abs(dx)) { down = null; return; }   // 竖着 / 往右:不是我的
+        down.on = true; cancelAnimationFrame(raf); done(); st = grab();
+        root.setAttribute("data-imswipe", "");
+        try { log.setPointerCapture(e.pointerId); } catch (er) {}
+      }
+      var x = Math.max(0, -dx); if (x > 72) x = 72 + (x - 72) * 0.25;           // 跟手 72px,再往后橡皮筋
+      paint(x);
+    }, { passive: true });
+    function up(e) {
+      if (!down || e.pointerId !== down.id) return;
+      var was = down.on, x = st ? parseFloat(log.style.getPropertyValue("--imsw")) || 0 : 0;
+      down = null;
+      if (!was) return;
+      root.removeAttribute("data-imswipe");
+      if (reduceMotionNow()) { paint(0); done(); } else springBack(x);
+    }
+    function reduceMotionNow() { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; } }
+    log.addEventListener("pointerup", up); log.addEventListener("pointercancel", up);
+    /* 拖着的时候别让长按菜单 / 点开思考那行生效:真拖过就吞掉这一下 click */
+    log.addEventListener("click", function (e) { if (st) { e.stopPropagation(); e.preventDefault(); } }, true);
+  })();
   window.__tgGrow = function (el) { var r = rowOf(el); if (r) { dirty.add(r); schedule([]); } };
   /* 2026-10-16 帧率:他开始忙 / 说完(setBusy)原来叫 __tgKick 整页过一遍 —— 每一轮开头结尾各一次,几百颗泡全扫。
      忙闲一变,真会跟着变的只有末尾那几行(思考 / 工具那行亮不亮、三个点、被打断那颗放出来的字),所以只过最后 24 行。 */
