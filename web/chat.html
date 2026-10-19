@@ -6039,6 +6039,20 @@ box.focus();
   html[data-chatstyle="tg"][data-imsg] .tgstk { right: 40px; bottom: 5.33px; }
   html[data-chatstyle="tg"][data-imsg][data-tghas] .tgstk { right: 46px; }
   html[data-chatstyle="tg"][data-imsg] #send:not(.stop) { background: rgb(64, 142, 245) !important; color: #fff !important; }
+  /* 他的思考 / 工具那行(2026-10-19 深夜,她发 iMessage 里「Text Message • SMS / Today 17:47」那行字:「他的 thinking 想用这个字体,用 TG 那边的排版」):
+     排版照 TG 版(靠左、⌄、点了原地展开),字换成 iOS 系统小号灰字 —— 量她那张图:大写高 24px(3x)≈ 8pt → 11.5pt、竖笔 / 大写高 .17 = 中粗(600)、灰 ≈ #86868a。
+     展开的正文同一族字、常规粗细。~~TG 版那行是衬线 12.5~~(只在 iMessage 主题里换)。 */
+  html[data-chatstyle="tg"][data-imsg] .row > .toolline { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", sans-serif; font-size: 11.5px;
+    font-weight: 600; letter-spacing: .01em; color: #86868a; gap: 5px; }
+  html[data-chatstyle="tg"][data-imsg] .row > .toolline .lbl b { font-weight: 600; }
+  html[data-chatstyle="tg"][data-imsg][data-tgdark] .row > .toolline { color: #8d8d93; }
+  html[data-chatstyle="tg"][data-imsg] .row > .toolline::before { width: 11.5px; height: 11.5px; opacity: 1; }
+  html[data-chatstyle="tg"][data-imsg] .row > .toolline.tgtool::before { width: 12.5px; height: 12.5px; }
+  html[data-chatstyle="tg"][data-imsg] .row > .toolline .chev { width: 10px; height: 10px; opacity: 1; }
+  html[data-chatstyle="tg"][data-imsg] .tgfold { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", sans-serif; font-size: 11.5px; font-weight: 400;
+    line-height: 1.5; color: #86868a; border-left-color: rgba(60,60,67,.18); }
+  /* 预览用:没有菊花那版(她挑完删掉没选中的那版) */
+  html[data-chatstyle="tg"][data-imsg][data-imnoflower] .row > .toolline::before { display: none; }
 </style>
 
 <script>
