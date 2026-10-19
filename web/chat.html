@@ -5405,53 +5405,24 @@ box.focus();
     -webkit-mask-image: var(--tg-tail-r); mask-image: var(--tg-tail-r);
   }
 
-  /* ══ 气泡样子:三版候选(2026-10-19,她:「气泡尾巴我不太喜欢,还有感觉气泡很扁平」)══
-     html[data-tgbub] 切换,先给她看图挑,挑定了只留那一版。三版都:**撤掉 TG 小尾巴**(::before 不画),只换「一串最后一颗」那个角和立体感。
-     a = 最后一颗那个角收小(不画尾巴)+ 柔和立体(细影 + 她的泡上亮下暗)
-     b = 四角全圆、没有尾巴 + 柔和立体
-     c = iMessage 式圆尾巴(和泡连成一体)+ 更明显的光泽 */
-  html[data-chatstyle="tg"][data-tgbub]:not([data-tgbub="c"]) .gu:not(.tg-split):not(.stkonly)::before,
-  html[data-chatstyle="tg"][data-tgbub]:not([data-tgbub="c"]) .tgset .tgb:last-child:not(.stkonly)::before,
-  html[data-chatstyle="tg"][data-tgbub]:not([data-tgbub="c"]) .row.me.tgend.tgend > .bubble:not(.stkonly)::before { content: none; }   /* 选择器照抄「① 尾巴」那几条再加属性,特异性才压得住 */
-  /* 柔和立体(a / b):他的白泡 = 半像素描边 + 一层很淡的落影;她的黑泡 = 自上而下 #2c2c30 → #111113 + 顶上一道细亮线 */
-  html[data-chatstyle="tg"]:is([data-tgbub="a"], [data-tgbub="b"]) .gu:not(.stkonly),
-  html[data-chatstyle="tg"]:is([data-tgbub="a"], [data-tgbub="b"]) .tgb:not(.stkonly) {
+  /* ══ 气泡样子(2026-10-19,她:「气泡尾巴我不太喜欢,还有感觉气泡很扁平」)══
+     出了三版(a 角收小 + 柔和立体 / b 全圆 + 柔和立体 / c iMessage 圆尾巴 + 光泽)给她看图,她选 **a**。所以:
+     ~~TG 小尾巴(上面「① 尾巴」的 ::before)~~ 不画了 —— 一串最后一颗只把那个角收到 6px(他的左下、她的右下),看得出是谁的、哪串到头了;
+     ~~平的气泡(「② 平的气泡」)~~ 改成柔和立体:他的白泡 = 半像素描边 + 很淡的落影;她的泡 = 上亮下暗 + 顶上一道细亮线。
+     ⚠️ 选择器照抄「① 尾巴」那几条,特异性才压得住(第一次只写 `.row.me > .bubble::before`,尾巴照样在)。要调深浅只动下面两组 box-shadow 的透明度。 */
+  html[data-chatstyle="tg"] .gu:not(.tg-split):not(.stkonly)::before,
+  html[data-chatstyle="tg"] .tgset .tgb:last-child:not(.stkonly)::before,
+  html[data-chatstyle="tg"] .row.me.tgend.tgend > .bubble:not(.stkonly)::before { content: none; }
+  html[data-chatstyle="tg"] .gu:not(.tg-split):not(.stkonly),
+  html[data-chatstyle="tg"] .tgset .tgb:last-child:not(.stkonly) { border-bottom-left-radius: 6px; }
+  html[data-chatstyle="tg"] .row.me.tgend.tgend > .bubble:not(.stkonly) { border-bottom-right-radius: 6px; }
+  html[data-chatstyle="tg"] .gu:not(.stkonly), html[data-chatstyle="tg"] .tgb:not(.stkonly) {
     box-shadow: 0 0 0 .5px rgba(0,0,0,.05), 0 1px 1px rgba(0,0,0,.05), 0 3px 10px -2px rgba(0,0,0,.07); }
-  html[data-chatstyle="tg"]:is([data-tgbub="a"], [data-tgbub="b"]) .row.me .bubble:not(.stkonly) {
+  html[data-chatstyle="tg"] .row.me .bubble:not(.stkonly) {
     background: linear-gradient(to bottom, color-mix(in srgb, var(--tg-me) 84%, #fff), var(--tg-me) 60%);
     box-shadow: inset 0 .5px 0 rgba(255,255,255,.16), 0 1px 1px rgba(0,0,0,.10), 0 3px 10px -2px rgba(0,0,0,.16); }
-  /* b:四角全圆 */
-  html[data-chatstyle="tg"][data-tgbub="b"] .gu, html[data-chatstyle="tg"][data-tgbub="b"] .tgb,
-  html[data-chatstyle="tg"][data-tgbub="b"] .row.me .bubble { border-radius: 18px !important; }
-  /* a:最后一颗那个角收到 6px(他的左下、她的右下),中间的全圆 —— 不画尾巴也看得出是谁的、哪串到头了 */
-  html[data-chatstyle="tg"][data-tgbub="a"] .gu:not(.tg-split):not(.stkonly),
-  html[data-chatstyle="tg"][data-tgbub="a"] .tgset .tgb:last-child:not(.stkonly) { border-bottom-left-radius: 6px; }
-  html[data-chatstyle="tg"][data-tgbub="a"] .row.me.tgend.tgend > .bubble:not(.stkonly) { border-bottom-right-radius: 6px; }
-  /* c:iMessage 式 —— 尾巴是从泡底角「长出来」的一道弧(::before 画一块同色的弯角),四角 19;光泽更明显 */
-  html[data-chatstyle="tg"][data-tgbub="c"] .gu, html[data-chatstyle="tg"][data-tgbub="c"] .tgb,
-  html[data-chatstyle="tg"][data-tgbub="c"] .row.me .bubble { border-radius: 19px !important; }
-  /* 带尾巴的那个角收平(4px),尾巴从直边接出去,不然泡的圆角和尾巴之间会露一个台阶 */
-  html[data-chatstyle="tg"][data-tgbub="c"] .gu:not(.tg-split):not(.stkonly),
-  html[data-chatstyle="tg"][data-tgbub="c"] .tgset .tgb:last-child:not(.stkonly) { border-bottom-left-radius: 4px !important; }
-  html[data-chatstyle="tg"][data-tgbub="c"] .row.me.tgend.tgend > .bubble:not(.stkonly) { border-bottom-right-radius: 4px !important; }
-  html[data-chatstyle="tg"][data-tgbub="c"] .gu:not(.tg-split):not(.stkonly)::before,
-  html[data-chatstyle="tg"][data-tgbub="c"] .tgset .tgb:last-child:not(.stkonly)::before,
-  html[data-chatstyle="tg"][data-tgbub="c"] .row.me.tgend.tgend > .bubble:not(.stkonly)::before {
-    content: ""; position: absolute; bottom: 0; width: 20px; height: 22px; pointer-events: none;
-    -webkit-mask: var(--tg-tail-im-l) no-repeat center / 100% 100%; mask: var(--tg-tail-im-l) no-repeat center / 100% 100%;
-    left: -7px; background: color-mix(in srgb, var(--tg-him) 94%, #000); }
-  html[data-chatstyle="tg"][data-tgbub="c"] .row.me.tgend.tgend > .bubble:not(.stkonly)::before {
-    left: auto; right: -7px; background: color-mix(in srgb, var(--tg-me) 100%, #000);
-    -webkit-mask-image: var(--tg-tail-im-r); mask-image: var(--tg-tail-im-r); }
-  html[data-chatstyle="tg"][data-tgbub="c"] {
-    --tg-tail-im-l: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 20'%3E%3Cpath d='M5.4 6C5.1 13 3.3 17.6 0 20C3.2 20.4 6.2 20 8.4 19.1L8.4 20L5 20L5 6Z'/%3E%3C/svg%3E");
-    --tg-tail-im-r: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 20'%3E%3Cpath d='M10.6 6C10.9 13 12.7 17.6 16 20C12.8 20.4 9.8 20 7.6 19.1L7.6 20L11 20L11 6Z'/%3E%3C/svg%3E"); }
-  html[data-chatstyle="tg"][data-tgbub="c"] .gu:not(.stkonly), html[data-chatstyle="tg"][data-tgbub="c"] .tgb:not(.stkonly) {
-    background: linear-gradient(to bottom, #fff, color-mix(in srgb, var(--tg-him) 94%, #000)); 
-    box-shadow: inset 0 0 0 .5px rgba(0,0,0,.06), 0 2px 8px -2px rgba(0,0,0,.10); }
-  html[data-chatstyle="tg"][data-tgbub="c"] .row.me .bubble:not(.stkonly) {
-    background: linear-gradient(to bottom, color-mix(in srgb, var(--tg-me) 74%, #fff), var(--tg-me) 75%);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 2px 8px -2px rgba(0,0,0,.22); }
+  html[data-chatstyle="tg"][data-tgdark] .gu:not(.stkonly), html[data-chatstyle="tg"][data-tgdark] .tgb:not(.stkonly) {
+    box-shadow: 0 0 0 .5px rgba(255,255,255,.06), 0 3px 10px -2px rgba(0,0,0,.4); }
 
   /* ══ iOS 手感第三轮(2026-10-10,她:「动画不够丝滑、要高刷感 / 页面动画按 iOS App 的质感 / 去安卓化」)══
      ① 曲线换成真弹簧:CSS linear() 把弹簧方程逐点写出来(iOS 17 / Safari 17.2 起认;不认的退回原来的 cubic-bezier)。
