@@ -5480,13 +5480,21 @@ box.focus();
     left: auto; right: -5.333px; -webkit-mask-image: var(--tg-tail3-r); mask-image: var(--tg-tail3-r); }
   html[data-chatstyle="tg"] :is(.row.me .bubble, .gu, .tgb):not(.stkonly):not(.tgtw)[data-tgt]::after { margin-top: 9px; }
   html[data-chatstyle="tg"] :is(.row.me .bubble, .gu, .tgb):not(.stkonly)[data-tgt]::after { margin-left: 6px; margin-right: 0; }
-  html[data-chatstyle="tg"] .row.me .bubble:not(.stkonly)[data-tgck]::after { margin-right: -3.8px; }
+  html[data-chatstyle="tg"] .row.me .bubble:not(.stkonly)[data-tgck]::after { margin-right: -4.1px; padding-right: 1.72em; }
   /* 时间掉行时泡要把它包住(同轮顺手修,main 上就有):拆开的 .tgb 是 flex 子项、本来就包得住;**没拆的单颗 .gu 不是**,
      浮动的时间掉到下一行会挂在泡底外面半截。flow-root 让泡把浮动算进高度,宽度不变(fit-content 照旧)。 */
   html[data-chatstyle="tg"] :is(.row.me .bubble, .gu, .tgb).tgtw:not(.stkonly) { display: flow-root; }
   html[data-chatstyle="tg"] {
-    --tgck1: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 17 11' fill='none' stroke='white' stroke-width='1.35' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.2 5.9 4.5 9.1 10.8 1.9'/%3E%3C/svg%3E");
-    --tgck2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 17 11' fill='none' stroke='white' stroke-width='1.35' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8.2 8.1 9.2 9.1 15.5 1.9'/%3E%3C/svg%3E");
+    --tgck1: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 26' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 14 12 20.6 28.8 4.3'/%3E%3C/svg%3E");
+    --tgck2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 26' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20.3 21.4 37.3 4.3'/%3E%3C/svg%3E");
+  }
+  /* 对勾形状也对标(同轮她:「发送的那个对号也对标一下」):叠她截图量 —— 原来那版笔画粗(约 1.06pt,TG 约 .8)、两个勾隔得开(TG 平行的两笔横向只隔 3pt)、
+     第二个勾还露出一小截短边(TG 第二个只有一条长斜线,短边藏在第一个勾底下)。路径直接按她截图的笔画中线描(viewBox 单位 ≈ 3x 截图像素,
+     时间 8.7px 时盒子正好 40 × 26),墨 35 × 20 = 11.7 × 6.7pt 与 TG 同;勾移近了,时间到勾的留白跟着收(~~1.94em~~ → 1.72em,TG 4pt)。
+     第一个勾 / 第二笔仍是两层,单 → 双时只有第二笔弹(动画没动)。浅色泡那支深色勾照旧 45% 深,只换形状。 */
+  html[data-chatstyle="tg"][data-tgmeink="dark"] .row.me .bubble:not(.stkonly) {
+    --tgck1: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 26' fill='none' stroke='rgba%2823%2C22%2C26%2C.45%29' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 14 12 20.6 28.8 4.3'/%3E%3C/svg%3E");
+    --tgck2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 26' fill='none' stroke='rgba%2823%2C22%2C26%2C.45%29' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20.3 21.4 37.3 4.3'/%3E%3C/svg%3E");
   }
 
   /* ══ iOS 手感第三轮(2026-10-10,她:「动画不够丝滑、要高刷感 / 页面动画按 iOS App 的质感 / 去安卓化」)══
