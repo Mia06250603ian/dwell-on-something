@@ -1042,6 +1042,123 @@
   /* 打开 / 关闭:iOS 模态那样从底下整页推上来、点「完成」滑下去(同聊天页那条弹簧);脚本驱动 */
   #settings.ios-in { animation: none; }
 
+  /* ══ 设置页两层(2026-10-19 深夜,她:「东西都是摊开的,字体和 UI 太大了也不美观」)══
+     第一层 = 一行一行的列表 + 右边灰字当前值 + ›;点进去 = 原来那组控件(.spage)。整体缩一号:
+     大标题 ~~SF 粗体 34~~ → 首页那套衬线 30(她定的);行字 ~~17~~ → 15.5;组标题照首页的 UPCOMING(衬线小号大写、字距拉开);
+     皮肤圆点 ~~54~~ → 40、一排 5~6 个;每行左边一枚细线图标(不上彩色底,整页零彩色照旧)。 */
+  #settings .sheethead { min-height: 52px; position: relative; }
+  #settings .sheethead .title { font-family: var(--serif); font-size: 30px; font-weight: 600; letter-spacing: -.005em; line-height: 36px; }
+  #settings .sheethead .done { font-size: 16px; }
+  #settings .sback { display: inline-flex; align-items: center; gap: 5px; margin-left: -2px; padding: 8px 8px 8px 0;
+    font: 400 16px/1 var(--en); color: var(--ink); background: none; border: 0; cursor: pointer; }
+  #settings .sback:active { opacity: .45; }
+  #settings .sback svg { width: 10px; height: 17px; }
+  #settings .sback[hidden], #settings .stitle[hidden] { display: none; }
+  #settings .stitle { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); margin: 0; max-width: 55%;
+    font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #settings[data-sp]:not([data-sp="root"]) .sheethead .title { visibility: hidden; width: 0; flex: 1; }
+  .stack.ios .spage[hidden] { display: none; }
+  .stack.ios .ghead { margin: 24px 16px 8px; font-family: var(--en); font-size: 11.5px; font-weight: 500; letter-spacing: .1em;
+    text-transform: uppercase; line-height: 16px; }
+  .stack.ios .spage > .card:first-child, .stack.ios .spage > .fprev:first-child { margin-top: 10px; }
+  .stack.ios .spage > .hint { margin: 8px 16px 0; font-size: 12.5px; line-height: 17px; color: var(--dim); }
+  .stack.ios .t, .stack.ios .srow .t { font-size: 15.5px; line-height: 21px; letter-spacing: 0; }
+  .stack.ios .srow .s { font-size: 12.5px; line-height: 17px; }
+  .stack.ios .group > .srow, .stack.ios .group > .gcell { padding: 10px 16px; min-height: 46px; }
+  .stack.ios .datum { font-size: 14.5px; }
+  .stack.ios .nameinput { font-size: 15.5px; }
+  .stack.ios .gcell > .t { margin-bottom: 9px; }
+  /* 第一层那几行 */
+  .stack.ios .srow.nav { width: 100%; text-align: left; font: inherit; color: inherit; background: none; border: 0; cursor: pointer; gap: 12px; }
+  .stack.ios .srow.nav:active { background: color-mix(in srgb, var(--ink) 5%, transparent); }
+  .stack.ios .srow.nav .sic { flex: none; width: 21px; height: 21px; color: var(--ink-2); }
+  .stack.ios .group > * + .srow.nav:not(.sprof)::before { left: 49px; }      /* 分隔线从字那里起,图标下面不画(iOS) */
+  .stack.ios .srow.nav .dval { font-size: 14.5px; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 50%; display: inline-flex; align-items: center; gap: 6px; }
+  .stack.ios .srow.nav .dval .sdot { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 0 .5px color-mix(in srgb, var(--ink) 18%, transparent); }
+  .stack.ios .srow.nav .chev { flex: none; color: color-mix(in srgb, var(--ink) 28%, transparent); }
+  .stack.ios .sprof { padding-top: 12px !important; padding-bottom: 12px !important; }
+  .stack.ios .spair { position: relative; width: 62px; height: 42px; flex: none; }
+  .stack.ios .spair .hav { position: absolute; top: 0; width: 42px; height: 42px; box-shadow: 0 0 0 2px var(--card); }
+  .stack.ios .spair .hav + .hav { left: 20px; }
+  .stack.ios .sprof .pn { display: block; font-family: var(--en); font-size: 17px; font-weight: 500; }
+  .stack.ios .sprof .s { display: block; margin-top: 1px; color: var(--dim); }
+  /* 皮肤:圆点缩小、一排排开 */
+  .stack.ios .skins { grid-template-columns: repeat(6, 1fr); gap: 12px 2px; padding: 4px 0; }
+  .stack.ios .swatch { width: 40px; height: 40px; }
+  .stack.ios .swatch .tick { transform: scale(.8); }
+  .stack.ios .skin { gap: 6px; }
+  .stack.ios .skin .nm { font-size: 11px; }
+  /* 选中那颗:外圈一道环(原来是圈里一道内描边 + 勾,深色模式下白圆点上看不见);勾照旧在 */
+  .stack.ios .skin[aria-pressed="true"] .swatch { box-shadow: 0 0 0 2px var(--card), 0 0 0 3.5px var(--ink); }
+  /* 单选:二级页里排成 iOS 勾选列表(盯的还是 aria-pressed,点选逻辑没动;那块白滑块在这里不用) */
+  .stack.ios .seg.list { display: block; height: auto; padding: 0; border-radius: 0; background: none; }
+  .stack.ios .seg.list .segthumb { display: none; }
+  .stack.ios .seg.list button { position: relative; display: flex; align-items: center; justify-content: space-between; width: 100%;
+    height: auto; min-height: 46px; padding: 10px 16px; border-radius: 0; text-align: left;
+    font-size: 15.5px; font-weight: 400 !important; color: var(--ink); }
+  .stack.ios .seg.list button:active { opacity: 1; background: color-mix(in srgb, var(--ink) 5%, transparent) !important; }
+  .stack.ios .seg.list button + button::before { left: 16px; right: 0; top: 0; bottom: auto; width: auto; height: var(--hair);
+    background: var(--line); opacity: 1 !important; }
+  .stack.ios .seg.list button[aria-pressed="true"]::after { content: ""; flex: none; width: 15px; height: 12px; background: var(--ink);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 15 12' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.5 6.5 5.5 10.5 13.5 1.5'/%3E%3C/svg%3E") center / contain no-repeat;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 15 12' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.5 6.5 5.5 10.5 13.5 1.5'/%3E%3C/svg%3E") center / contain no-repeat; }
+  /* 字号页顶上那颗预览泡:跟着选中的档变 */
+  .stack.ios .fprev { display: flex; justify-content: flex-end; padding: 18px 16px 14px; }
+  .stack.ios .fprev span { padding: 6.5px 12px; border-radius: 16px 16px 6px 16px; background: var(--ink); color: var(--card);
+    font-size: var(--fp, 14.5px); line-height: 1.36; transition: font-size .2s ease; }
+  /* 进二级页 / 回来:iOS 推入那样横着滑一小段 + 淡入(只动 transform / opacity) */
+  @keyframes spin-fwd { from { opacity: 0; transform: translate3d(26px, 0, 0); } }
+  @keyframes spin-back { from { opacity: 0; transform: translate3d(-26px, 0, 0); } }
+  .stack.ios .spage.fwd { animation: spin-fwd .38s var(--spring-ui, cubic-bezier(.32,.72,0,1)); }
+  .stack.ios .spage.back { animation: spin-back .38s var(--spring-ui, cubic-bezier(.32,.72,0,1)); }
+  @media (prefers-reduced-motion: reduce) { .stack.ios .spage.fwd, .stack.ios .spage.back { animation: none; } }
+
+  /* ══ 同夜第二版:照 iPhone 原生「设置」(iOS 26)══ 她看完第一版:「ui 你按 iPhone 原生 ui 优化一下」。照系统那几样换:
+     ① 每行图标 = 30pt 圆角方块(圆角 7)+ 白色符号 —— 系统是彩色方块,我们**用深浅不同的灰**(整页零彩色照旧);分隔线从字那里起(16+30+12=58);
+     ② 行高 52、字 17 / 值 17 灰(iOS 26 的数;~~15.5 / 46~~ 第一版缩过头,她要原生);组标题回到中文小灰字、不大写(系统的样子);
+     ③ 顶上那排:返回 / 完成 = iOS 26 的玻璃圆钮(44pt,返回是 ‹、完成是 ✓ 实心深色),二级页标题居中 17 粗;
+     ④ 头像那行照「Apple 账户」:头像 56、名字 21 中粗、下面一行小灰字。大标题仍是首页那套衬线(她定的)。 */
+  #settings .sheethead { min-height: 56px; padding: 6px 0 4px; }
+  #settings .gbtn { flex: none; width: 44px; height: 44px; padding: 0; border-radius: 50%; display: grid; place-items: center;
+    border: 0; cursor: pointer; color: var(--ink); background: color-mix(in srgb, var(--card) 72%, transparent);
+    -webkit-backdrop-filter: blur(14px) saturate(1.6); backdrop-filter: blur(14px) saturate(1.6);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 0 0 .5px color-mix(in srgb, var(--ink) 9%, transparent), 0 4px 14px -6px rgba(0,0,0,.18);
+    transition: transform .15s; }
+  #settings .gbtn:active { transform: scale(.92); opacity: 1; }
+  #settings .gbtn svg { width: 17px; height: 17px; }
+  #settings .sback.gbtn { margin: 0; padding: 0; }
+  #settings .sback.gbtn svg { width: 11px; height: 18px; margin-left: -2px; }
+  #settings .done.gbtn { background: var(--ink); color: var(--card); padding: 0; font-size: 0; }
+  #settings .done.gbtn svg { width: 18px; height: 15px; }
+  #settings .stitle { font-size: 17px; font-weight: 600; }
+  #settings .sheethead .title { font-size: 32px; line-height: 38px; }
+  .stack.ios .ghead { margin: 22px 20px 7px; font-family: inherit; font-size: 13px; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--dim); }
+  .stack.ios .spage > .hint { margin: 8px 20px 0; font-size: 13px; line-height: 18px; }
+  .stack.ios .card.group { border-radius: 26px; }
+  .stack.ios .t, .stack.ios .srow .t { font-size: 17px; line-height: 22px; letter-spacing: -.01em; }
+  .stack.ios .srow .s { font-size: 13px; line-height: 18px; }
+  .stack.ios .group > .srow, .stack.ios .group > .gcell { padding: 11px 16px; min-height: 52px; }
+  .stack.ios .datum, .stack.ios .nameinput { font-size: 17px; }
+  .stack.ios .srow.nav .dval { font-size: 17px; letter-spacing: -.01em; }
+  .stack.ios .srow.nav .chev { width: 8px; height: 13px; color: color-mix(in srgb, var(--ink) 26%, transparent); }
+  /* 图标方块:灰阶分三档(深 / 中 / 浅灰底深符号),一组里错开,不上彩色 */
+  .stack.ios .srow.nav .sic { box-sizing: border-box; width: 30px; height: 30px; padding: 5px; border-radius: 7px; color: #fff; stroke-width: 1.9;
+    background: #4a4946; }
+  .stack.ios .srow.nav[data-go="mode"] .sic, .stack.ios .srow.nav[data-go="bubble"] .sic, .stack.ios .srow.nav[data-go="voice"] .sic { background: #807e79; }
+  .stack.ios .srow.nav[data-go="card"] .sic, .stack.ios .srow.nav[data-go="font"] .sic { background: #a5a39d; }
+  .stack.ios .srow.nav[data-go="spec"] .sic { background: #8e8d88; }
+  .stack.ios .group > * + .srow.nav:not(.sprof)::before { left: 58px; }
+  .stack.ios .seg.list button { min-height: 52px; padding: 11px 16px; font-size: 17px; }
+  .stack.ios .sprof { padding-top: 14px !important; padding-bottom: 14px !important; gap: 14px; }
+  .stack.ios .spair { width: 80px; height: 56px; }
+  .stack.ios .spair .hav { width: 56px; height: 56px; box-shadow: 0 0 0 2.5px var(--card); }
+  .stack.ios .spair .hav + .hav { left: 24px; }
+  .stack.ios .sprof .pn { font-size: 21px; font-weight: 600; line-height: 26px; letter-spacing: -.01em; }
+  .stack.ios .sprof .s { font-size: 13px; margin-top: 2px; }
+  .stack.ios .swatch { width: 44px; height: 44px; }
+  .stack.ios .skin .nm { font-size: 12px; }
+
 
   .speclist { font-size: 13.5px; line-height: 1.85; }
   .speclist div { display: flex; gap: 12px; }
@@ -1302,125 +1419,50 @@
   <!-- 设置页最后一段也要躲开 Home Indicator,所以底部留白把安全区算进去 -->
   <div class="phone" style="padding-bottom:calc(60px + var(--sab))">
     <div class="sheethead">
+      <button class="sback gbtn" id="sBack" type="button" aria-label="返回" hidden><svg viewBox="0 0 12 20" width="12" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2 2 10l8 8"/></svg></button>
       <h1 class="title grow" style="margin:0">Settings</h1>
-      <button class="done" id="closeSettings">完成</button>
+      <h2 class="stitle" id="sTitle" hidden></h2>
+      <button class="done gbtn" id="closeSettings" aria-label="完成"><svg viewBox="0 0 20 16" width="20" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8.5 7.2 13.5 18 2.5"/></svg></button>
     </div>
 
     <!-- 2026-10-10 所有者:「这个界面能用 TG 的 UI 设计优化一下吗」—— 改成 iOS / Telegram 设置页的「分组列表」:
          组标题在卡片**外面**上方(灰色小字)、说明在卡片**下面**当脚注、每行 ≥44pt、分隔线左缩进半像素、
          分段按钮换成 iOS 原生那种(浅灰槽 + 白滑块,滑块会滑)。**只改结构和样式,所有 id / 按钮 / 存的东西都没动**。
          样式在 <style> 里搜「设置页:iOS 分组列表」。 -->
+    <!-- 2026-10-19 深夜,她:「这个页面东西都是摊开的,字体和 UI 太大了也不美观」→ 照 iPhone「设置」做成两层:
+         第一层(data-sp="root")只放一行一行的列表 + 当前值,点进去才是原来那些控件(各个 .spage);进出是 iOS 的推入。
+         **原来的控件一个没少,id / 按钮 / 存的东西都没动**,只是挪进了二级页;单选的分段按钮在二级页里排成 iOS 勾选列表(.seg.list,
+         点选逻辑照旧盯 aria-pressed)。大标题换成首页那套衬线(她定的;~~SF 粗体 34~~)。样式搜「设置页两层」。 -->
     <div class="stack ios">
-      <h3 class="ghead">皮肤</h3>
-      <section class="card group">
-        <div class="gcell"><div class="skins" id="skins"></div></div>
-        <div class="srow">
-          <div class="grow">
-            <div class="t">调色板</div>
-            <div class="s">改的是「墨白」的点缀色,每款皮肤各记各的</div>
-          </div>
-          <span class="well" style="--wellc:#1b191d" aria-hidden="true"></span>
-        </div>
-        <div class="srow">
-          <div class="grow">
-            <div class="t">卡片颜色</div>
-            <div class="s">卡片的底色,跟壁纸搭配着调</div>
-          </div>
-          <span class="well" style="--wellc:#ffffff" aria-hidden="true"></span>
-        </div>
-        <div class="gcell">
-          <div class="srow flat">
-            <label class="grow t" for="opacity">卡片透明度</label>
-            <span class="datum" id="opacityVal">100%</span>
-            <button class="datum act" id="opacityReset">恢复默认</button>
-          </div>
-          <div class="slider">
-            <input type="range" id="opacity" min="40" max="100" value="100" style="--fill:100%">
-          </div>
-        </div>
-      </section>
+      <div class="spage" data-sp="root">
+        <section class="card group">
+          <button type="button" class="srow nav sprof" data-go="profile">
+            <span class="hpair spair"><span class="av hav him" data-bloom aria-hidden="true"></span><span class="av hav" data-avatar="me" aria-hidden="true"></span></span>
+            <span class="grow"><span class="t pn">Mia &amp; <span data-himname>晏</span></span><span class="s">头像与名字</span></span>
+            <svg class="chev" viewBox="0 0 8 13" width="8" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 1.5 6.5 6.5l-5 5"/></svg>
+          </button>
+        </section>
+        <h3 class="ghead">外观</h3>
+        <section class="card group">
+          <button type="button" class="srow nav" data-go="skin"><svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg><span class="grow t">皮肤</span><span class="dval" data-sum="skin"></span><svg class="chev" viewBox="0 0 8 13" width="8" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 1.5 6.5 6.5l-5 5"/></svg></button>
+          <button type="button" class="srow nav" data-go="mode"><svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 14.6A8 8 0 1 1 9.4 4.5a6.4 6.4 0 0 0 10.1 10.1z"/></svg><span class="grow t">浅色与深色</span><span class="dval" data-sum="mode"></span><svg class="chev" viewBox="0 0 8 13" width="8" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 1.5 6.5 6.5l-5 5"/></svg></button>
+          <button type="button" class="srow nav" data-go="card"><svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.8" y="5.5" width="16.4" height="13" rx="3.4"/><path d="M3.8 10h16.4"/></svg><span class="grow t">卡片</span><span class="dval" data-sum="card"></span><svg class="chev" viewBox="0 0 8 13" width="8" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 1.5 6.5 6.5l-5 5"/></svg></button>
+        </section>
+        <h3 class="ghead">聊天</h3>
+        <section class="card group">
+          <button type="button" class="srow nav" data-go="style"><svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11.5C4 7.4 7.6 4.5 12 4.5s8 2.9 8 7-3.6 7-8 7c-1 0-2-.1-2.9-.4L5 19.5l1.1-3.3C4.8 14.9 4 13.3 4 11.5z"/></svg><span class="grow t">聊天样式</span><span class="dval" data-sum="style"></span><svg class="chev" viewBox="0 0 8 13" width="8" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 1.5 6.5 6.5l-5 5"/></svg></button>
+          <button type="button" class="srow nav" data-go="bubble"><svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.8" y="5" width="16.4" height="14" rx="3.2"/><circle cx="9" cy="10" r="1.5"/><path d="m4.5 17 4.4-4.3 3.4 3.3 2.6-2.5 4.6 4.4"/></svg><span class="grow t">气泡与壁纸</span><span class="dval" data-sum="bubble"></span><svg class="chev" viewBox="0 0 8 13" width="8" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 1.5 6.5 6.5l-5 5"/></svg></button>
+          <button type="button" class="srow nav" data-go="font"><svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 18 8 6.2h.9L13.4 18M5.1 14.1h6.7"/><path d="M15.6 12.8c.5-.9 1.3-1.3 2.3-1.3 1.5 0 2.3.8 2.3 2.3V18M20.2 15h-1.9c-1.5 0-2.5.6-2.5 1.6 0 .9.7 1.5 1.7 1.5 1.5 0 2.7-.9 2.7-2.4"/></svg><span class="grow t">字号</span><span class="dval" data-sum="font"></span><svg class="chev" viewBox="0 0 8 13" width="8" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 1.5 6.5 6.5l-5 5"/></svg></button>
+          <button type="button" class="srow nav" data-go="avpos"><svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.6" r="3.6"/><path d="M5 19.5c1.2-3.3 4-5 7-5s5.8 1.7 7 5"/></svg><span class="grow t">头像位置</span><span class="dval" data-sum="avpos"></span><svg class="chev" viewBox="0 0 8 13" width="8" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 1.5 6.5 6.5l-5 5"/></svg></button>
+          <button type="button" class="srow nav" data-go="voice"><svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 10v4M8.5 7v10M12 4.5v15M15.5 8v8M19 10.5v3"/></svg><span class="grow t">语音文字</span><span class="dval" data-sum="voice"></span><svg class="chev" viewBox="0 0 8 13" width="8" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 1.5 6.5 6.5l-5 5"/></svg></button>
+        </section>
+        <h3 class="ghead">其他</h3>
+        <section class="card group">
+          <button type="button" class="srow nav" data-go="spec"><svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7.5h9.5M18 7.5h1.5M4.5 16.5H6M10 16.5h9.5"/><circle cx="16" cy="7.5" r="2"/><circle cx="8" cy="16.5" r="2"/></svg><span class="grow t">设计参数</span><span class="dval" data-sum="spec"></span><svg class="chev" viewBox="0 0 8 13" width="8" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 1.5 6.5 6.5l-5 5"/></svg></button>
+        </section>
+      </div>
 
-      <!-- 2026-10-09 所有者定:两版 —— 仿官端(默认)/ 仿 Telegram 气泡。存在 dwell-bridge 的 /data 上(/api/prefs),换设备也在。 -->
-      <h3 class="ghead">聊天样式</h3>
-      <section class="card group">
-        <div class="gcell">
-          <div class="seg" id="chatStyle">
-            <button data-v="official" aria-pressed="true">官端</button>
-            <button data-v="tg">Telegram</button>
-          </div>
-        </div>
-      </section>
-      <p class="hint">官端:照 Claude App 的样子。Telegram:双方都在气泡里,他一段话一个气泡</p>
-
-      <h3 class="ghead">头像放哪儿(Telegram 版)</h3>
-      <section class="card group">
-        <div class="gcell">
-          <div class="seg" id="avatarMode">
-            <button data-v="top" aria-pressed="true">顶栏右边</button>
-            <button data-v="each">每条消息旁边</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- 2026-10-09 所有者:「最好有一个可以换气泡颜色和壁纸的功能」。只作用在 Telegram 版;存在 dwell-bridge 的 /data。 -->
-      <h3 class="ghead">聊天外观(Telegram 版)</h3>
-      <section class="card group">
-        <div class="gcell">
-          <div class="t">我的气泡</div>
-          <div class="dots" id="meDots"></div>
-        </div>
-        <div class="gcell">
-          <div class="t">他的气泡</div>
-          <div class="dots" id="himDots"></div>
-        </div>
-        <div class="srow">
-          <span class="wallthumb" id="wallThumb" aria-hidden="true"></span>
-          <div class="grow">
-            <div class="t">壁纸</div>
-            <div class="s" id="wallHint">没设就跟皮肤的底色走</div>
-          </div>
-          <button class="datum" id="wallReset">去掉</button>
-          <button class="datum act" id="wallPick">换一张</button>
-        </div>
-        <input type="file" id="wallFile" accept="image/*" hidden>
-        <!-- 2026-10-10 所有者:「聊天里的字有点偏大,我想要一个自己可以修改字号的功能」。存 /api/prefs(换设备也在) -->
-        <div class="gcell">
-          <div class="t">聊天字号</div>
-          <div class="seg" id="chatFont">
-            <button data-v="13.5" aria-pressed="false">小</button>
-            <button data-v="14.5" aria-pressed="false">标准</button>
-            <button data-v="15.5" aria-pressed="false">中</button>
-            <button data-v="16.5" aria-pressed="false">大</button>
-            <button data-v="17.5" aria-pressed="false">特大</button>
-          </div>
-        </div>
-        <!-- 2026-10-10 所有者:「语音翻译我想自己选折叠或者显示,我的和他的都是」。这里定默认;每颗语音条上的「文」还能单独点开 / 收起 -->
-        <div class="gcell">
-          <div class="t">语音文字</div>
-          <div class="seg" id="voiceText">
-            <button data-v="show" aria-pressed="false">显示</button>
-            <button data-v="fold" aria-pressed="false">折叠</button>
-          </div>
-        </div>
-      </section>
-      <p class="hint">气泡上的字会按底色深浅自动选黑字或白字</p>
-
-      <h3 class="ghead">外观</h3>
-      <section class="card group">
-        <div class="gcell">
-          <div class="seg" id="appearance">
-            <button data-v="system" aria-pressed="true">跟随系统</button>
-            <button data-v="light">浅色</button>
-            <button data-v="dark">夜间</button>
-          </div>
-        </div>
-      </section>
-      <p class="hint">玻璃皮肤自带昼夜气质,这里只对象牙纸张生效</p>
-
-      <!-- 2026-10-09 接上:换的图存在 dwell-bridge 的 /data 上,换设备也在。
-           他的头像同时用在 Chats 列表、首页悄悄话卡、Telegram 版聊天页。
-           ⚠️ 「恢复默认」**只有她点、并确认过**才删,没有任何自动清除的路径。 -->
-      <h3 class="ghead">头像</h3>
+      <div class="spage" data-sp="profile" data-title="头像与名字" hidden>
       <section class="card group">
         <div class="srow">
           <span class="av" data-avatar="me" aria-hidden="true"></span>
@@ -1443,10 +1485,129 @@
         <input type="file" id="avFile" accept="image/*" hidden>
       </section>
       <p class="hint" id="avHint">图会先在手机上裁成正方形、压小再传,存在服务器上,换设备也在</p>
+      </div>
 
-      <!-- 2026-10-10 所有者:「最下面那个参数用一个按钮包起来,藏起来,不要在外面漏着像毛坯房」。
-           收成一行「设计参数 ›」,点了原地展开、再点收起(iOS 列表的展开行)。里面的东西和复制按钮一样没少,只是默认不露。 -->
-      <h3 class="ghead">其他</h3>
+      <div class="spage" data-sp="skin" data-title="皮肤" hidden>
+      <section class="card group">
+        <div class="gcell"><div class="skins" id="skins"></div></div>
+        <div class="srow">
+          <div class="grow">
+            <div class="t">调色板</div>
+            <div class="s">改的是「墨白」的点缀色,每款皮肤各记各的</div>
+          </div>
+          <span class="well" style="--wellc:#1b191d" aria-hidden="true"></span>
+        </div>
+      </section>
+      </div>
+
+      <div class="spage" data-sp="mode" data-title="浅色与深色" hidden>
+      <section class="card group">
+        <div class="seg list" id="appearance">
+            <button data-v="system" aria-pressed="true">跟随系统</button>
+            <button data-v="light">浅色</button>
+            <button data-v="dark">夜间</button>
+          </div>
+      </section>
+      <p class="hint">玻璃皮肤自带昼夜气质,这里只对象牙纸张生效</p>
+      </div>
+
+      <div class="spage" data-sp="card" data-title="卡片" hidden>
+      <section class="card group">
+        <div class="srow">
+          <div class="grow">
+            <div class="t">卡片颜色</div>
+            <div class="s">卡片的底色,跟壁纸搭配着调</div>
+          </div>
+          <span class="well" style="--wellc:#ffffff" aria-hidden="true"></span>
+        </div>
+        <div class="gcell">
+          <div class="srow flat">
+            <label class="grow t" for="opacity">卡片透明度</label>
+            <span class="datum" id="opacityVal">100%</span>
+            <button class="datum act" id="opacityReset">恢复默认</button>
+          </div>
+          <div class="slider">
+            <input type="range" id="opacity" min="40" max="100" value="100" style="--fill:100%">
+          </div>
+        </div>
+      </section>
+      </div>
+
+      <!-- 2026-10-09 所有者定:两版 —— 仿官端(默认)/ 仿 Telegram 气泡。存在 dwell-bridge 的 /data 上(/api/prefs),换设备也在。 -->
+      <div class="spage" data-sp="style" data-title="聊天样式" hidden>
+      <section class="card group">
+        <div class="seg list" id="chatStyle">
+            <button data-v="official" aria-pressed="true">官端</button>
+            <button data-v="tg">Telegram</button>
+            <button data-v="imsg">iMessage</button>
+          </div>
+      </section>
+      <p class="hint">官端:照 Claude App 的样子。Telegram:双方都在气泡里,他一段话一个气泡。iMessage:照 iPhone 信息的样子,其余和 Telegram 版一样</p>
+      </div>
+
+      <!-- 2026-10-09 所有者:「最好有一个可以换气泡颜色和壁纸的功能」。只作用在 Telegram 版;存在 dwell-bridge 的 /data。 -->
+      <div class="spage" data-sp="bubble" data-title="气泡与壁纸" hidden>
+      <section class="card group">
+        <div class="gcell">
+          <div class="t">我的气泡</div>
+          <div class="dots" id="meDots"></div>
+        </div>
+        <div class="gcell">
+          <div class="t">他的气泡</div>
+          <div class="dots" id="himDots"></div>
+        </div>
+        <div class="srow">
+          <span class="wallthumb" id="wallThumb" aria-hidden="true"></span>
+          <div class="grow">
+            <div class="t">壁纸</div>
+            <div class="s" id="wallHint">没设就跟皮肤的底色走</div>
+          </div>
+          <button class="datum" id="wallReset">去掉</button>
+          <button class="datum act" id="wallPick">换一张</button>
+        </div>
+        <input type="file" id="wallFile" accept="image/*" hidden>
+      </section>
+      <p class="hint">气泡颜色在 Telegram 版和 iMessage 版都管用(iMessage 没挑就是原装的灰和蓝);壁纸只在 Telegram 版。气泡上的字会按底色深浅自动选黑字或白字</p>
+      </div>
+
+      <!-- 2026-10-10 所有者:「聊天里的字有点偏大,我想要一个自己可以修改字号的功能」。存 /api/prefs(换设备也在) -->
+      <div class="spage" data-sp="font" data-title="字号" hidden>
+      <div class="fprev" id="fontPrev"><span>晚安,今天也辛苦了</span></div>
+      <section class="card group">
+        <div class="seg list" id="chatFont">
+            <button data-v="13.5" aria-pressed="false">小</button>
+            <button data-v="14.5" aria-pressed="false">标准</button>
+            <button data-v="15.5" aria-pressed="false">中</button>
+            <button data-v="16.5" aria-pressed="false">大</button>
+            <button data-v="17.5" aria-pressed="false">特大</button>
+          </div>
+      </section>
+      <p class="hint">只作用在 Telegram 版的聊天页</p>
+      </div>
+
+      <div class="spage" data-sp="avpos" data-title="头像位置" hidden>
+      <section class="card group">
+        <div class="seg list" id="avatarMode">
+            <button data-v="top" aria-pressed="true">顶栏右边</button>
+            <button data-v="each">每条消息旁边</button>
+          </div>
+      </section>
+      <p class="hint">只作用在 Telegram 版</p>
+      </div>
+
+      <!-- 2026-10-10 所有者:「语音翻译我想自己选折叠或者显示,我的和他的都是」。这里定默认;每颗语音条长按还能单独显示 / 收起 -->
+      <div class="spage" data-sp="voice" data-title="语音文字" hidden>
+      <section class="card group">
+        <div class="seg list" id="voiceText">
+            <button data-v="show" aria-pressed="false">显示</button>
+            <button data-v="fold" aria-pressed="false">折叠</button>
+          </div>
+      </section>
+      <p class="hint">语音条下面那行文字默认显示还是折叠,他的和你的一起</p>
+      </div>
+
+      <!-- 2026-10-10 所有者:「最下面那个参数用一个按钮包起来,藏起来,不要在外面漏着像毛坯房」。现在又多藏一层:在「其他 → 设计参数」里 -->
+      <div class="spage" data-sp="spec" data-title="设计参数" hidden>
       <section class="card group">
         <button type="button" class="srow disc" id="specToggle" aria-expanded="false" aria-controls="specBody">
           <span class="grow t">设计参数</span>
@@ -1460,6 +1621,7 @@
           <p class="hint" style="margin:10px 0 0">改了什么这里就跟着变,随手复制一份就是备份 —— 这一页不会自动清空任何东西。</p>
         </div>
       </section>
+      </div>
     </div>
   </div>
 </div>
@@ -1995,7 +2157,7 @@
     var live = [
       ["当前皮肤", (SKINS.filter(function (s) { return s.id === state.skin; })[0] || {}).name],
       ["外观", { system: "跟随系统", light: "浅色", dark: "夜间" }[state.appearance]],
-      ["聊天样式", state.chatStyle === "tg" ? "Telegram" : "官端"],
+      ["聊天样式", state.chatStyle === "tg" ? "Telegram" : state.chatStyle === "imsg" ? "iMessage" : "官端"],
       ["卡片透明度", state.opacity + "%"],
       ["页面底(上)", cs.getPropertyValue("--paper-top").trim()],
       ["页面底(下)", cs.getPropertyValue("--paper-bot").trim()],
@@ -2525,6 +2687,44 @@
       body.hidden = !open; tg.setAttribute("aria-expanded", String(open));
     });
   })();
+
+  /* 设置页两层(2026-10-19 深夜):第一层列表 ⇄ 二级页。每次打开设置都回到第一层;第一层右边的灰字从各控件的现状读(不另存一份) */
+  var spTitle = document.getElementById("sTitle"), spBack = document.getElementById("sBack");
+  function spSum() {
+    var on = function (id) { var b = document.querySelector("#" + id + ' button[aria-pressed="true"]'); return b ? b.textContent.trim() : ""; };
+    var put = function (k, html) { var el = sheet.querySelector('[data-sum="' + k + '"]'); if (el && el.innerHTML !== html) el.innerHTML = html; };
+    var sk = document.querySelector('#skins .skin[aria-pressed="true"]');
+    if (sk) {
+      var sw = sk.querySelector(".swatch"), nm = sk.querySelector(".nm");
+      put("skin", '<i class="sdot" style="background:' + (sw ? sw.style.background : "") + '"></i>' + (nm ? nm.textContent : ""));
+    }
+    put("mode", on("appearance"));
+    var ov = document.getElementById("opacityVal"); put("card", ov ? ov.textContent : "");
+    put("style", on("chatStyle")); put("font", on("chatFont")); put("avpos", on("avatarMode")); put("voice", on("voiceText"));
+    var fb = document.querySelector('#chatFont button[aria-pressed="true"]'), fp = document.getElementById("fontPrev");
+    if (fp) fp.style.setProperty("--fp", ((fb && fb.dataset.v) || "14.5") + "px");
+  }
+  function spGo(id, how) {
+    var to = sheet.querySelector('.spage[data-sp="' + id + '"]');
+    if (!to) return;
+    Array.prototype.forEach.call(sheet.querySelectorAll(".spage"), function (pg) { if (pg !== to) pg.hidden = true; pg.classList.remove("fwd", "back"); });
+    to.hidden = false;
+    sheet.setAttribute("data-sp", id);
+    var root = id === "root";
+    spBack.hidden = root; spTitle.hidden = root; spTitle.textContent = root ? "" : (to.dataset.title || "");
+    spSum(); segAll();
+    sheet.scrollTop = 0;
+    if (how && !reduceMotion) { void to.offsetWidth; to.classList.add(how); }
+  }
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest(".srow.nav[data-go]");
+    if (b) spGo(b.dataset.go, "fwd");
+  });
+  spBack.addEventListener("click", function () { spGo("root", "back"); });
+  document.getElementById("openSettings").addEventListener("click", function () { spGo("root"); });
+  /* 字号页:点一档,预览泡当场跟着变 */
+  document.getElementById("chatFont").addEventListener("click", function () { setTimeout(spSum, 0); });
+  spGo("root");
 
   apply();
   pullPrefs();

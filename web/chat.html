@@ -2377,6 +2377,7 @@ function addMe(text) {
   const b = document.createElement('div');
   b.className = 'bubble';
   b.textContent = text;
+  b._raw0 = text;                // 原文:删这颗时按它认(2026-10-19,刚发的泡还不知道 seq)
   r.appendChild(b);
   renderRich(b);
   scroll(true);
@@ -4269,10 +4270,15 @@ box.focus();
         var b = row.querySelector(':scope > .bubble'), g = row.querySelector(':scope > .gu');
         if (row.classList.contains('me') && b) {
           var m = me[i++]; if (m && m.at) b.dataset.at = m.at;
+          if (m && m.seq) b.dataset.seq = m.seq;                                            /* 删消息要用(2026-10-19) */
           if (m) b._raw0 = m.text;                                                         /* 回应要按原文认泡(2026-10-10) */
           if (m && m.voice) { b.dataset.voice = m.voice; b.dataset.dur = m.dur || ""; }   /* 她的录音(2026-10-10) */
         }
-        else if (g) { var n = gu[j++]; if (n && n.at) g.dataset.at = n.at; }
+        else if (g) {
+          var n = gu[j++]; if (n && n.at) g.dataset.at = n.at;
+          if (n && n.seq) g.dataset.seq = n.seq;
+          if (n && n.hide && n.hide.length) g.dataset.hide = n.hide.join(",");              /* 这段回复里删过的那几颗(第几颗),拆泡时跳过 */
+        }
       });
     } catch (e) {}
     return out;
@@ -5302,6 +5308,23 @@ box.focus();
   .tgrmenu .list .it { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 46px; padding: 0 20px; border: 0; background: none; cursor: pointer;
                        font: 400 17px/1.2 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; color: var(--text); text-align: left; }
   .tgrmenu .list .it:active { background: color-mix(in srgb, var(--text) 8%, transparent); }
+  .tgrmenu .list .it.danger { color: #ff3b30; }   /* 删消息那一项(2026-10-19):iOS 的删除红 */
+  .row.tghidrow { display: none !important; }        /* 他那段回复一颗颗删光了 */
+  /* 删消息的确认表(2026-10-19):照「他」页那张 iOS 操作表的样子 */
+  .tgdel[hidden] { display: none; }
+  .tgdel .dbg { position: fixed; inset: 0; z-index: 80; background: rgba(0,0,0,.28); animation: tgfade .2s ease; }
+  .tgdel .dact { position: fixed; left: 10px; right: 10px; z-index: 81; bottom: calc(8px + var(--dw-sab, env(safe-area-inset-bottom)));
+                 animation: pactin .38s cubic-bezier(.32,.72,0,1); }
+  .tgdel .dg { border-radius: 14px; overflow: hidden; margin-top: 8px; background: rgba(250,250,250,.92);
+               -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); }
+  html[data-tgdark] .tgdel .dg { background: rgba(44,44,46,.92); }
+  .tgdel .dg:first-child { margin-top: 0; }
+  .tgdel .dttl { padding: 13px 16px 12px; text-align: center; font-size: 13px; line-height: 1.45; color: #8a8a8e; }
+  .tgdel button { display: block; width: 100%; min-height: 56px; border: 0; background: none; color: var(--text, #000);
+                  font: 400 19px/1.2 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; border-top: .5px solid rgba(60,60,67,.2); cursor: pointer; }
+  .tgdel button:active { background: rgba(60,60,67,.12); }
+  .tgdel .dok { color: #ff3b30; }
+  .tgdel .dno { font-weight: 600; border-top: 0; }
   .tgrmenu .list .ic { display: grid; place-items: center; width: 24px; }
   .tgheld-hide { visibility: hidden; }
   /* 右上角:搜索替掉他的头像 / 那两颗官端按钮 */
@@ -5948,6 +5971,142 @@ box.focus();
     box-shadow: inset 0 0 0 .5px rgba(0,0,0,.075), inset .67px 0 0 rgba(0,0,0,.15), inset -.67px 0 0 rgba(0,0,0,.15) !important;
   }
 </style>
+
+<style>
+  /* ══ 仿 iMessage(2026-10-19 深夜,她:「聊天界面再做一种主题,仿 iMessage 的这种 UI,右上角的视频依旧是搜索聊天记录,气泡 UI 保持 1:1 复刻」
+     又补:「所有的 UI 大小形状都 1:1 复刻,不要偷懒」)══
+     **骑在 TG 版上**:设置里选 iMessage = `data-chatstyle="tg"` + `data-imsg`,拆泡 / 弹动画 / 思考行 / 长按菜单 / 搜索全照 TG 那套走,这里只换样子。
+     **下面每个数都是从她 iMessage 截图量的**(1206px = 402pt@3x,和本页同一坐标系;本地 402×874@3x、安全区 62 / 34 渲染,同一段代码量框作差):
+     - 字:那张图正文 14.9pt —— **叠图拟合字宽量的**:同一句话成对比,泡宽 = 左右留白 + 字数 × 字宽,4~11 个字的五颗泡拟合出字宽 44.7px、留白共 84px(偏差 ≤1px);
+       ~~按墨高跟 TG 那张比出来的 13.2~~、~~按四个字墨宽估的 14.4~~ 都错了(叠图一比宽差 4~13px),**别再用墨高 / 单颗墨宽估字号**;
+       这里 = 她挑的字号 × 1.0276,**默认档「标准」正好 14.9**,别的档等比;
+     - 泡:一行高 38pt = 上下留白 .675em + 行高 1.2;左右各 .94em(14pt);圆角 = 半个泡高,**四角一样圆**(iMessage 同一串不收角);
+       他的 #E9E9EA 黑字;她的蓝**越靠屏幕上面越浅**(iOS 26 本来就这样:同屏上下两颗差 16 个色阶),滚动驱动动画按泡在屏上的位置取色
+       (底 rgb(48,126,245) → 顶 rgb(118,196,246),两点从截图反推;不认 animation-timeline 的退回中间色);同串隔 4、换人隔 10、离左右 16;
+       **没有时间、没有对勾**;尾巴从她截图抠(--im-r / --im-l,101×70px@3x,往泡底下垂 6.33pt)、遮罩只画泡身(按 25pt 大圆角算)外面那部分;
+     - 顶栏:返回 / 视频(= 搜索,她要的)两颗圆钮 45.33、上沿在安全区上 .83、离边 15.33;返回 ‹ 墨 9.3×16.7、线 1.9、中心离钮左 19.3;
+       视频墨 26.67×17.67、线 1.5、中心偏右 .67;他的头像 59.67、上沿安全区下 3.33、居中;下面压一颗名字胶囊 60.67×32(随名字长短变宽)、
+       上沿安全区下 55,名字 17 中粗、离左 15,灰 › 6.5×11.5;
+     - 输入栏:「+」圆钮 41.33、离左 27.33(加号 15pt、线 1.6);隔 10.67 是胶囊(高 41.67)、右端离屏幕右 25;占位「iMessage」15pt、
+       浅灰、离胶囊左 16.5;胶囊里右端是波形(五根 2pt 宽、间距 4、高 2.67 / 6.67 / 15.33,中心离胶囊右 24.5)= 语音键挪进胶囊;
+       贴纸那颗留在波形左边(iMessage 没有,但她用得上)。离屏幕底 27.67 和 TG 版本来就一样。 */
+  @property --imc { syntax: "<color>"; inherits: true; initial-value: rgb(84, 162, 245); }
+  html[data-chatstyle="tg"][data-imsg] {
+    --imfs: calc(var(--tg-fs, 14.5px) * 1.0276);
+    --tg-page: #fff; --tg-page2: #fff; --bg: #fff; --text: #000; --dim: #8e8e93; --card: #fff; --line: rgba(60,60,67,.14);
+    --tg-him: #e9e9ea; --tg-him-ink: #000; --tg-me: rgb(84, 162, 245); --tg-me-ink: #fff;
+    --im-r: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGUAAABGCAYAAADVRFpXAAADKUlEQVR42u2cXYhMYRjHf7MzviIbKZvJDUpKkSK1V5RcSCk35EIpceVm5ZZys0rKtkruNhcuuaF8FbWRonyWxYopWSayzexqtxnHxXtOTdMYMzvnnPdZ/v96L+arqf/vvM/zvM95z5tB8q2g7vVElzwxp7GcPPCuX3WvC5opflVt8N6ooNjTi4w8MJPgI20RFFuhaxLIK3zZ0hugrOrLVugaBhAUG2VwpBtNPpMSniWNRhFYAqCcYiNsATwExgXFlq7KAjthKwC+Avnoi0r0/pM7wE1gTBalv1D806gA22WRrdD1HFhU+2Uler8VF8BFXHtFMjBDAmAE6Kn/kRJ9snnkb6vzS+GiUTIyS94BK2WTHSBV4BiQlVU2gAS4bvByWWUHSBnYpcrXFpSh+nWJ5BfIK2CDZokdICXggJK7HSABcB5YLLvsALkPrFHYsgNkBNimsGUHSBHYD8yRZTaAlIA+YKEsswHkJ3ASWCbL/MMIgCmgnwYteckPkMkQSF6Vlg0gJeCUgNiAEW0ROoHr/AqIASAjwCFgqYDYAHIP14ZfIOv8w6gCV4BeLQz9wwhwm+cuAOvVOvEPIwIyCKxW/rABJAAuo26vGRjRZoeNCln+QUTjB7AbmCtL/cOIxmC4DpE8g6hdrW9OM2zl/gEQSesOMErjwwgEJSUI9bpGyo8q5AShqSaAZ8D0/wIlmAUzs4Bryad64IDPRVCmzfGF9E9jKKaZSyxAaVc9wDngQ4pGlT1cCLNudXobtx8XYBUwL+H/e487dEDPJLaow7gnaysJrlEeoQ0QbasX1yQsJQTlEzUnQUjt6TjwMQEoFWCrcsrM9AB4HYaaFTGW+l1hXhnWdd+Z+sNSNq7Z8kR5JR7tAx7HVARMA3sVvjrXyxBKFlhLZ/dBsuFMua7SOD4dBJ52OGumgCOyMl5tAgaA7x2AeQusk5Xxaw9wN7zyZ7LXawjolo3JqA+33bTaJpgycFT2JauzuNu97YAp4G4Pq/pKSLfCKq2Ka3DOb+E33bi9w1EYlBLUTlwfbZzWemI68CZF7cAdjvatCZTPguJPp3H3b+oLgjNJ/ulvVtmhPAJzfgIAAAAASUVORK5CYII=");
+    --im-l: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGUAAABGCAYAAADVRFpXAAACNElEQVR42u2cL0/DUBRHfyzIfYChkYh9ACQCj0QgEYDGTSARBDWBnEFNoUaCnEGQDIEqJCQIcJAUQTIBAkgIYaNrX9+9D85J6pq97J7df802SepKev12gSENSTeEwZ+UW8KQRqZQwhyQ01d8ZYokXZIt/qScEwp/Ui4IhT9aksY/9BVKmDFDpPgqX5J0MuEexBjSnpApZIwxI6T4Kl+SdDzlXsQYTmE52eKPPr3FH6tISWtnQYwha79IQYzD8RgxZAt8ZYAYf7Q1+ekxYgzpFpCCGIMt/w4pPhdKyphDDihj/mgW3F0QYzCN5YjxuVSOEeOPTkEpiInMEWJ8Nv4+YtIXgxzEIKaHmPSnMuREZH2GBRMxkTf/DDH+aOn3b8Ugx2gAGJQQg5wIYs5KikFOzaUsQ4zP5p9XEIOcmtirKAVBNfWX+4Bi/qScRuTzniUdBn5NsidQ0x8HzpY/lUENgzMfFOcfLpKV1DA699LgzGQkzRude+XgvRcRM/efMuXJqGzOzXj9q/L1ElnGtqQFZqzprEeYvsZ6/8VAK7XgWPWUugN1LWlH0imf/+L0asyQ/seTA5iRrAYZuaRNQluOdg1CRpIWCW15ugrbzPcJafUGnwcSkklaJqQ+suRz1KWZB+oleYDsWCGU4Riq2mS1RwjD0qkgZCBpiRCGZblk2cr0/lM+CEyzxKL4KGmX0NXH1ox9g50jAr2CMg6U4NPcVJn2Pa/7jwEADDb40TcZQ0kbhGYybzWjxOsQk40HAAAAAElFTkSuQmCC");
+  }
+  html[data-chatstyle="tg"][data-imsg][data-tgdark] { --tg-page: #000; --tg-page2: #000; --bg: #000; --text: #fff; --card: #1c1c1e; --line: rgba(84,84,88,.6);
+    --tg-him: #262628; --tg-him-ink: #fff; }
+  html[data-chatstyle="tg"][data-imsg] body { background: var(--tg-page) !important; }
+  html[data-chatstyle="tg"][data-imsg] #log { padding-left: 16px; padding-right: 16px; padding-top: calc(97px + var(--dw-sat, env(safe-area-inset-top))); }
+  /* 气泡 */
+  html[data-chatstyle="tg"][data-imsg] .row.me .bubble:not(.stkonly), html[data-chatstyle="tg"][data-imsg] .gu:not(.stkonly), html[data-chatstyle="tg"][data-imsg] .tgb:not(.stkonly) {
+    font-size: var(--imfs); line-height: calc(var(--imfs) * 1.2);
+    padding: calc(var(--imfs) * .675) calc(var(--imfs) * .94);
+    border-radius: calc(var(--imfs) * 1.275) !important; box-shadow: none !important; max-width: 77%; }   /* 截图里一行到 279.3pt 还没折,75% 在这台宽度只有 277.5 */
+  html[data-chatstyle="tg"][data-imsg] .gu:not(.stkonly), html[data-chatstyle="tg"][data-imsg] .tgb:not(.stkonly) { background: var(--tg-him) !important; color: var(--tg-him-ink) !important; }
+  html[data-chatstyle="tg"][data-imsg] .row.me .bubble:not(.stkonly) { background: var(--imc, var(--tg-me)) !important; color: #fff !important; }
+  /* 她挑了自己的气泡色:纯色、字跟着配,不随屏幕高低变色 */
+  html[data-chatstyle="tg"][data-imsg][data-imme] .row.me .bubble:not(.stkonly) { background: var(--tg-me) !important; color: var(--tg-me-ink) !important; }
+  html[data-chatstyle="tg"][data-imsg][data-imme] .row.me { animation: none !important; }
+  html[data-chatstyle="tg"][data-imsg][data-imme] .row.me.tgend.tgend > .bubble:not(.stkonly)::before { background: var(--tg-me); }
+  @keyframes imgrad { from { --imc: rgb(48, 126, 245); } to { --imc: rgb(118, 196, 246); } }
+  @supports (animation-timeline: view()) {
+    html[data-chatstyle="tg"][data-imsg] .row.me { animation: imgrad linear both; animation-timeline: view(); }
+  }
+  html[data-chatstyle="tg"][data-imsg] .tgset { gap: 4px; }
+  html[data-chatstyle="tg"][data-imsg] .row.me.tgcont.tgcont { margin-top: -6px; }
+  html[data-chatstyle="tg"][data-imsg] [data-tgt]::after { content: none !important; }
+  /* 尾巴:一串最后一颗 */
+  html[data-chatstyle="tg"][data-imsg] .gu:not(.tg-split):not(.stkonly)::before,
+  html[data-chatstyle="tg"][data-imsg] .tgset .tgb:last-child:not(.stkonly)::before,
+  html[data-chatstyle="tg"][data-imsg] .row.me.tgend.tgend > .bubble:not(.stkonly)::before {
+    width: 33.667px; height: 23.333px; bottom: -6.333px; left: 0; right: auto; background: var(--tg-him);
+    -webkit-mask: var(--im-l) no-repeat center / 100% 100%; mask: var(--im-l) no-repeat center / 100% 100%; }
+  html[data-chatstyle="tg"][data-imsg] .row.me.tgend.tgend > .bubble:not(.stkonly)::before {
+    left: auto; right: 0; background: var(--imc, var(--tg-me));
+    -webkit-mask-image: var(--im-r); mask-image: var(--im-r); }
+  /* 顶栏 */
+  html[data-chatstyle="tg"][data-imsg] header { padding-top: calc(var(--dw-sat, env(safe-area-inset-top)) - .83px); padding-left: 15.33px; padding-right: 15.33px; }
+  html[data-chatstyle="tg"][data-imsg] header::before { height: calc(118px + var(--dw-sat, env(safe-area-inset-top))) !important; }
+  html[data-chatstyle="tg"][data-imsg] #menuBtn, html[data-chatstyle="tg"][data-imsg] .tgsrch { width: 45.33px !important; height: 45.33px !important; }
+  html[data-chatstyle="tg"][data-imsg] #menuBtn svg { width: 10.9px; height: 17.95px; stroke-width: 1.75; margin-left: 0 !important; translate: -3.6px 0; }
+  html[data-chatstyle="tg"][data-imsg] .tgsrch::before { width: 20px; height: 20px; }   /* 她 10-19:「右上角的摄像头换成搜索的放大镜」—— ~~视频图标~~ 换回 TG 那支放大镜,点了还是同一个搜关键词面板 */
+  html[data-chatstyle="tg"][data-imsg] .tgav { display: block !important; position: absolute; left: 50%; top: calc(3.33px + var(--dw-sat, env(safe-area-inset-top)));
+    width: 59.67px; height: 59.67px; margin: 0; transform: translateX(-50%); border-radius: 50%; z-index: 1;
+    box-shadow: none !important; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  html[data-chatstyle="tg"][data-imsg] .tgav:active { transform: translateX(-50%) scale(.94); }
+  html[data-chatstyle="tg"][data-imsg] .tgname { top: calc(55px + var(--dw-sat, env(safe-area-inset-top))); height: 32px !important; min-width: 0 !important;
+    padding: 0 13px 0 15px !important; flex-direction: row; align-items: center; gap: 3.5px; z-index: 2; }
+  html[data-chatstyle="tg"][data-imsg] .tgname .tgst { display: none; }
+  html[data-chatstyle="tg"][data-imsg] .tgname b, html[data-chatstyle="tg"][data-imsg] .tgname .tgnm { top: 0; font-size: 17px; font-weight: 600; letter-spacing: -.02em; line-height: 22px; }
+  html[data-chatstyle="tg"][data-imsg] .tgname::after { content: ""; flex: none; width: 6.5px; height: 11.5px; background: #acacac;
+    -webkit-mask: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6.5 11.5' fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.2 1.2 5.3 5.75 1.2 10.3'/%3E%3C/svg%3E"); mask: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6.5 11.5' fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.2 1.2 5.3 5.75 1.2 10.3'/%3E%3C/svg%3E"); }
+  /* 输入栏 */
+  html[data-chatstyle="tg"][data-imsg] footer { padding-left: 27.33px; padding-right: 25px; }
+  html[data-chatstyle="tg"][data-imsg] #plusBtn { width: 41.33px; height: 41.33px; }
+  html[data-chatstyle="tg"][data-imsg] #plusBtn::before { width: 24px; height: 24px; translate: 0 -.33px;
+    -webkit-mask: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 5.15v13.7M5.15 12h13.7'/%3E%3C/svg%3E"); mask: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 5.15v13.7M5.15 12h13.7'/%3E%3C/svg%3E"); }
+  html[data-chatstyle="tg"][data-imsg] #box { margin-left: 10.67px; min-height: 41.67px; border-radius: 20.83px; font-size: 15px; line-height: 20px;
+    padding: 10.83px 80px 10.83px 16.5px; }
+  html[data-chatstyle="tg"][data-imsg][data-tghas] #box { padding-right: 84px; }
+  html[data-chatstyle="tg"][data-imsg] #box::placeholder { color: rgba(60,60,67,.3); }
+  html[data-chatstyle="tg"][data-imsg][data-tgdark] #box::placeholder { color: rgba(235,235,245,.3); }
+  html[data-chatstyle="tg"][data-imsg] #micBtn { position: relative; z-index: 3; width: 41.33px; height: 41.67px; margin-left: -45.16px; margin-right: 3.83px;
+    background: transparent !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+    color: var(--dim) !important; }
+  html[data-chatstyle="tg"][data-imsg][data-tghas] #micBtn { width: 0; margin-left: 0; margin-right: 0; }
+  html[data-chatstyle="tg"][data-imsg] #micBtn .ic { display: none; }
+  html[data-chatstyle="tg"][data-imsg]:not([data-tgrec]):not([data-tgpick]) #micBtn::before { content: ""; width: 18px; height: 15.33px; translate: 0 .33px; background: currentColor;
+    -webkit-mask: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 15.33' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 7.33v.67M5 5.33v4.67M9 1v13.33M13 5.33v4.67M17 7.33v.67'/%3E%3C/svg%3E"); mask: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 15.33' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 7.33v.67M5 5.33v4.67M9 1v13.33M13 5.33v4.67M17 7.33v.67'/%3E%3C/svg%3E"); }
+  html[data-chatstyle="tg"][data-imsg] .tgstk { right: 40px; bottom: 5.33px; }
+  html[data-chatstyle="tg"][data-imsg][data-tghas] .tgstk { right: 46px; }
+  html[data-chatstyle="tg"][data-imsg] #send:not(.stop) { background: rgb(64, 142, 245) !important; color: #fff !important; }
+  /* 他的思考 / 工具那行(2026-10-19 深夜,她发 iMessage 里「Text Message • SMS / Today 17:47」那行字:「他的 thinking 想用这个字体,用 TG 那边的排版」):
+     排版照 TG 版(靠左、⌄、点了原地展开),字换成 iOS 系统小号灰字 —— 量她那张图:大写高 24px(3x)≈ 8pt → 11.5pt、竖笔 / 大写高 .17 = 中粗(600)、灰 ≈ #86868a。
+     展开的正文同一族字、常规粗细。~~TG 版那行是衬线 12.5~~(只在 iMessage 主题里换)。 */
+  html[data-chatstyle="tg"][data-imsg] .row > .toolline { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", sans-serif; font-size: 11.5px;
+    font-weight: 600; letter-spacing: .01em; color: #86868a; gap: 5px; }
+  html[data-chatstyle="tg"][data-imsg] .row > .toolline .lbl b { font-weight: 600; }
+  html[data-chatstyle="tg"][data-imsg][data-tgdark] .row > .toolline { color: #8d8d93; }
+  html[data-chatstyle="tg"][data-imsg] .row > .toolline::before { display: none; }   /* 她 10-19 两版里挑了「没有菊花」(工具那支扳手一起去掉,两行字左边齐) */
+  html[data-chatstyle="tg"][data-imsg] .row > .toolline .chev { width: 10px; height: 10px; opacity: 1; }
+  html[data-chatstyle="tg"][data-imsg] .tgfold { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", sans-serif; font-size: 11.5px; font-weight: 400;
+    line-height: 1.5; color: #86868a; border-left-color: rgba(60,60,67,.18); }
+  /* 他在忙:iMessage 自带的「正在输入」泡(她:「思考输出动画要 iMessage 自带的那种」)。照开源的 MessageKit(iOS 聊天库)里 TypingBubble / TypingIndicator 的做法 1:1:
+     主泡 + 左下两颗小圆(角泡直径 = 总高 / 3、小泡 = 总高 / 6、错开 总高 / 36);总高 47 时主泡正好 38(= 我们一行泡高),宽 = 1.65 × 总高 − 角让位 = 68.4;
+     三个点:浅灰、透明度 1 ↔ .5、每颗 .5s 来回、依次错开 .33s(MessageKit 默认关了上下跳);主泡缩放 1 ↔ 1.04(1s 来回)、两颗小圆 1 ↔ 1.1(.5s 来回)。
+     **iMessage 主题里他想着 / 写着都只出这颗泡**(TG 版是「想的时候那行 Thinking 在扫光、想完才出三个点」),想的那行(.row.tgthinklive)这时藏着,想完以「In Ian's Mind」出来 —— 一次只动一样,同她给 TG 定的规矩。 */
+  html[data-chatstyle="tg"][data-imsg] .row.tgthinklive { display: none !important; }
+  html[data-chatstyle="tg"][data-imsg] .tgtyping { padding-bottom: 9px; }
+  html[data-chatstyle="tg"][data-imsg] .tgdots { position: relative; width: 68.4px; height: 38px; box-sizing: border-box; padding: 0; gap: 5px; justify-content: center;
+    border-radius: 19px !important; background: var(--tg-him); box-shadow: none; transform-origin: 30% 70%;
+    animation: imtypb 1s ease-in-out infinite alternate; }
+  html[data-chatstyle="tg"][data-imsg] .tgdots::before, html[data-chatstyle="tg"][data-imsg] .tgdots::after { content: ""; position: absolute; border-radius: 50%; background: var(--tg-him);
+    animation: imtypc .5s ease-in-out infinite alternate; }
+  html[data-chatstyle="tg"][data-imsg] .tgdots::before { width: 15.67px; height: 15.67px; left: -2.6px; top: 24.8px; }
+  html[data-chatstyle="tg"][data-imsg] .tgdots::after { width: 7.83px; height: 7.83px; left: -9.13px; top: 39.17px; }
+  html[data-chatstyle="tg"][data-imsg] .tgdots i { width: 8.5px; height: 8.5px; transform: none; color: #8e8e93; opacity: 1; animation: imtypd .5s ease-in-out infinite alternate; }
+  html[data-chatstyle="tg"][data-imsg][data-tgdark] .tgdots i { color: #8d8d93; }
+  html[data-chatstyle="tg"][data-imsg] .tgdots i:nth-child(2) { animation-delay: .33s; }
+  html[data-chatstyle="tg"][data-imsg] .tgdots i:nth-child(3) { animation-delay: .66s; }
+  /* 左滑看时间(脚本在 __tgKick 后面那段):只给开拖时看得见的泡(.imsw)生成时间;位置 = 屏幕右边(脚本量好的 --imd),她的泡自己往左走、时间用 --imsw 抵回来不动 */
+  html[data-chatstyle="tg"][data-imsg] #log { touch-action: pan-y; }
+  html[data-chatstyle="tg"][data-imsg] .row.me > .bubble, html[data-chatstyle="tg"][data-imsg] .tgb, html[data-chatstyle="tg"][data-imsg] .gu { position: relative; }
+  html[data-chatstyle="tg"][data-imsg] .imsw[data-tgt]::after { content: attr(data-tgt) !important; position: absolute; top: 50%; left: calc(100% + var(--imd, 0px));
+    float: none !important; margin: 0 !important; padding: 0 !important; background: none !important; transform: translate(-100%, -50%);
+    white-space: nowrap; font: 600 11.5px/1 -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; letter-spacing: .01em;
+    color: #86868a !important; opacity: var(--imp, 0); pointer-events: none; animation: none !important; }
+  html[data-chatstyle="tg"][data-imsg] .row.me > .imsw[data-tgt]::after { translate: var(--imsw, 0px) 0; }
+  @keyframes imtypd { from { opacity: 1; } to { opacity: .5; } }
+  @keyframes imtypb { from { transform: none; } to { transform: scale(1.04); } }
+  @keyframes imtypc { from { transform: none; } to { transform: scale(1.1); } }
+  @media (prefers-reduced-motion: reduce) { html[data-chatstyle="tg"][data-imsg] .tgdots, html[data-chatstyle="tg"][data-imsg] .tgdots::before, html[data-chatstyle="tg"][data-imsg] .tgdots::after, html[data-chatstyle="tg"][data-imsg] .tgdots i { animation: none; } }
+</style>
+
 <script>
 (function () {
   "use strict";
@@ -5978,12 +6137,25 @@ box.focus();
   var LOOK_VARS = ["--tg-fs", "--tg-page", "--tg-page2", "--tg-him", "--tg-him-ink", "--tg-me", "--tg-me-ink", "--text", "--bg", "--dim", "--card", "--line", "--tg-wall"];
   /* TG 版的颜色:底 / 卡片 / 字跟皮肤;气泡色她自己挑的优先;字的黑白按气泡亮度配。官端时全部撤掉。 */
   function applyLook() {
-    var tg = prefs.chatStyle === "tg", P = prefs.palette;
+    var tg = prefs.chatStyle === "tg" || prefs.chatStyle === "imsg", P = prefs.palette;
     LOOK_VARS.forEach(function (v) { root.style.removeProperty(v); });
     root.removeAttribute("data-tgdark"); root.removeAttribute("data-tgwall");
     if (!tg) return;
     var set = function (k, v) { if (v) root.style.setProperty(k, v); };
     if (/^\d{2}(\.5)?$/.test(prefs.chatFont || "")) set("--tg-fs", prefs.chatFont + "px");
+    /* 仿 iMessage(2026-10-19 深夜):颜色照 iMessage 1:1 写死在 CSS(html[data-imsg] 那段),不跟皮肤、不吃她挑的气泡色和壁纸;
+       深浅照旧跟皮肤底色走(和 TG 版同一个判断)。 */
+    root.removeAttribute("data-imme");
+    if (prefs.chatStyle === "imsg") {
+      if (P && P.dark) root.setAttribute("data-tgdark", "");
+      /* 10-19 她:「想能和 TG 改气泡颜色一样能自己改」—— 挑过的气泡色照用(字黑白按亮度配,同 TG);没挑 = iMessage 原装的灰 / 渐变蓝。
+         她的泡换了色就是纯色(data-imme 关掉随屏幕高低变色那条)。壁纸仍不吃(iMessage 是白底)。 */
+      var hb = prefs.himBubble || "", mb = prefs.meBubble || "";
+      if (hb) { set("--tg-him", hb); set("--tg-him-ink", lum(hb) > 0.45 ? "#000000" : "#ffffff"); }
+      if (mb) { set("--tg-me", mb); set("--tg-me-ink", lum(mb) > 0.45 ? "#000000" : "#ffffff"); root.setAttribute("data-imme", ""); }
+      root.setAttribute("data-tgmeink", mb && lum(mb) > 0.45 ? "dark" : "light");
+      return;
+    }
     if (P) {
       if (P.dark) root.setAttribute("data-tgdark", "");
       set("--tg-page", P.top); set("--tg-page2", P.bot); set("--text", P.ink); set("--bg", P.top);
@@ -5998,8 +6170,10 @@ box.focus();
   }
   function applyPrefs() {
     applyLook();
-    if (prefs.chatStyle === "tg") root.setAttribute("data-chatstyle", "tg");
+    /* 仿 iMessage 骑在 TG 版那套上(拆泡 / 弹动画 / 思考行 / 搜索 / 长按菜单全照用),只多一个 data-imsg 换样子 */
+    if (prefs.chatStyle === "tg" || prefs.chatStyle === "imsg") root.setAttribute("data-chatstyle", "tg");
     else root.removeAttribute("data-chatstyle");
+    if (prefs.chatStyle === "imsg") root.setAttribute("data-imsg", ""); else root.removeAttribute("data-imsg");
     root.setAttribute("data-avmode", prefs.avatarMode === "each" ? "each" : "top");
     ["me", "him"].forEach(function (w) {
       var v = prefs.avatars && prefs.avatars[w];
@@ -6041,7 +6215,7 @@ box.focus();
   function syncComposer() {
     if (!box) return;
     var tg = root.getAttribute("data-chatstyle") === "tg";
-    var want = tg ? "Message" : origPh;
+    var want = tg ? (root.hasAttribute("data-imsg") ? "iMessage" : "Message") : origPh;
     if (box.getAttribute("placeholder") !== want) box.setAttribute("placeholder", want);
     var n = 0; try { n = (typeof attachments !== "undefined" && attachments) ? attachments.length : 0; } catch (e) {}
     var has = !!(box.value || "").trim() || n > 0 || (sendBtn && sendBtn.classList.contains("stop"));
@@ -7073,6 +7247,7 @@ box.focus();
     lines.forEach(function (line, i) {
       var live = lives[i];
       line.classList.toggle("tglive", live && root.getAttribute("data-chatstyle") === "tg");
+      if (line.parentElement) line.parentElement.classList.toggle("tgthinklive", !!live && !line._ids);   /* 仿 iMessage:他正想着时那行藏起来,只出「正在输入」泡(见《仿 iMessage》那段 CSS) */
       /* 思考那行的标题:想着 =「Thinking」(CSS 里扫流光),想完换回原字并轻轻淡入一下;切回官端还原 */
       if (!line._ids) {
         var tl = line.querySelector(".lbl");
@@ -7320,6 +7495,9 @@ box.focus();
     }
   }
   function growSet(el, lines, t, live) {
+    /* 删过的那几颗(2026-10-19,el.dataset.hide = 第几颗)先从这串里拿掉 —— 尾巴照旧落在剩下的最后一颗;每颗记下自己原来是第几颗(data-part),删的时候报给后台 */
+    var hid = el.dataset.hide ? el.dataset.hide.split(",").map(Number) : null, parts = null;
+    if (hid && hid.length) { parts = []; lines = lines.filter(function (l, i) { if (hid.indexOf(i) >= 0) return false; parts.push(i); return true; }); }
     var set = el.nextElementSibling && el.nextElementSibling.classList.contains("tgset") ? el.nextElementSibling : null;
     if (!set) { set = document.createElement("div"); set.className = "tgset"; el.after(set); }
     if (!set._lines) set._lines = [];
@@ -7338,6 +7516,8 @@ box.focus();
     });
     while (set.children.length > lines.length) set.lastElementChild.remove();
     set._lines.length = set.children.length;
+    Array.prototype.forEach.call(set.children, function (c, k) { c.dataset.part = parts ? parts[k] : k; });
+    var hrow = el.closest(".row"); if (hrow) hrow.classList.toggle("tghidrow", !lines.length);   // 一段全删光了:整行收起来
     el.classList.add("tg-split");
     return set;
   }
@@ -7718,7 +7898,8 @@ box.focus();
   var IC = {
     copy: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2.6"/><path d="M15.5 8.5V6.6A2.6 2.6 0 0 0 12.9 4H6.6A2.6 2.6 0 0 0 4 6.6v6.3a2.6 2.6 0 0 0 2.6 2.6h1.9"/></svg>',
     text: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 6.5h16M4 11.5h16M4 16.5h10"/></svg>',
-    hide: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 6.5h16M4 11.5h9"/><path d="m15.5 15 4 4m0-4-4 4"/></svg>'
+    hide: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 6.5h16M4 11.5h9"/><path d="m15.5 15 4 4m0-4-4 4"/></svg>',
+    del: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 6.5h15M9.5 6.5V4.8c0-.7.6-1.3 1.3-1.3h2.4c.7 0 1.3.6 1.3 1.3v1.7M6.5 6.5l.8 12.2c.1 1 .9 1.8 1.9 1.8h5.6c1 0 1.8-.8 1.9-1.8l.8-12.2M10.2 10.5v6M13.8 10.5v6"/></svg>'
   };
   var menu = document.createElement("div");
   menu.className = "tgrmenu";
@@ -7758,6 +7939,11 @@ box.focus();
     if (textOf(b)) item(IC.copy, "Copy", function (v) {
       try { navigator.clipboard.writeText(textOf(v)).then(function () { note("（复制好了）"); }); } catch (x) {}
     });
+    /* 删消息(2026-10-19 深夜,她要的;**只是网页上不显示**,存档留着原话、晏那边照样记得):还在发 / 转写中的那颗不给删 */
+    if (!b.closest(".tgvpend, .tgsending") && (b.closest(".row.me") || b.classList.contains("tgb") || b.classList.contains("gu"))) {
+      item(IC.del, "Delete", function (v) { askDel(v); });
+      mList.lastElementChild.classList.add("danger");
+    }
     /* 克隆那颗泡,包一层同样的行,放到原位置 */
     var wrap = document.createElement("div");
     wrap.className = mine ? "row me" : "row";
@@ -7789,6 +7975,48 @@ box.focus();
     if (menu._b) menu._b.classList.remove("tgheld-hide");
     menu._b = null; mClone.innerHTML = "";
   }
+  /* ── 删一颗泡:iOS 操作表确认 → POST api/hide → 原地收起来 ── */
+  var dsheet = document.createElement("div");
+  dsheet.className = "tgdel"; dsheet.hidden = true;
+  dsheet.innerHTML = '<div class="dbg"></div><div class="dact"><div class="dg"><div class="dttl">只从网页上删掉这条。<br>晏那边看过的照样记得,服务器存档也留着原话。</div>' +
+    '<button type="button" class="dok">删除消息</button></div><div class="dg"><button type="button" class="dno">取消</button></div></div>';
+  document.body.appendChild(dsheet);
+  var delTarget = null;
+  function askDel(v) { delTarget = v; dsheet.hidden = false; }
+  function shutDel() { dsheet.hidden = true; delTarget = null; }
+  dsheet.querySelector(".dbg").addEventListener("click", shutDel);
+  dsheet.querySelector(".dno").addEventListener("click", shutDel);
+  dsheet.querySelector(".dok").addEventListener("click", function () { var v = delTarget; shutDel(); if (v) doDel(v); });
+  function doDel(v) {
+    var row = v.closest(".row"); if (!row) return;
+    var mine = row.classList.contains("me");
+    var set = v.closest(".tgset"), gu = mine ? null : (v.classList.contains("gu") ? v : (set && set.previousElementSibling));
+    var holder = mine ? v : gu; if (!holder) return;
+    var text = mine ? (v._raw0 != null ? v._raw0 : v.textContent) : (gu._raw != null ? gu._raw : gu.textContent);
+    var part = -1, ptext = "";
+    if (!mine && set && v.classList.contains("tgb") && v.dataset.part != null) {
+      part = +v.dataset.part;
+      var k = Array.prototype.indexOf.call(set.children, v); ptext = (set._lines && set._lines[k]) || v.textContent || "";
+    }
+    fetch("api/hide", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ seq: holder.dataset.seq ? +holder.dataset.seq : null, kind: mine ? "me" : "gu", text: text, part: part, ptext: ptext }) })
+      .then(function (r) { return r.json(); }).then(function (d) {
+        if (!d || !d.ok) { note("（没删掉:" + ((d && d.error) || "服务器没收") + "）"); return; }
+        if (d.seq && !holder.dataset.seq) holder.dataset.seq = d.seq;
+        var go = function () {
+          if (part >= 0 && gu) {
+            var h = gu.dataset.hide ? gu.dataset.hide.split(",") : []; h.push(String(part)); gu.dataset.hide = h.join(",");
+            gu._tgRaw = null;                                   // guPass 见正文没变会跳过(el._tgRaw === raw),清掉它逼这一段重拆
+            if (window.__tgGrow) window.__tgGrow(gu);
+          } else row.remove();
+        };
+        if (v.animate && !calm) {
+          var a = v.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(.86)" }], { duration: 220, easing: "cubic-bezier(.32,.72,0,1)", fill: "forwards" });
+          a.onfinish = function () { go(); try { a.cancel(); } catch (e) {} };
+        } else go();
+      }).catch(function () { note("（没删掉:连不上服务器）"); });
+  }
+
   log.addEventListener("scroll", closeMenu, { passive: true });
   var press = null;
   log.addEventListener("touchstart", function (e) {
@@ -7895,7 +8123,7 @@ box.focus();
   function typing() {
     var on = root.getAttribute("data-chatstyle") === "tg" && root.hasAttribute("data-tgbusy");
     /* 2026-10-16 折中(她选的):他正在想 / 正在用工具(那一行亮着在动)时不出三个点,一次只动一样;想完才出三个点 = 在写 */
-    if (on && log.querySelector(":scope > .row > .toolline.tglive")) on = false;
+    if (on && !root.hasAttribute("data-imsg") && log.querySelector(":scope > .row > .toolline.tglive")) on = false;   /* 仿 iMessage:想着 / 写着都出那颗泡 */
     if (!on) { if (dots.isConnected) dots.remove(); return; }
     /* ⚠️ 菊花那行(.brandline)也要「永远最后」,两边抢会无限互换。所以三个点让它:排在菊花前面就算到位 */
     var last = log.lastElementChild, bl = last && last.classList.contains("brandline") ? last : null;
@@ -7903,6 +8131,82 @@ box.focus();
     if (!want) { if (bl) log.insertBefore(dots, bl); else log.appendChild(dots); try { scroll(); } catch (e) {} }
   }
   window.__tgKick = function () { full = true; schedule(); };
+  /* ── 仿 iMessage:左滑看时间(2026-10-19 深夜,她「好」)──
+     iMessage 泡上没有时间(这个主题照它去掉了),往左拖才露出来:她的泡跟着手指往左走、他的泡不动,每颗泡的时间在屏幕右边淡出来;松手弹回。
+     照开源 MessageKit 的 MessagesViewController+PanGesture.swift:横着拖才算(竖着照常滚)、松手 0.5s 阻尼 .7 的弹簧回到 0。
+     ~~MessageKit 整列一起挪、最多挪屏宽 35%~~ —— 照 iMessage 本身:只挪她的泡、跟手 72px 之后橡皮筋。
+     帧率:拖的时候**只碰屏幕里看得见的那几颗**(开拖时记下来,一般 ≤ 20 颗),时间那个伪元素也只给它们生成(.imsw);整页几百颗不动。 */
+  (function () {
+    if (!log || !window.PointerEvent) return;
+    var st = null, raf = 0;
+    function imsg() { return root.getAttribute("data-chatstyle") === "tg" && root.hasAttribute("data-imsg"); }
+    function grab() {
+      var lr = log.getBoundingClientRect(), right = lr.right - parseFloat(getComputedStyle(log).paddingRight || "16"), vh = innerHeight;
+      var bs = [], rows = [];
+      Array.prototype.forEach.call(log.querySelectorAll(".row.me > .bubble[data-tgt], .tgset > .tgb[data-tgt], .row > .gu[data-tgt]:not(.tg-split)"), function (b) {
+        var r = b.getBoundingClientRect();
+        if (r.bottom < -40 || r.top > vh + 40 || !r.height) return;
+        b.style.setProperty("--imd", (right - r.right) + "px");
+        b.classList.add("imsw"); bs.push(b);
+        var row = b.closest(".row.me"); if (row && rows.indexOf(row) < 0) rows.push(row);
+      });
+      return { bs: bs, rows: rows };
+    }
+    function paint(x) {
+      if (!st) return;
+      log.style.setProperty("--imsw", x + "px");
+      log.style.setProperty("--imp", Math.min(1, x / 56).toFixed(3));
+      for (var i = 0; i < st.rows.length; i++) st.rows[i].style.translate = (-x) + "px 0";
+    }
+    function done() {
+      if (!st) return;
+      st.bs.forEach(function (b) { b.classList.remove("imsw"); b.style.removeProperty("--imd"); });
+      st.rows.forEach(function (r) { r.style.translate = ""; });
+      log.style.removeProperty("--imsw"); log.style.removeProperty("--imp");
+      st = null;
+    }
+    function springBack(x0) {
+      /* UIView.animate(withDuration: .5, usingSpringWithDamping: .7):ζ = .7,ω 取「.5s 内收敛到千分之一」= ln1000 /(ζ·.5) */
+      var z = 0.7, w = Math.log(1000) / (z * 0.5), wd = w * Math.sqrt(1 - z * z), t0 = performance.now();
+      cancelAnimationFrame(raf);
+      (function step(now) {
+        var t = (now - t0) / 1000, x = x0 * Math.exp(-z * w * t) * (Math.cos(wd * t) + (z * w / wd) * Math.sin(wd * t));
+        if (t >= 0.6) { paint(0); done(); return; }
+        paint(x); raf = requestAnimationFrame(step);
+      })(t0);
+    }
+    var down = null;
+    log.addEventListener("pointerdown", function (e) {
+      if (!imsg() || (e.pointerType === "mouse" && e.button !== 0)) return;
+      if (e.clientX < 28) return;                       // 左边缘 24px 是「返回 Chats」那个手势,不抢
+      down = { x: e.clientX, y: e.clientY, id: e.pointerId, on: false };
+    }, { passive: true });
+    log.addEventListener("pointermove", function (e) {
+      if (!down || e.pointerId !== down.id) return;
+      var dx = e.clientX - down.x, dy = e.clientY - down.y;
+      if (!down.on) {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+        if (dx > 0 || Math.abs(dy) >= Math.abs(dx)) { down = null; return; }   // 竖着 / 往右:不是我的
+        down.on = true; cancelAnimationFrame(raf); done(); st = grab();
+        root.setAttribute("data-imswipe", "");
+        try { log.setPointerCapture(e.pointerId); } catch (er) {}
+      }
+      var x = Math.max(0, -dx); if (x > 72) x = 72 + (x - 72) * 0.25;           // 跟手 72px,再往后橡皮筋
+      paint(x);
+    }, { passive: true });
+    function up(e) {
+      if (!down || e.pointerId !== down.id) return;
+      var was = down.on, x = st ? parseFloat(log.style.getPropertyValue("--imsw")) || 0 : 0;
+      down = null;
+      if (!was) return;
+      root.removeAttribute("data-imswipe");
+      if (reduceMotionNow()) { paint(0); done(); } else springBack(x);
+    }
+    function reduceMotionNow() { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; } }
+    log.addEventListener("pointerup", up); log.addEventListener("pointercancel", up);
+    /* 拖着的时候别让长按菜单 / 点开思考那行生效:真拖过就吞掉这一下 click */
+    log.addEventListener("click", function (e) { if (st) { e.stopPropagation(); e.preventDefault(); } }, true);
+  })();
   window.__tgGrow = function (el) { var r = rowOf(el); if (r) { dirty.add(r); schedule([]); } };
   /* 2026-10-16 帧率:他开始忙 / 说完(setBusy)原来叫 __tgKick 整页过一遍 —— 每一轮开头结尾各一次,几百颗泡全扫。
      忙闲一变,真会跟着变的只有末尾那几行(思考 / 工具那行亮不亮、三个点、被打断那颗放出来的字),所以只过最后 24 行。 */
