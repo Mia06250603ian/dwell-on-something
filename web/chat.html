@@ -6007,8 +6007,7 @@ box.focus();
   html[data-chatstyle="tg"][data-imsg] header::before { height: calc(118px + var(--dw-sat, env(safe-area-inset-top))) !important; }
   html[data-chatstyle="tg"][data-imsg] #menuBtn, html[data-chatstyle="tg"][data-imsg] .tgsrch { width: 45.33px !important; height: 45.33px !important; }
   html[data-chatstyle="tg"][data-imsg] #menuBtn svg { width: 10.9px; height: 17.95px; stroke-width: 1.75; margin-left: 0 !important; translate: -3.6px 0; }
-  html[data-chatstyle="tg"][data-imsg] .tgsrch::before { width: 27px; height: 18px; translate: .67px .33px;
-    -webkit-mask: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26.67 17.67' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='.75' y='.75' width='17.83' height='16.17' rx='4.3'/%3E%3Cpath d='M19.33 6.4 25.92 2.8v12.07l-6.59-3.6'/%3E%3C/svg%3E"); mask: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26.67 17.67' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='.75' y='.75' width='17.83' height='16.17' rx='4.3'/%3E%3Cpath d='M19.33 6.4 25.92 2.8v12.07l-6.59-3.6'/%3E%3C/svg%3E"); }
+  html[data-chatstyle="tg"][data-imsg] .tgsrch::before { width: 20px; height: 20px; }   /* 她 10-19:「右上角的摄像头换成搜索的放大镜」—— ~~视频图标~~ 换回 TG 那支放大镜,点了还是同一个搜关键词面板 */
   html[data-chatstyle="tg"][data-imsg] .tgav { display: block !important; position: absolute; left: 50%; top: calc(3.33px + var(--dw-sat, env(safe-area-inset-top)));
     width: 59.67px; height: 59.67px; margin: 0; transform: translateX(-50%); border-radius: 50%; z-index: 1;
     box-shadow: none !important; -webkit-backdrop-filter: none; backdrop-filter: none; }
@@ -6046,13 +6045,31 @@ box.focus();
     font-weight: 600; letter-spacing: .01em; color: #86868a; gap: 5px; }
   html[data-chatstyle="tg"][data-imsg] .row > .toolline .lbl b { font-weight: 600; }
   html[data-chatstyle="tg"][data-imsg][data-tgdark] .row > .toolline { color: #8d8d93; }
-  html[data-chatstyle="tg"][data-imsg] .row > .toolline::before { width: 11.5px; height: 11.5px; opacity: 1; }
-  html[data-chatstyle="tg"][data-imsg] .row > .toolline.tgtool::before { width: 12.5px; height: 12.5px; }
+  html[data-chatstyle="tg"][data-imsg] .row > .toolline::before { display: none; }   /* 她 10-19 两版里挑了「没有菊花」(工具那支扳手一起去掉,两行字左边齐) */
   html[data-chatstyle="tg"][data-imsg] .row > .toolline .chev { width: 10px; height: 10px; opacity: 1; }
   html[data-chatstyle="tg"][data-imsg] .tgfold { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", sans-serif; font-size: 11.5px; font-weight: 400;
     line-height: 1.5; color: #86868a; border-left-color: rgba(60,60,67,.18); }
-  /* 预览用:没有菊花那版(她挑完删掉没选中的那版) */
-  html[data-chatstyle="tg"][data-imsg][data-imnoflower] .row > .toolline::before { display: none; }
+  /* 他在忙:iMessage 自带的「正在输入」泡(她:「思考输出动画要 iMessage 自带的那种」)。照开源的 MessageKit(iOS 聊天库)里 TypingBubble / TypingIndicator 的做法 1:1:
+     主泡 + 左下两颗小圆(角泡直径 = 总高 / 3、小泡 = 总高 / 6、错开 总高 / 36);总高 47 时主泡正好 38(= 我们一行泡高),宽 = 1.65 × 总高 − 角让位 = 68.4;
+     三个点:浅灰、透明度 1 ↔ .5、每颗 .5s 来回、依次错开 .33s(MessageKit 默认关了上下跳);主泡缩放 1 ↔ 1.04(1s 来回)、两颗小圆 1 ↔ 1.1(.5s 来回)。
+     **iMessage 主题里他想着 / 写着都只出这颗泡**(TG 版是「想的时候那行 Thinking 在扫光、想完才出三个点」),想的那行(.row.tgthinklive)这时藏着,想完以「In Ian's Mind」出来 —— 一次只动一样,同她给 TG 定的规矩。 */
+  html[data-chatstyle="tg"][data-imsg] .row.tgthinklive { display: none !important; }
+  html[data-chatstyle="tg"][data-imsg] .tgtyping { padding-bottom: 9px; }
+  html[data-chatstyle="tg"][data-imsg] .tgdots { position: relative; width: 68.4px; height: 38px; box-sizing: border-box; padding: 0; gap: 5px; justify-content: center;
+    border-radius: 19px !important; background: var(--tg-him); box-shadow: none; transform-origin: 30% 70%;
+    animation: imtypb 1s ease-in-out infinite alternate; }
+  html[data-chatstyle="tg"][data-imsg] .tgdots::before, html[data-chatstyle="tg"][data-imsg] .tgdots::after { content: ""; position: absolute; border-radius: 50%; background: var(--tg-him);
+    animation: imtypc .5s ease-in-out infinite alternate; }
+  html[data-chatstyle="tg"][data-imsg] .tgdots::before { width: 15.67px; height: 15.67px; left: -2.6px; top: 24.8px; }
+  html[data-chatstyle="tg"][data-imsg] .tgdots::after { width: 7.83px; height: 7.83px; left: -9.13px; top: 39.17px; }
+  html[data-chatstyle="tg"][data-imsg] .tgdots i { width: 8.5px; height: 8.5px; transform: none; color: #8e8e93; opacity: 1; animation: imtypd .5s ease-in-out infinite alternate; }
+  html[data-chatstyle="tg"][data-imsg][data-tgdark] .tgdots i { color: #8d8d93; }
+  html[data-chatstyle="tg"][data-imsg] .tgdots i:nth-child(2) { animation-delay: .33s; }
+  html[data-chatstyle="tg"][data-imsg] .tgdots i:nth-child(3) { animation-delay: .66s; }
+  @keyframes imtypd { from { opacity: 1; } to { opacity: .5; } }
+  @keyframes imtypb { from { transform: none; } to { transform: scale(1.04); } }
+  @keyframes imtypc { from { transform: none; } to { transform: scale(1.1); } }
+  @media (prefers-reduced-motion: reduce) { html[data-chatstyle="tg"][data-imsg] .tgdots, html[data-chatstyle="tg"][data-imsg] .tgdots::before, html[data-chatstyle="tg"][data-imsg] .tgdots::after, html[data-chatstyle="tg"][data-imsg] .tgdots i { animation: none; } }
 </style>
 
 <script>
@@ -7185,6 +7202,7 @@ box.focus();
     lines.forEach(function (line, i) {
       var live = lives[i];
       line.classList.toggle("tglive", live && root.getAttribute("data-chatstyle") === "tg");
+      if (line.parentElement) line.parentElement.classList.toggle("tgthinklive", !!live && !line._ids);   /* 仿 iMessage:他正想着时那行藏起来,只出「正在输入」泡(见《仿 iMessage》那段 CSS) */
       /* 思考那行的标题:想着 =「Thinking」(CSS 里扫流光),想完换回原字并轻轻淡入一下;切回官端还原 */
       if (!line._ids) {
         var tl = line.querySelector(".lbl");
@@ -8007,7 +8025,7 @@ box.focus();
   function typing() {
     var on = root.getAttribute("data-chatstyle") === "tg" && root.hasAttribute("data-tgbusy");
     /* 2026-10-16 折中(她选的):他正在想 / 正在用工具(那一行亮着在动)时不出三个点,一次只动一样;想完才出三个点 = 在写 */
-    if (on && log.querySelector(":scope > .row > .toolline.tglive")) on = false;
+    if (on && !root.hasAttribute("data-imsg") && log.querySelector(":scope > .row > .toolline.tglive")) on = false;   /* 仿 iMessage:想着 / 写着都出那颗泡 */
     if (!on) { if (dots.isConnected) dots.remove(); return; }
     /* ⚠️ 菊花那行(.brandline)也要「永远最后」,两边抢会无限互换。所以三个点让它:排在菊花前面就算到位 */
     var last = log.lastElementChild, bl = last && last.classList.contains("brandline") ? last : null;
