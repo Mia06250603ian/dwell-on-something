@@ -5733,30 +5733,19 @@ box.focus();
   .tgprof .hs.bad i { background: none; box-shadow: inset 0 0 0 1.3px var(--p2); }
   .tgprof .hs.bad span { color: var(--p1); }
   .tgprof .hs.on { background: var(--hair); }
+  .tgprof .hs small { margin-top: -3px; font-family: var(--rnd); font-size: 10px; color: var(--p3); font-variant-numeric: tabular-nums; }
+  .tgprof .hs small:empty { display: none; }
   .tgprof .hdet { margin: 6px 0 0; font-size: 11px; color: var(--p2); min-height: 0; text-align: center; }
   .tgprof .hdet:empty { display: none; }
+  .tgprof .hdet svg { display: block; width: 100%; height: 36px; overflow: visible; margin-bottom: 6px; }
 
-  /* ══ 「他」页 SERVER(2026-10-19,所有者:「想要之前在 Zeabur 的那种可视化,搬家了不是没有了嘛」)══
-     同日她看完第一版:「有点太冗余了,能不能做成现在这种点一下能看到详细信息的」→ 照 HEALTH 那排点的样子:
-     点开只有两排格子(机器四格 + 服务一格一个),点一格才在下面一行出线和细节,再点收起。三档深浅、圆体数字、零彩色 */
-  .tgprof .svcard { padding: 0; }
-  .tgprof .svhead b { font-family: var(--rnd); font-weight: 500; margin-left: 4px; font-variant-numeric: tabular-nums; }
-  .tgprof .svhead .sep { color: var(--p3); margin: 0 6px; }
-  .tgprof .svsum.bad { color: var(--p1); }
-  .tgprof .svfold { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .42s cubic-bezier(.32,.72,0,1); }
-  .tgprof.svopen .svfold { grid-template-rows: 1fr; }
-  .tgprof .svin { min-height: 0; overflow: hidden; padding: 0 18px; }
-  .tgprof.svopen .svin { padding-bottom: 12px; }
-  .tgprof .svchev svg { transition: transform .32s cubic-bezier(.32,.72,0,1); }
-  .tgprof.svopen .svchev svg { transform: rotate(90deg); }
-  .tgprof:not(.svopen) .svnote { display: none; }
-  @media (prefers-reduced-motion: reduce) { .tgprof .svfold, .tgprof .svchev svg { transition: none; } }
-  .tgprof .svg4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 4px; padding: 12px 0 2px; border-top: .5px solid var(--hair); }
-  .tgprof .svg4 + .svg4 { padding-top: 10px; }
+  /* ══ 「他」页 HEALTH 里的机器体征(2026-10-19,所有者:「想要之前在 Zeabur 的那种可视化,搬家了不是没有了嘛」)══
+     ~~第一版单独一块 SERVER 卡(长列表 → 两排格子)~~ 她看完:「有点丑,能和健康结合吗」→ 并进 HEALTH:
+     点开后多一排机器四格(CPU / 内存 / 磁盘 / 网络),服务那排点下面多一行小字 = 各占多少内存;点一格 / 一颗才在下面出线和细节。零彩色 */
+  .tgprof .svg4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 4px; padding: 10px 0 2px; border-top: .5px solid var(--hair); }
   .tgprof .svt { display: flex; flex-direction: column; align-items: center; gap: 3px; border: 0; background: none; padding: 6px 0 5px; color: var(--p2); font: inherit; font-size: 10.5px; cursor: pointer; border-radius: 10px; min-width: 0; }
-  .tgprof .svt b { font-family: var(--rnd); font-size: 15px; font-weight: 500; color: var(--p1); font-variant-numeric: tabular-nums; letter-spacing: -.01em; white-space: nowrap; }
+  .tgprof .svt b { font-family: var(--rnd); font-size: 14px; font-weight: 500; color: var(--p1); font-variant-numeric: tabular-nums; letter-spacing: -.01em; white-space: nowrap; }
   .tgprof .svt b small { font-size: 10px; font-weight: 400; color: var(--p2); margin-left: 1px; }
-  .tgprof .svt.sv b { font-size: 12.5px; }
   .tgprof .svt > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tgprof .svt.bad b { color: var(--p3); font-weight: 400; }
   .tgprof .svt.bad > span { color: var(--p1); }
@@ -6009,17 +5998,9 @@ box.focus();
       '<svg class="hspark" viewBox="0 0 120 40" preserveAspectRatio="none" aria-hidden="true"><path class="hline" d=""/></svg></div>' +
       '<div class="hlrow"><span>Compactions</span><span class="v hcomp">—</span></div>' +
       '<div class="hlrow"><span>Last error</span><span class="v herr">—</span></div>' +
-      '<div class="hsv" role="list"></div><p class="hdet" aria-live="polite"></p></div></div></div>' +
+      '<div class="svg4 svm" role="list" hidden></div><div class="svdet svmdet" aria-live="polite" hidden></div>' +   // 机器四格(2026-10-19 并进来的)
+      '<div class="hsv" role="list"></div><div class="hdet" aria-live="polite"></div></div></div></div>' +
     '<p class="foot hnote"></p>' +
-    /* 2026-10-19 所有者:「想要之前在 Zeabur 的那种可视化,搬家了不是没有了嘛」—— 机器体征来自 dwell-bridge 的 /api/server(机器上每分钟采一次,只读) */
-    '<div class="sect">Server</div>' +
-    '<div class="card glass svcard"><button class="it svhead" type="button" aria-expanded="false"><span class="grow"><span class="t">CPU <b class="svcpu">—</b><span class="sep">·</span>Memory <b class="svmem">—</b></span></span>' +
-      '<span class="tr svsum"></span><span class="chev svchev">' + CHEV + '</span></button>' +
-      '<div class="svfold"><div class="svin">' +
-      '<div class="svg4 svm" role="list"></div><div class="svdet svmdet" aria-live="polite" hidden></div>' +
-      '<div class="svg4 svs" role="list"></div><div class="svdet svsdet" aria-live="polite" hidden></div>' +
-      '</div></div></div>' +
-    '<p class="foot svnote"></p>' +
     /* 2026-10-12 深夜她选 A:~~单独一个「MODEL」分区 + 一张卡~~ 并进 More settings 那张卡,做成 iOS 设置页那种一行:
        左「Model」、右灰字 = 现在的型号(或「→ 下一句要换的」),点了照旧往下展开清单。.pmcur / .pmeng 留着(藏起来)只为脚本不用改两处。 */
     '<div class="card glass pmcard">' +
@@ -6048,7 +6029,7 @@ box.focus();
     closeProf(); var d = document.getElementById("dotsBtn"); if (d) setTimeout(function () { d.click(); }, 280);
   });
   function closeProf() { if (nameIn && !nameIn.hidden) nameIn.blur(); closeAct(); prof.classList.remove("open"); topTint(null); }
-  function openProf() { prof.classList.add("open"); foldModels(false); foldHealth(false); foldServer(false); paintCover(); loadProf(); }
+  function openProf() { prof.classList.add("open"); foldModels(false); foldHealth(false); paintCover(); loadProf(); }
 
   /* ── 背景(2026-10-10 第六版,所有者「我也想要这种能换背景的」)──
      存法同聊天壁纸:长边压到 1600px 的 JPEG → POST api/avatar/cover(本层上限 1.5MB,和壁纸同一档)。
@@ -6189,9 +6170,6 @@ box.focus();
   var hlHead = prof.querySelector(".hlhead");
   function foldHealth(open) { prof.classList.toggle("hlopen", !!open); hlHead.setAttribute("aria-expanded", String(!!open)); }
   hlHead.addEventListener("click", function () { foldHealth(!prof.classList.contains("hlopen")); });
-  var svHead = prof.querySelector(".svhead");
-  function foldServer(open) { prof.classList.toggle("svopen", !!open); svHead.setAttribute("aria-expanded", String(!!open)); }
-  svHead.addEventListener("click", function () { foldServer(!prof.classList.contains("svopen")); });
 
   /* ── 在这页直接换他的头像 / 改他的名字(2026-10-10 所有者要的;原来只能去外壳的设置里)──
      存法和设置里那份一模一样:头像裁正方、压 256px JPEG → POST api/avatar/him;名字 → POST api/prefs { himName }
@@ -6356,7 +6334,7 @@ box.focus();
     loadServer();
   }
   /* ── Health(2026-10-16)── 缓存命中(最近一轮 + 24 小时那条线)/ 这个窗口压缩过几次 / 最近一次报错 / 八个服务好不好 */
-  var hDet = "";
+  var hDet = "", hLast = null;
   function kfmt(n) { return n >= 1000 ? (Math.round(n / 100) / 10) + "k" : String(n); }
   function loadHealth() {
     var q = function (c) { return prof.querySelector(c); };
@@ -6381,28 +6359,12 @@ box.focus();
       q(".hcomp").textContent = w.compactions == null ? "—" : w.compactions + " this window";
       q(".herr").textContent = d.lastErr ? d.lastErr.kind + (d.lastErr.at ? " · " + whenSeen(Date.parse(d.lastErr.at) / 1000) : "") : "None";
       q(".herr").classList.toggle("na", !d.lastErr);
-      var box = q(".hsv"); box.innerHTML = "";
-      var bad = [];
-      (d.services || []).forEach(function (s) {
-        var b = document.createElement("button");
-        b.type = "button"; b.className = "hs" + (s.ok ? "" : " bad"); b.setAttribute("role", "listitem");
-        b.innerHTML = "<i></i><span></span>";
-        b.querySelector("span").textContent = s.name;
-        b.setAttribute("aria-label", s.name + ": " + (s.ok ? "OK" : "needs attention") + (s.detail ? ", " + s.detail : ""));
-        b.addEventListener("click", function () { hDet = hDet === s.key ? "" : s.key; paintDet(d); });
-        box.appendChild(b);
-        if (!s.ok) bad.push(s.name);
-      });
-      paintDet(d);
-      var n = (d.services || []).length;
-      q(".hnote").textContent = (bad.length ? bad.length + " need" + (bad.length > 1 ? "" : "s") + " attention: " + bad.join(", ") : "All " + n + " services up") + (d.at ? " · checked " + whenSeen(d.at) : "");
-      q(".hlsum").textContent = bad.length ? bad.length + (bad.length > 1 ? " issues" : " issue") : "All " + n + " up";   // 收着时右边那句:有坏的收着也看得出来
-      q(".hlsum").classList.toggle("bad", !!bad.length);
+      hLast = d; paintSvc();
     }).catch(function () { q(".hnote").textContent = "Health unavailable — server unreachable."; q(".hlsum").textContent = "Unavailable"; });
   }
   /* ── Server(2026-10-19)── 点开:机器四格(CPU / 内存 / 磁盘 / 网络)+ 服务一格一个;点一格,下面一行出那格的线和细节,再点收起。
      线的范围 1H / 24H / 7D 只在机器那格的细节里换(记在本机)。纵轴:CPU / 网络从 0 起、上沿取这段最高再留两成;内存在最低 / 最高外各留 5 个点 */
-  var SV_KEY = "dwell-server-range", svRange = "24h", svPick = "", svSvc = "", svLast = null;
+  var SV_KEY = "dwell-server-range", svRange = "24h", svPick = "", svLast = null;
   try { var _r = localStorage.getItem(SV_KEY); if (_r === "1h" || _r === "24h" || _r === "7d") svRange = _r; } catch (e) {}
   function fmtB(n, rate) {
     if (n == null) return "—";
@@ -6460,9 +6422,8 @@ box.focus();
     var d = svLast; if (!d) return;
     var c = d.cur, rl = d.range;
     Array.prototype.forEach.call(prof.querySelectorAll(".svm .svt"), function (t) { t.classList.toggle("on", t.getAttribute("data-k") === svPick); });
-    Array.prototype.forEach.call(prof.querySelectorAll(".svs .svt"), function (t) { t.classList.toggle("on", t.getAttribute("data-k") === svSvc); });
-    var md = prof.querySelector(".svmdet"), sd = prof.querySelector(".svsdet");
-    md.hidden = !svPick; sd.hidden = true;
+    var md = prof.querySelector(".svmdet");
+    md.hidden = !svPick;
     if (svPick) {
       var memPct = c.memTotal ? Math.round(c.memUsed / c.memTotal * 100) : null, html = "", txt = "";
       if (svPick === "cpu") { html = svChart(d.series.cpu, null, "cpu"); txt = (c.ncpu ? c.ncpu + " cores" : "") + (c.load ? " · load " + c.load[0].toFixed(2) : "") + (d.peak.cpu != null ? " · " + rl + " peak " + Math.round(d.peak.cpu) + "%" : ""); }
@@ -6476,27 +6437,14 @@ box.focus();
         b.addEventListener("click", function () { svRange = b.getAttribute("data-r"); try { localStorage.setItem(SV_KEY, svRange); } catch (e) {} loadServer(); });
       });
     }
-    var s = null; d.services.forEach(function (x) { if (x.key === svSvc) s = x; });
-    if (s) {
-      sd.hidden = false;
-      var run = s.state === "running";
-      sd.innerHTML = (run ? svChart(s.series.mem, null, "bytes") : "") + "<p></p>";
-      sd.querySelector("p").textContent = s.name + " — " + (run ? fmtB(s.mem) + " · CPU " + s.cpu + "% · " : "") + (s.status || s.state) + (s.limit ? " · limit " + fmtB(s.limit) : "");
-    }
   }
   function loadServer() {
     var q = function (c) { return prof.querySelector(c); };
     fetch("api/server?range=" + svRange, { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
-      if (!d || !d.ok) {
-        q(".svsum").textContent = d && d.why === "Not set up" ? "Not set up" : "No data";
-        q(".svnote").textContent = d && d.why === "Not set up" ? "The server isn't reporting yet." : "No samples yet — they arrive once a minute.";
-        return;
-      }
+      if (!d || !d.ok) { svLast = null; q(".svm").hidden = true; q(".svmdet").hidden = true; paintSvc(); return; }   // 机器没在报:那排格子不出,服务照只有体检的样子
       svLast = d;
       var c = d.cur, memPct = c.memTotal ? Math.round(c.memUsed / c.memTotal * 100) : null;
-      q(".svcpu").textContent = c.cpu == null ? "—" : Math.round(c.cpu) + "%";
-      q(".svmem").textContent = memPct == null ? "—" : memPct + "%";
-      var m = q(".svm"); m.innerHTML = "";
+      var m = q(".svm"); m.innerHTML = ""; m.hidden = false;
       var rx = fmtB(c.rx, true);
       [["cpu", "CPU", c.cpu == null ? "—" : String(c.cpu < 10 ? c.cpu : Math.round(c.cpu)), c.cpu == null ? "" : "%"],
        ["mem", "Memory", memPct == null ? "—" : String(memPct), memPct == null ? "" : "%"],
@@ -6507,28 +6455,58 @@ box.focus();
         b.addEventListener("click", function () { svPick = svPick === t[0] ? "" : t[0]; svPaint(); });
         m.appendChild(b);
       });
-      var box = q(".svs"); box.innerHTML = "";
-      var down = [];
-      d.services.forEach(function (s) {
-        var run = s.state === "running", v = run ? fmtB(s.mem) : (s.state || "stopped");
-        var b = svTile("sv", s.key, s.name, run ? v.replace(/ .*$/, "") : v, run ? v.replace(/^[\d.]+ /, "").charAt(0) : "", !run);
-        b.setAttribute("aria-label", s.name + ": " + (run ? fmtB(s.mem) + " memory" : s.state));
-        b.addEventListener("click", function () { svSvc = svSvc === s.key ? "" : s.key; svPaint(); });
-        box.appendChild(b);
-        if (!run) down.push(s.name);
-      });
-      svPaint();
-      q(".svsum").textContent = d.stale ? "Stale" : down.length ? down.length + " down" : "Up " + fmtUp(c.up);
-      q(".svsum").classList.toggle("bad", !!(d.stale || down.length));
-      q(".svnote").textContent = (down.length ? down.join(", ") + (down.length > 1 ? " aren't" : " isn't") + " running · " : "") +
-        (d.stale ? "No new sample since " : "Sampled every minute · updated ") + whenSeen(d.at);
-    }).catch(function () { q(".svsum").textContent = "Unavailable"; q(".svnote").textContent = "Server stats unavailable — server unreachable."; });
+      svPaint(); paintSvc();
+    }).catch(function () { svLast = null; q(".svm").hidden = true; q(".svmdet").hidden = true; paintSvc(); });
   }
-  function paintDet(d) {
+  /* 服务那排:体检的八个(好不好)+ 机器上的容器(各占多少内存);体检口没有的三个(网页本身 / 飞行棋 / 大门)按「容器在不在跑」算 */
+  var HV_HOST = { ian: "kelivo-shim", memory: "ombre-brain", telegram: "telegram-bridge", imessage: "imessage-bridge",
+                  mail: "gmail-mcp", browser: "browser-hands", music: "netease-mcp", ears: "ears" };
+  function svcList() {
+    var host = {}, used = {}, out = [];
+    ((svLast && svLast.services) || []).forEach(function (h) { host[h.key] = h; });
+    ((hLast && hLast.services) || []).forEach(function (s) {
+      var h = host[HV_HOST[s.key]]; if (h) used[h.key] = 1;
+      out.push({ key: s.key, name: s.name, ok: s.ok && (!h || h.state === "running"), detail: s.detail, host: h || null });
+    });
+    ((svLast && svLast.services) || []).forEach(function (h) {
+      if (used[h.key]) return;
+      var run = h.state === "running";
+      out.push({ key: "c:" + h.key, name: h.name, ok: run, detail: run ? "" : (h.state || "stopped"), host: h });
+    });
+    return out;
+  }
+  function paintSvc() {
+    var q = function (c) { return prof.querySelector(c); };
+    var list = svcList(), box = q(".hsv"), bad = [];
+    box.innerHTML = "";
+    list.forEach(function (s) {
+      var b = document.createElement("button"), h = s.host, mem = h && h.state === "running" ? fmtB(h.mem) : "";
+      b.type = "button"; b.className = "hs" + (s.ok ? "" : " bad"); b.setAttribute("role", "listitem");
+      b.innerHTML = "<i></i><span></span><small></small>";
+      b.querySelector("span").textContent = s.name;
+      b.querySelector("small").textContent = mem.replace(/ ([KMGT])B$/, "$1");
+      b.setAttribute("aria-label", s.name + ": " + (s.ok ? "OK" : "needs attention") + (s.detail ? ", " + s.detail : "") + (mem ? ", " + mem : ""));
+      b.addEventListener("click", function () { hDet = hDet === s.key ? "" : s.key; paintDet(list); });
+      box.appendChild(b);
+      if (!s.ok) bad.push(s.name);
+    });
+    paintDet(list);
+    if (!hLast && !svLast) return;
+    var n = list.length, c = svLast && svLast.cur;
+    q(".hnote").textContent = (bad.length ? bad.length + " need" + (bad.length > 1 ? "" : "s") + " attention: " + bad.join(", ") : "All " + n + " services up") +
+      (svLast && svLast.stale ? " · server stats stale" : "") + (hLast && hLast.at ? " · checked " + whenSeen(hLast.at) : "");
+    q(".hlsum").textContent = bad.length ? bad.length + (bad.length > 1 ? " issues" : " issue") : "All " + n + " up";   // 收着时右边那句:有坏的收着也看得出来
+    q(".hlsum").classList.toggle("bad", !!bad.length);
+  }
+  function paintDet(list) {
     var el = prof.querySelector(".hdet"), s = null;
-    (d.services || []).forEach(function (x) { if (x.key === hDet) s = x; });
-    Array.prototype.forEach.call(prof.querySelectorAll(".hsv .hs"), function (b, i) { b.classList.toggle("on", !!s && d.services[i] === s); });
-    el.textContent = s ? s.name + " — " + (s.ok ? "OK" : "Needs attention") + (s.detail ? " · " + s.detail : "") : "";
+    list.forEach(function (x) { if (x.key === hDet) s = x; });
+    Array.prototype.forEach.call(prof.querySelectorAll(".hsv .hs"), function (b, i) { b.classList.toggle("on", !!s && list[i] === s); });
+    if (!s) { el.innerHTML = ""; return; }
+    var h = s.host, run = h && h.state === "running";
+    el.innerHTML = (run ? svChart(h.series.mem, null, "bytes") : "") + "<span></span>";
+    el.querySelector("span").textContent = s.name + " — " + (s.ok ? "OK" : "Needs attention") + (s.detail ? " · " + s.detail : "") +
+      (run ? " · " + fmtB(h.mem) + " · CPU " + h.cpu + "%" + (h.limit ? " of " + fmtB(h.limit) + " limit" : "") : "") + (h && h.status ? " · " + h.status : "");
   }
   function whenSeen(sec) {
     var m = Math.round((Date.now() / 1000 - sec) / 60);
