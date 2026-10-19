@@ -4982,9 +4982,7 @@ box.focus();
   .tgpick img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
   .tgpick .empty { text-align: center; color: var(--dim); font-size: 14px; padding: 30px 0; }
   /* 最近用过(2026-10-19,她点头的「最近用过一排」):最多 8 张、两行四列,下面一条细线和全部那一格隔开;没用过就不出 */
-  .tgpick .rlab { font-size: 11px; color: var(--dim); margin: 0 4px 4px; letter-spacing: .04em; }
-  .tgpick .recent { padding-bottom: 8px; margin-bottom: 8px; border-bottom: .5px solid var(--line); }
-  .tgpick .rlab[hidden], .tgpick .recent[hidden] { display: none; }
+  .tgpick .sec[hidden] { display: none; }
   /* 长按放大预览(2026-10-19,照 TG):背后压暗 + 模糊,中间一张大图 + 名字;按着拖到别的格子上换那一张,松手停住,出「发送 / 改名 / 删除」(后两个只有她自制的有)。点空白处收起 */
   .stkpv { position: fixed; inset: 0; z-index: 70; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
            background: rgba(0,0,0,.28); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); opacity: 0; transition: opacity .18s; }
@@ -5788,6 +5786,33 @@ box.focus();
   .tgprof .svseg { display: inline-flex; gap: 2px; margin-top: 6px; }
   .tgprof .svseg button { border: 0; background: none; font: inherit; font-size: 10.5px; color: var(--p3); padding: 3px 10px; border-radius: 999px; cursor: pointer; }
   .tgprof .svseg button[aria-checked="true"] { background: var(--hair); color: var(--p1); font-weight: 500; }
+
+  /* ══ 贴纸面板照 TG iOS(2026-10-19,她发 TG 贴纸页截图:「太扁平安卓啦」)══
+     量(她截图 1206px = 402pt@3x):面板近白(252)、顶上大圆角约 32pt、只有一道极淡的边;没有拉手。
+     分区标题居中、全大写、约 13pt、灰(≈180)、字距放开;「最近用过」标题右边一颗 ×(清空)。
+     一行 5 张:格 66pt、间距 11pt、左右各留 10pt;照片圆角约 10pt、裸图不加格子底;
+     「Create Sticker」= 66pt 的浅灰(242)圆角方块 + 灰「+」+ 两行灰字(不是虚线框)。
+     分区:Recently Used(用过才出)→ My Stickers(Create + 她自制的)→ Stickers(他那 59 张)。只在 TG 版 */
+  html[data-chatstyle="tg"] .tgpick { background: color-mix(in srgb, var(--card) 96%, var(--text) 1%); -webkit-backdrop-filter: none; backdrop-filter: none;
+    border-radius: 32px 32px 0 0; box-shadow: 0 -.5px 0 color-mix(in srgb, var(--text) 7%, transparent), 0 -8px 28px rgba(0,0,0,.05);
+    padding: 4px 10px calc(14px + var(--dw-sab, env(safe-area-inset-bottom))); scrollbar-width: thin; }
+  html[data-chatstyle="tg"] .tgpick .grab { display: none; }
+  html[data-chatstyle="tg"] .tgpick .sec[hidden] { display: none; }
+  html[data-chatstyle="tg"] .tgpick .hd { position: relative; text-align: center; padding: 15px 0 10px; font-size: 12.5px; font-weight: 500; letter-spacing: .06em;
+    text-transform: uppercase; color: color-mix(in srgb, var(--text) 34%, transparent); }
+  html[data-chatstyle="tg"] .tgpick .hd .clr { position: absolute; right: 4px; top: 50%; translate: 0 -38%; width: 28px; height: 28px; aspect-ratio: auto; padding: 0; border-radius: 50%;
+    display: grid; place-items: center; color: color-mix(in srgb, var(--text) 30%, transparent); }
+  html[data-chatstyle="tg"] .tgpick .hd .clr svg { width: 11px; height: 11px; }
+  html[data-chatstyle="tg"] .tgpick .grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 11px; padding: 0; }
+  html[data-chatstyle="tg"] .tgpick .grid button { padding: 0; border-radius: 10px; }
+  html[data-chatstyle="tg"] .tgpick .grid img { border-radius: 10px; }
+  html[data-chatstyle="tg"] .tgpick .mine::after { display: none; }
+  html[data-chatstyle="tg"] .tgpick .stkadd { border: 0 !important; border-radius: 16px; background: color-mix(in srgb, var(--text) 5%, var(--card));
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: color-mix(in srgb, var(--text) 32%, transparent); }
+  html[data-chatstyle="tg"] .tgpick .stkadd::before { content: none; }
+  html[data-chatstyle="tg"] .tgpick .stkadd svg { width: 19px; height: 19px; }
+  html[data-chatstyle="tg"] .tgpick .stkadd span { font-size: 11px; line-height: 1.2; text-align: center; }
+  html[data-chatstyle="tg"] .tgpick .empty { grid-column: 1 / -1; }
 
   /* ══ 输入栏 1:1 第四版(2026-10-16,所有者发了 Telegram iOS 三张截图:贴纸面板开 / 空着 / 有字,「我要一模一样的」)══
      量法:她的截图 1206px = 402pt@3x,和本页同一坐标系;本地 402×874@3x 渲染、页底临时换白,同一段代码量墨迹框和描边作差(见 dwell 手册《输入栏 1:1 第四版》)。
@@ -6649,7 +6674,10 @@ box.focus();
   var comp = document.querySelector(".composer");
   if (comp) comp.appendChild(stkBtn);
   var pick = document.createElement("div");
-  pick.className = "tgpick"; pick.innerHTML = '<div class="grab"></div><div class="rlab" hidden>Recent</div><div class="grid recent" hidden></div><div class="grid all"><div class="empty">贴纸还没装上</div></div>';
+  pick.className = "tgpick"; pick.innerHTML = '<div class="grab"></div>' +
+    '<div class="sec rsec" hidden><div class="hd"><span>Recently Used</span><button type="button" class="clr" aria-label="清空最近用过"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9"/></svg></button></div><div class="grid recent"></div></div>' +
+    '<div class="sec msec"><div class="hd"><span>My Stickers</span></div><div class="grid mineg"></div></div>' +
+    '<div class="sec"><div class="hd"><span>Stickers</span></div><div class="grid all"><div class="empty">贴纸还没装上</div></div></div>';
   document.body.appendChild(pick);
   /* 照 TG:面板在下、输入栏被顶到面板上方(不然面板盖住输入栏,图标再也点不到、关不上 —— 10-09 测出来的) */
   var footEl = document.querySelector("footer");
@@ -6799,6 +6827,12 @@ box.focus();
     for (var i = 0; i < stkItems.length; i++) if (stkItems[i].tag === b.getAttribute("data-tag")) return stkItems[i];
     return null;
   }
+  pick.querySelector(".rsec .clr").addEventListener("click", function (e) {
+    e.stopPropagation();
+    if (!confirm("清空最近用过的贴纸?(贴纸本身不会删)")) return;
+    try { localStorage.removeItem(RECENT_KEY); } catch (er) {}
+    if (stkItems.length) buildPicker(stkItems);
+  });
   function stkButton(it) {
     var b = document.createElement("button"); b.type = "button"; b.title = it.tag; b.setAttribute("data-tag", it.tag);
     if (it.mine) b.className = "mine";
@@ -6827,13 +6861,14 @@ box.focus();
     var byTag = {}; items.forEach(function (it) { byTag[it.tag] = it; });
     var rec = recentTags().filter(function (t) { return byTag[t]; }), rg = pick.querySelector(".recent");
     rg.innerHTML = ""; rec.forEach(function (t) { rg.appendChild(stkButton(byTag[t])); });
-    rg.hidden = !rec.length; pick.querySelector(".rlab").hidden = !rec.length;
-    var g = pick.querySelector(".grid.all"); g.innerHTML = "";
+    pick.querySelector(".rsec").hidden = !rec.length;
+    var mg = pick.querySelector(".grid.mineg"), g = pick.querySelector(".grid.all"); mg.innerHTML = ""; g.innerHTML = "";
     var add = document.createElement("button"); add.type = "button"; add.className = "stkadd"; add.title = "加一张自己的贴纸";
+    add.innerHTML = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10 2.5v15M2.5 10h15"/></svg><span>Create<br>Sticker</span>';
     add.addEventListener("click", function () { addFile.value = ""; addFile.click(); });
-    g.appendChild(add);
-    items.filter(function (it) { return it.mine; }).concat(items.filter(function (it) { return !it.mine; })).forEach(function (it) {
-      g.appendChild(stkButton(it));                           // ~~自制的长按 = 删~~ 2026-10-19 起长按 = 放大预览,删 / 改名在预览里
+    mg.appendChild(add);                                      // 2026-10-19 照 TG:她的那一区以「Create Sticker」打头
+    items.forEach(function (it) {
+      (it.mine ? mg : g).appendChild(stkButton(it));          // ~~自制的长按 = 删~~ 2026-10-19 起长按 = 放大预览,删 / 改名在预览里
     });
   }
   addFile.addEventListener("change", function () {
