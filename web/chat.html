@@ -5410,9 +5410,21 @@ box.focus();
      ~~TG 小尾巴(上面「① 尾巴」的 ::before)~~ 不画了 —— 一串最后一颗只把那个角收到 6px(他的左下、她的右下),看得出是谁的、哪串到头了;
      ~~平的气泡(「② 平的气泡」)~~ 改成柔和立体:他的白泡 = 半像素描边 + 很淡的落影;她的泡 = 上亮下暗 + 顶上一道细亮线。
      ⚠️ 选择器照抄「① 尾巴」那几条,特异性才压得住(第一次只写 `.row.me > .bubble::before`,尾巴照样在)。要调深浅只动下面两组 box-shadow 的透明度。 */
+  /* ~~不画尾巴~~ 10-19 第三轮她又要回来,但「别太尖」(她截图里是 TG 那种):照她截图量的形状画 ——
+     尾巴从泡的直边往外、往下顺着一道弧拖出去,和泡的圆角之间留一个浅凹口,尖端磨成约 1pt 的圆头(TG 原图是尖的,她「不想太尖锐」)。
+     大小照截图 1:1(约 12×8pt、外伸 5pt);带尾巴的那颗,尾巴那侧下角照旧 6px(直边顺着接进尾巴;~~改成 18 大圆~~ 试过,泡和尾巴之间露一道缝)。 */
+  html[data-chatstyle="tg"] {
+    --tg-tail2-r: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8.4'%3E%3Cpath d='M7 .7C7.6 3.8 8.9 5.9 10.2 7C11.5 8 11.2 8.35 9.9 8.35C8.2 8.4 6.6 7.85 5 7C3.6 6.4 1.7 5.5 0 5.3V.7Z'/%3E%3C/svg%3E");
+    --tg-tail2-l: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8.4'%3E%3Cpath d='M5 .7C4.4 3.8 3.1 5.9 1.8 7C.5 8 .8 8.35 2.1 8.35C3.8 8.4 5.4 7.85 7 7C8.4 6.4 10.3 5.5 12 5.3V.7Z'/%3E%3C/svg%3E"); }
   html[data-chatstyle="tg"] .gu:not(.tg-split):not(.stkonly)::before,
   html[data-chatstyle="tg"] .tgset .tgb:last-child:not(.stkonly)::before,
-  html[data-chatstyle="tg"] .row.me.tgend.tgend > .bubble:not(.stkonly)::before { content: none; }
+  html[data-chatstyle="tg"] .row.me.tgend.tgend > .bubble:not(.stkonly)::before {
+    content: ""; position: absolute; bottom: 0; width: 12px; height: 8.4px; pointer-events: none;
+    left: -5px; background: var(--tg-him);
+    -webkit-mask: var(--tg-tail2-l) no-repeat center / 100% 100%; mask: var(--tg-tail2-l) no-repeat center / 100% 100%; }
+  html[data-chatstyle="tg"] .row.me.tgend.tgend > .bubble:not(.stkonly)::before {
+    left: auto; right: -5px; background: var(--tg-me);
+    -webkit-mask-image: var(--tg-tail2-r); mask-image: var(--tg-tail2-r); }
   /* 形状照 TG(10-19 她发 TG 截图:「只是参考气泡的形状」):四角大圆(18);**发送那一侧,和同一串相邻的那个角收到 6px**,
      一串看着是一摞 —— 第一颗上角大、下角小,中间的上下都小,最后一颗上角小、下角小(~~原来只有最后一颗下角收小~~)。
      他的:拆成一串的 .tgset .tgb 按位置;单颗的 .gu 下角小。她的:脚本记 .tgcont(前面紧挨着的也是她的泡,见 tailMark)。 */
