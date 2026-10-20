@@ -6076,26 +6076,27 @@ box.focus();
   html[data-chatstyle="tg"][data-imsg] .tgname b, html[data-chatstyle="tg"][data-imsg] .tgname .tgnm { top: 0; font-size: 17px; font-weight: 600; letter-spacing: -.02em; line-height: 22px; }
   html[data-chatstyle="tg"][data-imsg] .tgname::after { content: ""; flex: none; width: 6.5px; height: 11.5px; background: #acacac;
     -webkit-mask: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6.5 11.5' fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.2 1.2 5.3 5.75 1.2 10.3'/%3E%3C/svg%3E"); mask: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6.5 11.5' fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.2 1.2 5.3 5.75 1.2 10.3'/%3E%3C/svg%3E"); }
-  /* 玻璃(2026-10-20 她「玻璃质感 1:1 复刻」,浅 / 深两张 iMessage 截图逐像素量的,1206px = 402pt@3x):
-     浅色:摄像头圆钮在纯白上本体是 249~250(**比背后还暗一点**,不是发白)、上沿内侧一道 255 亮线、离上沿约 1/3 最暗、底边亮回 254;
-           外圈一道 1 物理像素的细边,两侧深(176)、上沿浅(241)、下沿居中(227);外面几乎没有影(下沿外 252)。
-           同一种玻璃压在灰泡(238)上读 240~242 —— 背后被提亮了一点、又罩了一层浅灰,所以 = 浅灰 32% + 背后提亮 6% + 轻模糊。
-     深色:在纯黑上本体 31、压在 132 的东西上 100 → 反推 = rgba(58,58,60,.52);上沿内侧 96、往下约 10px 退到 31,下沿 79 → 上下两道亮边 + 两头各一截淡光。
-     返回 / 搜索 / 名字胶囊 / 「+」/ 输入胶囊 / ⌄ 全用这一套(TG 版那套 --g4 变量,只在 iMessage 主题里换值)。⚠️ 折射 Safari 做不了,只做光。 */
+  /* 玻璃(2026-10-20 第二版;她真机:「头像压住玻璃」「我们的所有玻璃都像磨砂亚克力,不像玻璃」+ 一张 iOS 名字胶囊特写)
+     ~~第一版:浅灰 32% + 背后提亮 6% + 糊 3px~~ —— 太透:胶囊压在头像上,头像几乎原样透过来(看着像头像压在玻璃上),整块又平,像一片亚克力。
+     **iOS 那张反算**(特写约 3.05px/pt):胶囊压在头像(暗 ~110,糊开约 150)上读 217~236、压在灰底 230 上读 235~240 → 本体 ≈ rgba(242,242,244,.66) + 重糊;
+     「像玻璃」靠的是**边上的光**:上沿一道 255 的高光、边缘一圈更亮(厚边)、左上一点镜面反光、下沿外一道 216 的细暗线、整块轻轻浮起。
+     深色沿用第一版量的本体 rgba(58,58,60,.5x)(纯黑上 31),同样加重糊和厚边光。⚠️ 折射(背后的字在边上弯一下)Safari 做不了,只做光。
+     返回 / 搜索 / 名字胶囊 / 「+」/ 输入胶囊 / ⌄ 全用这一套(TG 版那套 --g4 变量,只在 iMessage 主题里换值)。调透明度只动本体那一层的 alpha。 */
   html[data-chatstyle="tg"][data-imsg] {
-    --g4-bg: linear-gradient(to bottom, rgba(255,255,255,.8) 0, rgba(255,255,255,.3) 3px, rgba(255,255,255,0) 7px),
-             linear-gradient(to top, rgba(255,255,255,.65) 0, rgba(255,255,255,.2) 3px, rgba(255,255,255,0) 6px),
-             rgba(238,238,240,.32);
-    --g4-sh: inset 0 1px 0 rgba(255,255,255,.95), inset 0 -1px 0 rgba(255,255,255,.75),
-             0 0 0 .34px rgba(0,0,0,.24), 0 .5px 0 rgba(0,0,0,.05), 0 1px 3px rgba(0,0,0,.03);
-    --g4-filter: blur(3px) saturate(1.5) brightness(1.06);
+    --g4-bg: linear-gradient(to bottom, rgba(255,255,255,.85) 0, rgba(255,255,255,.35) 2.5px, rgba(255,255,255,0) 7px),
+             linear-gradient(to top, rgba(255,255,255,.5) 0, rgba(255,255,255,0) 6px),
+             rgba(242,242,244,.66);
+    --g4-sh: inset 0 1px 0 #fff, inset 0 0 3px 1px rgba(255,255,255,.6), inset 1.5px 1.5px 1px -1px rgba(255,255,255,.95), inset 0 -1px 0 rgba(255,255,255,.55),
+             0 0 0 .34px rgba(0,0,0,.18), 0 .6px 0 rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.05);
+    --g4-filter: blur(8px) saturate(1.7);
   }
   html[data-chatstyle="tg"][data-imsg][data-tgdark] {
-    --g4-bg: linear-gradient(to bottom, rgba(255,255,255,.09) 0, rgba(255,255,255,.03) 5px, rgba(255,255,255,0) 11px),
-             linear-gradient(to top, rgba(255,255,255,.08) 0, rgba(255,255,255,.03) 5px, rgba(255,255,255,0) 11px),
-             rgba(58,58,60,.52);
-    --g4-sh: inset 0 1px 0 rgba(255,255,255,.26), inset 0 -1px 0 rgba(255,255,255,.17), inset 0 0 0 .34px rgba(255,255,255,.05), 0 0 0 .34px rgba(0,0,0,.55);
-    --g4-filter: blur(3px) saturate(1.4);
+    --g4-bg: linear-gradient(to bottom, rgba(255,255,255,.1) 0, rgba(255,255,255,.03) 4px, rgba(255,255,255,0) 10px),
+             linear-gradient(to top, rgba(255,255,255,.07) 0, rgba(255,255,255,0) 8px),
+             rgba(58,58,60,.56);
+    --g4-sh: inset 0 1px 0 rgba(255,255,255,.28), inset 0 0 3px 1px rgba(255,255,255,.07), inset 1.5px 1.5px 1px -1px rgba(255,255,255,.22), inset 0 -1px 0 rgba(255,255,255,.16),
+             0 0 0 .34px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.3);
+    --g4-filter: blur(8px) saturate(1.5);
   }
   /* 语音条(2026-10-20,她「语音条做了吗」—— 功能 10-10 就有,但 iMessage 主题里还是 TG 那颗黑钮;现在照她截图 1:1):
      他那颗:泡高 58.33、圆角同文字泡;蓝圆钮 25.67(左留白 16.33、rgb(59,134,247))、里面的三角是**镂空成泡色**的 8.67×9.67、略偏右;
