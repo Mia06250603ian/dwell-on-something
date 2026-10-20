@@ -5724,10 +5724,12 @@ box.focus();
              0 0 0 .5px rgba(0,0,0,.05), 0 1px 1.5px rgba(0,0,0,.13), 0 6px 18px rgba(0,0,0,.05);
     --g4-filter: blur(14px) saturate(1.6);
   }
+  /* ⚠️ 深色这套 10-20 已改(她:「暗色模式下像不锈钢」—— 上沿亮、16px 处暗、30px 又亮回来,深底上读成金属管反光):
+     ~~上 .14 → 16px .03 → 30px .05 → .06 的竖向光带 + rgba(30,30,32,.42)~~ → 照 iOS 深色玻璃:平本体 rgba(58,58,60,.52) + 上下沿细亮边、上沿光 10px 内淡掉。同首页 index.html 那套深色。 */
   html[data-chatstyle="tg"][data-tgdark] {
-    --g4-bg: linear-gradient(to top, rgba(255,255,255,.07) 0, rgba(255,255,255,.02) 5px, rgba(255,255,255,0) 14px),
-             linear-gradient(to bottom, rgba(255,255,255,.14) 0, rgba(255,255,255,.07) 5px, rgba(255,255,255,.03) 16px, rgba(255,255,255,.05) 30px, rgba(255,255,255,.06) 100%),
-             linear-gradient(rgba(30,30,32,.42), rgba(30,30,32,.42));
+    --g4-bg: linear-gradient(to bottom, rgba(255,255,255,.08) 0, rgba(255,255,255,.03) 4px, rgba(255,255,255,0) 10px),
+             linear-gradient(to top, rgba(255,255,255,.05) 0, rgba(255,255,255,0) 8px),
+             linear-gradient(rgba(58,58,60,.52), rgba(58,58,60,.52));
     --g4-sh: inset 0 1px 0 rgba(255,255,255,.22), inset 0 -1px 0 rgba(255,255,255,.07), inset 0 0 0 .5px rgba(255,255,255,.06),
              0 1px 1.5px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.3);
     --g4-filter: blur(14px) saturate(1.5);
@@ -6041,17 +6043,19 @@ box.focus();
   /* ~~实心 --im-top + 缓动遮罩 + 一层 6px 模糊~~(10-20 上午那版)—— 她真机:「上方那个模糊做的很不自然」:她截图里自己那颗黑泡被刷成
      「上灰下黑」的一段渐变色、字反而清楚 = 那是**颜色在淡出**,不是模糊。iOS 26 的 scroll edge 是**渐进模糊**:越靠顶越糊、颜色基本还在,只在最顶上一小截化进状态栏。
      现在两层(header 的 ::before / ::after,都在按钮底下、不接点击):
-       ① ::before = 轻糊 2px,盖到状态栏下 84px,实到 40px 再缓动收掉;颜色只在最上面约 40px 从 --im-top 化开(接状态栏那条,接缝不回来);
+       ① ::before = 轻糊 2px,盖到状态栏下 84px,实到 40px 再缓动收掉;颜色:最上面 10px 实心(接状态栏那条)、再约 44px 化开;
        ② ::after  = 重糊 6px,只在最上面 44px、往下缓动收掉。
      两层叠出来是「顶上糊得厉害、往下越来越清楚」,没有一条看得见的边。⚠️ 别再加颜色往下盖 —— 那就是她说的不自然。调强弱只动这两层的 blur 和遮罩长度。 */
   html[data-chatstyle="tg"][data-imsg] header::before, html[data-chatstyle="tg"][data-imsg] header::after {
     content: ""; position: absolute; left: 0; right: 0; top: 0; z-index: -1; pointer-events: none; }
   html[data-chatstyle="tg"][data-imsg] header::before { height: calc(84px + var(--dw-sat, env(safe-area-inset-top))) !important; inset: 0 0 auto !important;
-    background: linear-gradient(to bottom, var(--im-top, var(--tg-page)) 0, var(--im-top, var(--tg-page)) var(--dw-sat, env(safe-area-inset-top)),
-      color-mix(in srgb, var(--im-top, var(--tg-page)) 62%, transparent) calc(8px + var(--dw-sat, env(safe-area-inset-top))),
-      color-mix(in srgb, var(--im-top, var(--tg-page)) 30%, transparent) calc(20px + var(--dw-sat, env(safe-area-inset-top))),
-      color-mix(in srgb, var(--im-top, var(--tg-page)) 10%, transparent) calc(32px + var(--dw-sat, env(safe-area-inset-top))),
-      transparent calc(44px + var(--dw-sat, env(safe-area-inset-top)))) !important;
+    /* ⚠️ 实心那截要**多出 10px**(10-20 她真机「上方又断层了」):她手机上网页从状态栏下面才开始,--dw-sat = 0,
+       ~~实心只到 --dw-sat~~ 等于没有实心 —— 糊开的黑泡在网页第一行就读 191,紧贴着 243 的状态栏 = 一刀断层。 */
+    background: linear-gradient(to bottom, var(--im-top, var(--tg-page)) 0, var(--im-top, var(--tg-page)) calc(10px + var(--dw-sat, env(safe-area-inset-top))),
+      color-mix(in srgb, var(--im-top, var(--tg-page)) 72%, transparent) calc(18px + var(--dw-sat, env(safe-area-inset-top))),
+      color-mix(in srgb, var(--im-top, var(--tg-page)) 40%, transparent) calc(29px + var(--dw-sat, env(safe-area-inset-top))),
+      color-mix(in srgb, var(--im-top, var(--tg-page)) 15%, transparent) calc(41px + var(--dw-sat, env(safe-area-inset-top))),
+      transparent calc(54px + var(--dw-sat, env(safe-area-inset-top)))) !important;
     -webkit-backdrop-filter: blur(2px) saturate(1.15); backdrop-filter: blur(2px) saturate(1.15);
     --im-m1: linear-gradient(to bottom, #000 0, #000 calc(40px + var(--dw-sat, env(safe-area-inset-top))), rgba(0,0,0,.7) calc(52px + var(--dw-sat, env(safe-area-inset-top))),
       rgba(0,0,0,.35) calc(66px + var(--dw-sat, env(safe-area-inset-top))), rgba(0,0,0,.1) calc(77px + var(--dw-sat, env(safe-area-inset-top))), transparent 100%);
@@ -6147,11 +6151,11 @@ box.focus();
   html[data-chatstyle="tg"][data-imsg] .row.me .tgvoice .vdur, html[data-chatstyle="tg"][data-imsg] .row.me .tgvoice .vtext { color: rgba(255,255,255,.78); }
   /* 「Delivered / 17:53 Read」(2026-10-20):只挂在**最后一条**她的话下面,送到了才出(按下就飞那一下 / 没送出去的不出)。脚本在 checks() 里挂 .imdlv、字写在 data-imdl。
      ~~第一版「已送达」(照她深色截图,11px、右缩 19.67)~~ 她同日发「17:53 Read」那张说「改成这种」:那张是缩放过的(上下黑边),按泡高 38pt 换算回来 ——
-     半粗 ~~12px~~ ~~11px~~ 10px(她看了 12「大太多了」、上线后真机看 11 仍说「字太大了」)次要灰、右端停在尾巴左边(right 21)、字顶离泡底约 5pt。时间照她 10-09 定的 12 小时制(hhmm,带 AM / PM),不照截图的 17:53。他回过话写「他开始回的时刻 + Read」,还没回写「Delivered」。左滑看时间时让位给时间。 */
+     半粗 ~~12px~~ ~~11px~~ ~~10px~~ 9px(她看了 12「大太多了」、真机看 11「字太大了」、10 又说「改小一号」)次要灰、右端停在尾巴左边(right 21)、字顶离泡底约 5pt。~~时间照她 10-09 定的 12 小时制~~ 10-20 她要 iMessage 这边 24 小时制(hhmm 里按 data-imsg 分)。他回过话写「他开始回的时刻 + Read」,还没回写「Delivered」。左滑看时间时让位给时间。 */
   html[data-chatstyle="tg"][data-imsg] .row.me.imdlv { margin-bottom: 14px; }
   html[data-chatstyle="tg"][data-imsg] .row.me.imdlv > .bubble:last-child:not(.imsw)::after { content: attr(data-imdl) !important; position: absolute; top: calc(100% + 2px); right: 21px; left: auto;
     float: none !important; margin: 0 !important; padding: 0 !important; background: none !important; transform: none; translate: none; animation: none !important;
-    white-space: nowrap; font: 600 10px/1.2 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", sans-serif; letter-spacing: .01em; font-variant-numeric: tabular-nums; color: rgb(138, 138, 142) !important; opacity: 1; pointer-events: none; }
+    white-space: nowrap; font: 600 9px/1.2 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", sans-serif; letter-spacing: .01em; font-variant-numeric: tabular-nums; color: rgb(138, 138, 142) !important; opacity: 1; pointer-events: none; }
   html[data-chatstyle="tg"][data-imsg][data-tgdark] .row.me.imdlv > .bubble:last-child:not(.imsw)::after { color: rgb(141, 141, 146) !important; }
   /* 他的头像(「每条消息旁」那档):iMessage 主题里**贴在每轮第一颗泡旁边**(2026-10-20 她:「他的头像改成在每轮第一条信息旁边」)。
      ~~贴这一行底边 = 最后一颗旁边~~(TG 版照旧,TG 本来就是贴底)。一轮 = 她两句话之间他说的全部:中间夹着思考 / 工具行、或一轮被拆成好几行 .gu 时,
@@ -7419,6 +7423,8 @@ box.focus();
   /* 12 小时制带 AM / PM(所有者 10-09:「时间要 pm、am 能区分」,同参考图 4:44 AM;~~24 小时制 19:49~~) */
   function hhmm(sec) {
     var d = new Date(sec * 1000), h = d.getHours(), m = d.getMinutes();
+    /* 仿 iMessage 主题用 24 小时制(2026-10-20 她:「iMessage 这边改成 24 小时吧」;Read 那行、左滑看的时间都走这里)。TG / 官端照旧 12 小时制 */
+    if (document.documentElement.hasAttribute("data-imsg")) return (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m;
     return ((h + 11) % 12 + 1) + ":" + (m < 10 ? "0" : "") + m + (h < 12 ? " AM" : " PM");
   }
   function stamp(el) {
