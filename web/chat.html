@@ -6114,6 +6114,23 @@ box.focus();
              0 0 0 .34px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.3);
     --g4-filter: blur(8px) saturate(1.5);
   }
+  /* ⚠️ 上面这套 iMessage 玻璃**只给顶栏 / 输入栏的按钮**(10-20 傍晚她:「这个页面怎么变奇怪了 是不是哪里改错了」——「他」页那几张卡吃了这套,变成灰底厚边带影)。
+     「他」页、长按菜单、贴纸面板退回 TG 版那套(玻璃第五版 + 深色 10-20 那版),和 10-20 之前一样。 */
+  html[data-chatstyle="tg"][data-imsg] :is(.tgprof, .tgrmenu, .tgpick) {
+    --g4-bg: linear-gradient(to top, rgba(255,255,255,.9) 0, rgba(255,255,255,.62) 1px, rgba(255,255,255,.37) 2px, rgba(255,255,255,.17) 3px, rgba(255,255,255,0) 5px),
+             linear-gradient(to bottom, rgba(255,255,255,.86) 0, rgba(255,255,255,.67) 1.5px, rgba(255,255,255,.55) 3px, rgba(255,255,255,.43) 5px,
+                             rgba(255,255,255,.3) 7px, rgba(255,255,255,.2) 10px, rgba(255,255,255,.21) 15px, rgba(255,255,255,.36) 20px,
+                             rgba(255,255,255,.45) 25px, rgba(255,255,255,.48) 30px, rgba(255,255,255,.48) 100%);
+    --g4-sh: inset 0 1px 0 rgba(255,255,255,.95), inset 0 -.5px 0 rgba(255,255,255,.7), 0 0 0 .5px rgba(0,0,0,.07), 0 .5px .5px rgba(0,0,0,.04);
+    --g4-filter: blur(14px) saturate(1.6);
+  }
+  html[data-chatstyle="tg"][data-imsg][data-tgdark] :is(.tgprof, .tgrmenu, .tgpick) {
+    --g4-bg: linear-gradient(to bottom, rgba(255,255,255,.08) 0, rgba(255,255,255,.03) 4px, rgba(255,255,255,0) 10px),
+             linear-gradient(to top, rgba(255,255,255,.05) 0, rgba(255,255,255,0) 8px),
+             linear-gradient(rgba(58,58,60,.52), rgba(58,58,60,.52));
+    --g4-sh: inset 0 1px 0 rgba(255,255,255,.2), inset 0 -.5px 0 rgba(255,255,255,.06), 0 0 0 .5px rgba(255,255,255,.07), 0 .5px 1px rgba(0,0,0,.35);
+    --g4-filter: blur(14px) saturate(1.5);
+  }
   /* 语音条(2026-10-20,她「语音条做了吗」—— 功能 10-10 就有,但 iMessage 主题里还是 TG 那颗黑钮;现在照她截图 1:1):
      他那颗:泡高 58.33、圆角同文字泡;蓝圆钮 25.67(左留白 16.33、rgb(59,134,247))、里面的三角是**镂空成泡色**的 8.67×9.67、略偏右;
      隔 12.67 是波形:**42 根**、每根 2pt 宽、间距 2(共 166pt)、高 4 ~ 34.67pt(最矮的是圆点);没放过的 9% 墨、放过的 23% 墨(截图 213 / 179 压在 233 上);
