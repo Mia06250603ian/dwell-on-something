@@ -6122,6 +6122,7 @@ box.focus();
   /* 10-20 真机:开着「每条消息旁」头像时泡最宽只有 77% ≈ 257pt,装不下 281 的语音条,「00:14」跑出泡外 → 语音条不受 77% 限制;再窄的屏让波形自己收(从右边截) */
   html[data-chatstyle="tg"][data-imsg] .tgvoice .vwave { flex: 0 1 auto; min-width: 0; overflow: hidden; width: auto; height: 34.67px; gap: 2px; margin-left: 12.67px; }
   html[data-chatstyle="tg"][data-imsg] .tgvoice .vdur { flex: none; }
+  html[data-chatstyle="tg"][data-imsg] .tgvoice .vwave i.imx { display: none; }   /* 真波形:根数随时长,多的藏掉(脚本 fitWave) */
   html[data-chatstyle="tg"][data-imsg] .tgvoice .vwave i { flex: none; width: 2px; min-width: 2px; max-width: 2px; border-radius: 1px;
     height: calc(4px + var(--hi, var(--h, 0)) * 30.67px) !important; background: color-mix(in srgb, var(--tg-him-ink, #000) 9%, transparent); }
   html[data-chatstyle="tg"][data-imsg] .tgvoice .vwave i.on { background: color-mix(in srgb, var(--tg-him-ink, #000) 23%, transparent); }
@@ -7730,8 +7731,40 @@ box.focus();
     b.innerHTML = '<span class="vrow"><button type="button" class="vplay" aria-label="播放"></button>' + wave +
       '<span class="vdur"></span></span><span class="vtext"></span>';
     b.querySelector(".vtext").textContent = text;
-    /* 时长先按英文语速估一个(约 2.6 词/秒),真放过一次就换成真的 */
-    b.querySelector(".vdur").textContent = opt.dur ? fmtSec(opt.dur) : fmtSec(Math.max(1, text.split(/\s+/).length / 2.6));
+    /* 时长先按英文语速估一个(约 2.6 词/秒),拿到真波形 / 真放过一次就换成真的 */
+    var est = opt.dur || Math.max(1, text.split(/\s+/).length / 2.6);
+    b.querySelector(".vdur").textContent = fmtSec(est);
+    b._waved = false;
+    fitWave(b, est, null);
+    loadWave(b, 0);
+  }
+  /* ── 真波形(2026-10-20,她「随时长长短变化,随声音波长长短」,选了 B:他说完就合成)──
+     dwell-bridge 的 /api/vwave 给 { dur, p:64 段音量 0~1 }(只读已合成的 mp3,不会触发合成)。
+     iMessage 主题:**根数 = 时长定**(waveN:1 秒 16 根、每秒 +3、10 秒起封顶 42 根 = 原来那条全长),多出来的挂 .imx 藏掉;每根高 = 那一段的音量,太轻的是圆点。
+     TG 版只认 --h、只露前 28 根,样子不变(只有时长数字换成真的)。还没合成 / 拿不到 = 先用估的时长 + 占位的高低。 */
+  function waveN(dur) { return Math.max(16, Math.min(BARS, Math.round(12 + (dur || 0) * 3))); }
+  function fitWave(b, dur, p) {
+    var bars = b.querySelectorAll(".vwave i"), n = waveN(dur);
+    for (var i = 0; i < bars.length; i++) {
+      if (bars[i].classList.contains("imx") !== (i >= n)) bars[i].classList.toggle("imx", i >= n);
+      if (p && i < n) {
+        var a = Math.floor(i * p.length / n), z = Math.max(a + 1, Math.floor((i + 1) * p.length / n)), v = 0;
+        for (var j = a; j < z; j++) v = Math.max(v, p[j] || 0);
+        bars[i].style.setProperty("--hi", (v < 0.12 ? 0 : Math.min(1, 0.12 + 0.88 * v)).toFixed(3));
+      }
+    }
+    if (p) b.querySelector(".vdur").textContent = fmtSec(dur);
+  }
+  function loadWave(b, tries) {
+    var id = b._src && /api\/myvoice\/([0-9a-f]{16})/.exec(b._src);
+    var url = id ? "api/vwave?id=" + id[1] : "api/vwave?t=" + encodeURIComponent(b._voice || "");
+    fetch(url, { credentials: "same-origin" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      if (!b.isConnected && tries > 0) return;
+      if (d && d.ok && d.p) { b._waved = true; fitWave(b, d.dur, d.p); return; }
+      /* 刚说完的那条:服务器正在提前合成,隔几秒再问(最多 6 次);老记录没合成过的不追问,等她点播放 */
+      var row = b.closest && b.closest(".row");
+      if (!id && row && row._tgLive && tries < 6) setTimeout(function () { if (!b._waved) loadWave(b, tries + 1); }, 4000);
+    }).catch(function () {});
   }
   var cur = null;   // 正在放的那一颗 { b, audio, raf }
   function stopCur() {
@@ -7741,7 +7774,7 @@ box.focus();
     paintProg(cur.b, 0); cur = null;
   }
   function paintProg(b, f) {
-    var bars = b.querySelectorAll(".vwave i"), shown = root.hasAttribute("data-imsg") ? bars.length : Math.min(bars.length, BARS_TG), n = Math.round(f * shown);
+    var bars = b.querySelectorAll(".vwave i"), shown = root.hasAttribute("data-imsg") ? b.querySelectorAll(".vwave i:not(.imx)").length : Math.min(bars.length, BARS_TG), n = Math.round(f * shown);
     for (var i = 0; i < bars.length; i++) bars[i].classList.toggle("on", i < n);
   }
   log.addEventListener("click", function (e) {
@@ -7768,6 +7801,7 @@ box.focus();
       if (isFinite(audio.duration)) b.querySelector(".vdur").textContent = fmtSec(audio.duration);
     });
     audio.addEventListener("ended", function () { if (cur === me) stopCur(); });
+    audio.addEventListener("canplaythrough", function () { if (!b._waved) loadWave(b, 0); });   // 点了才合成的那条(老记录):声音到手就换成真波形
     audio.addEventListener("error", function () {
       if (cur === me) { stopCur(); b.classList.remove("loading"); note("（这句没放出来,看字吧）", "err"); }
     });
