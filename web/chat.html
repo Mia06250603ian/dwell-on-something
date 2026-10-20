@@ -6038,50 +6038,80 @@ box.focus();
   /* 2026-10-20 第二轮(她发 iMessage 浅 / 深两张截图「1:1 复刻」):iOS 里消息是**从按钮底下透过去**的(返回钮后面那颗泡糊着但看得见,名字胶囊旁边那颗已经全清楚)。
      ~~高 118 + 往下伸 20 的实心渐隐~~ 把顶栏一带的消息整个盖掉了;现在只留 64(到返回钮下沿),最上面那截照旧实心接状态栏,往下化开 + 一点模糊。
      ⚠️ 状态栏那 62pt 本身网页画不进去(《「他」页照片铺到状态栏底下》),所以 iOS 截图里「消息一直糊到屏顶」那段做不了。 */
-  html[data-chatstyle="tg"][data-imsg] header::before { height: calc(64px + var(--dw-sat, env(safe-area-inset-top))) !important; inset: 0 0 auto !important; background: var(--im-top, var(--tg-page)) !important;
-    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  /* ~~实心 --im-top + 缓动遮罩 + 一层 6px 模糊~~(10-20 上午那版)—— 她真机:「上方那个模糊做的很不自然」:她截图里自己那颗黑泡被刷成
+     「上灰下黑」的一段渐变色、字反而清楚 = 那是**颜色在淡出**,不是模糊。iOS 26 的 scroll edge 是**渐进模糊**:越靠顶越糊、颜色基本还在,只在最顶上一小截化进状态栏。
+     现在两层(header 的 ::before / ::after,都在按钮底下、不接点击):
+       ① ::before = 轻糊 2px,盖到状态栏下 84px,实到 40px 再缓动收掉;颜色只在最上面约 40px 从 --im-top 化开(接状态栏那条,接缝不回来);
+       ② ::after  = 重糊 6px,只在最上面 44px、往下缓动收掉。
+     两层叠出来是「顶上糊得厉害、往下越来越清楚」,没有一条看得见的边。⚠️ 别再加颜色往下盖 —— 那就是她说的不自然。调强弱只动这两层的 blur 和遮罩长度。 */
+  html[data-chatstyle="tg"][data-imsg] header::before, html[data-chatstyle="tg"][data-imsg] header::after {
+    content: ""; position: absolute; left: 0; right: 0; top: 0; z-index: -1; pointer-events: none; }
+  html[data-chatstyle="tg"][data-imsg] header::before { height: calc(84px + var(--dw-sat, env(safe-area-inset-top))) !important; inset: 0 0 auto !important;
+    background: linear-gradient(to bottom, var(--im-top, var(--tg-page)) 0, var(--im-top, var(--tg-page)) var(--dw-sat, env(safe-area-inset-top)),
+      color-mix(in srgb, var(--im-top, var(--tg-page)) 62%, transparent) calc(8px + var(--dw-sat, env(safe-area-inset-top))),
+      color-mix(in srgb, var(--im-top, var(--tg-page)) 30%, transparent) calc(20px + var(--dw-sat, env(safe-area-inset-top))),
+      color-mix(in srgb, var(--im-top, var(--tg-page)) 10%, transparent) calc(32px + var(--dw-sat, env(safe-area-inset-top))),
+      transparent calc(44px + var(--dw-sat, env(safe-area-inset-top)))) !important;
+    -webkit-backdrop-filter: blur(2px) saturate(1.15); backdrop-filter: blur(2px) saturate(1.15);
+    --im-m1: linear-gradient(to bottom, #000 0, #000 calc(40px + var(--dw-sat, env(safe-area-inset-top))), rgba(0,0,0,.7) calc(52px + var(--dw-sat, env(safe-area-inset-top))),
+      rgba(0,0,0,.35) calc(66px + var(--dw-sat, env(safe-area-inset-top))), rgba(0,0,0,.1) calc(77px + var(--dw-sat, env(safe-area-inset-top))), transparent 100%);
+    -webkit-mask: var(--im-m1); mask: var(--im-m1); }
+  html[data-chatstyle="tg"][data-imsg] header::after { height: calc(44px + var(--dw-sat, env(safe-area-inset-top)));
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    --im-m2: linear-gradient(to bottom, #000 0, #000 calc(6px + var(--dw-sat, env(safe-area-inset-top))), rgba(0,0,0,.75) calc(14px + var(--dw-sat, env(safe-area-inset-top))),
+      rgba(0,0,0,.4) calc(24px + var(--dw-sat, env(safe-area-inset-top))), rgba(0,0,0,.12) calc(35px + var(--dw-sat, env(safe-area-inset-top))), transparent 100%);
+    -webkit-mask: var(--im-m2); mask: var(--im-m2); }
   /* 输入栏底下也没有白雾:iOS 26 里消息直接从「+」和胶囊后面滑过去(她浅色截图里「不许躲」那颗就在胶囊底下) */
   html[data-chatstyle="tg"][data-imsg] footer::before { content: none; }
   html[data-chatstyle="tg"][data-imsg] #menuBtn, html[data-chatstyle="tg"][data-imsg] .tgsrch { width: 45.33px !important; height: 45.33px !important; }
   html[data-chatstyle="tg"][data-imsg] #menuBtn svg { width: 10.9px; height: 17.95px; stroke-width: 1.75; margin-left: 0 !important; translate: -3.6px 0; }
   html[data-chatstyle="tg"][data-imsg] .tgsrch::before { width: 20px; height: 20px; }   /* 她 10-19:「右上角的摄像头换成搜索的放大镜」—— ~~视频图标~~ 换回 TG 那支放大镜,点了还是同一个搜关键词面板 */
   html[data-chatstyle="tg"][data-imsg] .tgav { display: block !important; position: absolute; left: 50%; top: calc(3.33px + var(--dw-sat, env(safe-area-inset-top)));
-    width: 59.67px; height: 59.67px; margin: 0; transform: translateX(-50%); border-radius: 50%; z-index: 1;
+    width: 59.67px; height: 59.67px; margin: 0; transform: translateX(-50%); border-radius: 50%; z-index: 3;
     box-shadow: none !important; -webkit-backdrop-filter: none; backdrop-filter: none; }
   html[data-chatstyle="tg"][data-imsg] .tgav:active { transform: translateX(-50%) scale(.94); }
+  /* 谁压谁(2026-10-20 她拿 iOS 特写问「你再看一下呢 谁压谁」):**头像压在名字胶囊上面** —— 头像圆的下沿完整清楚,胶囊上沿只在头像两侧露出来。
+     ~~头像 z 1、胶囊 z 2(胶囊盖住头像下沿)~~ 是看反了,别改回去。 */
   html[data-chatstyle="tg"][data-imsg] .tgname { top: calc(55px + var(--dw-sat, env(safe-area-inset-top))); height: 32px !important; min-width: 0 !important;
     padding: 0 13px 0 15px !important; flex-direction: row; align-items: center; gap: 3.5px; z-index: 2; }
   html[data-chatstyle="tg"][data-imsg] .tgname .tgst { display: none; }
   html[data-chatstyle="tg"][data-imsg] .tgname b, html[data-chatstyle="tg"][data-imsg] .tgname .tgnm { top: 0; font-size: 17px; font-weight: 600; letter-spacing: -.02em; line-height: 22px; }
-  html[data-chatstyle="tg"][data-imsg] .tgname::after { content: ""; flex: none; width: 6.5px; height: 11.5px; background: #acacac;
-    -webkit-mask: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6.5 11.5' fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.2 1.2 5.3 5.75 1.2 10.3'/%3E%3C/svg%3E"); mask: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6.5 11.5' fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.2 1.2 5.3 5.75 1.2 10.3'/%3E%3C/svg%3E"); }
-  /* 玻璃(2026-10-20 她「玻璃质感 1:1 复刻」,浅 / 深两张 iMessage 截图逐像素量的,1206px = 402pt@3x):
-     浅色:摄像头圆钮在纯白上本体是 249~250(**比背后还暗一点**,不是发白)、上沿内侧一道 255 亮线、离上沿约 1/3 最暗、底边亮回 254;
-           外圈一道 1 物理像素的细边,两侧深(176)、上沿浅(241)、下沿居中(227);外面几乎没有影(下沿外 252)。
-           同一种玻璃压在灰泡(238)上读 240~242 —— 背后被提亮了一点、又罩了一层浅灰,所以 = 浅灰 32% + 背后提亮 6% + 轻模糊。
-     深色:在纯黑上本体 31、压在 132 的东西上 100 → 反推 = rgba(58,58,60,.52);上沿内侧 96、往下约 10px 退到 31,下沿 79 → 上下两道亮边 + 两头各一截淡光。
-     返回 / 搜索 / 名字胶囊 / 「+」/ 输入胶囊 / ⌄ 全用这一套(TG 版那套 --g4 变量,只在 iMessage 主题里换值)。⚠️ 折射 Safari 做不了,只做光。 */
+  /* 名字后面的 ›(2026-10-20 她「那个 > 能复刻吗」→「你确定吗 再看一遍 能叠上嘛 颜色对嘛」;照 iOS 特写抠出来、缩到同一比例叠图量的):
+     4.6×12.8pt、笔画 2、两头和拐角圆。颜色是**半透明**的 31% 黑,透出胶囊后面的东西 —— 她指出:同一个 › 压在白上读 171(上中下一样)、
+     压在灰底和字上读 136~158,~~上浅下深的渐变~~ 是我把背景透过来的颜色当成了它自己的颜色(第三版,已撤)。
+     ~~6.5×11.5、#acacac~~(第一版,偏宽偏浅)、~~5.5×12.3、实心 127~~(第二版,拐角伸太右、太深)都叠不上,别回去。 */
+  html[data-chatstyle="tg"][data-imsg] .tgname::after { content: ""; flex: none; width: 4.6px; height: 12.8px;
+    background: rgba(0, 0, 0, .31);
+    -webkit-mask: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4.6 12.8' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1 3.6 6.4 1 11.8'/%3E%3C/svg%3E"); mask: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4.6 12.8' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1 3.6 6.4 1 11.8'/%3E%3C/svg%3E"); }
+  html[data-chatstyle="tg"][data-imsg][data-tgdark] .tgname::after { background: rgba(235, 235, 245, .4); }
+  /* 玻璃(2026-10-20 第二版;她真机:「头像压住玻璃」「我们的所有玻璃都像磨砂亚克力,不像玻璃」+ 一张 iOS 名字胶囊特写)
+     ~~第一版:浅灰 32% + 背后提亮 6% + 糊 3px~~ —— 太透:胶囊压在头像上,头像几乎原样透过来(看着像头像压在玻璃上),整块又平,像一片亚克力。
+     **iOS 那张反算**(特写约 3.05px/pt):胶囊压在头像(暗 ~110,糊开约 150)上读 217~236、压在灰底 230 上读 235~240 → 本体 ≈ rgba(242,242,244,.66) + 重糊;
+     「像玻璃」靠的是**边上的光**:上沿一道 255 的高光、边缘一圈更亮(厚边)、左上一点镜面反光、下沿外一道 216 的细暗线、整块轻轻浮起。
+     深色沿用第一版量的本体 rgba(58,58,60,.5x)(纯黑上 31),同样加重糊和厚边光。⚠️ 折射(背后的字在边上弯一下)Safari 做不了,只做光。
+     返回 / 搜索 / 名字胶囊 / 「+」/ 输入胶囊 / ⌄ 全用这一套(TG 版那套 --g4 变量,只在 iMessage 主题里换值)。调透明度只动本体那一层的 alpha。 */
   html[data-chatstyle="tg"][data-imsg] {
-    --g4-bg: linear-gradient(to bottom, rgba(255,255,255,.8) 0, rgba(255,255,255,.3) 3px, rgba(255,255,255,0) 7px),
-             linear-gradient(to top, rgba(255,255,255,.65) 0, rgba(255,255,255,.2) 3px, rgba(255,255,255,0) 6px),
-             rgba(238,238,240,.32);
-    --g4-sh: inset 0 1px 0 rgba(255,255,255,.95), inset 0 -1px 0 rgba(255,255,255,.75),
-             0 0 0 .34px rgba(0,0,0,.24), 0 .5px 0 rgba(0,0,0,.05), 0 1px 3px rgba(0,0,0,.03);
-    --g4-filter: blur(3px) saturate(1.5) brightness(1.06);
+    --g4-bg: linear-gradient(to bottom, rgba(255,255,255,.85) 0, rgba(255,255,255,.35) 2.5px, rgba(255,255,255,0) 7px),
+             linear-gradient(to top, rgba(255,255,255,.5) 0, rgba(255,255,255,0) 6px),
+             rgba(242,242,244,.66);
+    --g4-sh: inset 0 1px 0 #fff, inset 0 0 3px 1px rgba(255,255,255,.6), inset 1.5px 1.5px 1px -1px rgba(255,255,255,.95), inset 0 -1px 0 rgba(255,255,255,.55),
+             0 0 0 .34px rgba(0,0,0,.18), 0 .6px 0 rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.05);
+    --g4-filter: blur(8px) saturate(1.7);
   }
   html[data-chatstyle="tg"][data-imsg][data-tgdark] {
-    --g4-bg: linear-gradient(to bottom, rgba(255,255,255,.09) 0, rgba(255,255,255,.03) 5px, rgba(255,255,255,0) 11px),
-             linear-gradient(to top, rgba(255,255,255,.08) 0, rgba(255,255,255,.03) 5px, rgba(255,255,255,0) 11px),
-             rgba(58,58,60,.52);
-    --g4-sh: inset 0 1px 0 rgba(255,255,255,.26), inset 0 -1px 0 rgba(255,255,255,.17), inset 0 0 0 .34px rgba(255,255,255,.05), 0 0 0 .34px rgba(0,0,0,.55);
-    --g4-filter: blur(3px) saturate(1.4);
+    --g4-bg: linear-gradient(to bottom, rgba(255,255,255,.1) 0, rgba(255,255,255,.03) 4px, rgba(255,255,255,0) 10px),
+             linear-gradient(to top, rgba(255,255,255,.07) 0, rgba(255,255,255,0) 8px),
+             rgba(58,58,60,.56);
+    --g4-sh: inset 0 1px 0 rgba(255,255,255,.28), inset 0 0 3px 1px rgba(255,255,255,.07), inset 1.5px 1.5px 1px -1px rgba(255,255,255,.22), inset 0 -1px 0 rgba(255,255,255,.16),
+             0 0 0 .34px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.3);
+    --g4-filter: blur(8px) saturate(1.5);
   }
   /* 语音条(2026-10-20,她「语音条做了吗」—— 功能 10-10 就有,但 iMessage 主题里还是 TG 那颗黑钮;现在照她截图 1:1):
      他那颗:泡高 58.33、圆角同文字泡;蓝圆钮 25.67(左留白 16.33、rgb(59,134,247))、里面的三角是**镂空成泡色**的 8.67×9.67、略偏右;
      隔 12.67 是波形:**42 根**、每根 2pt 宽、间距 2(共 166pt)、高 4 ~ 34.67pt(最矮的是圆点);没放过的 9% 墨、放过的 23% 墨(截图 213 / 179 压在 233 上);
      再隔 13.33 是时长「00:02」12pt、次要灰 rgb(129,129,133)、右留白 15.67。整颗约 281pt 宽。
      她自己那颗(蓝泡)照 iMessage:白钮、蓝三角、白波形。转写文字照旧在下面(设置里「语音文字」决定默认收不收)。 */
-  html[data-chatstyle="tg"][data-imsg] :is(.gu, .tgb, .bubble).tgvoice:not(.stkonly) { min-width: 0; padding: 11.83px 15.67px 11.83px 16.33px; }
+  html[data-chatstyle="tg"][data-imsg] :is(.gu, .tgb, .bubble).tgvoice:not(.stkonly) { min-width: 0; max-width: 100%; padding: 11.83px 15.67px 11.83px 16.33px; }
   html[data-chatstyle="tg"][data-imsg] .tgvoice .vrow { gap: 0; min-height: 34.67px; }
   html[data-chatstyle="tg"][data-imsg] .tgvoice .vplay { width: 25.67px; height: 25.67px; background: rgb(59, 134, 247); }
   html[data-chatstyle="tg"][data-imsg] .tgvoice .vplay::before { width: 9.67px; height: 9.67px; background: var(--tg-him); transform: translateX(.8px);
@@ -6089,9 +6119,11 @@ box.focus();
             mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 29'%3E%3Cpath d='M0 3.2C0 .8 2.6-.7 4.7.6l19.6 11.3c2.1 1.2 2.1 4.2 0 5.4L4.7 28.5C2.6 29.7 0 28.2 0 25.8Z'/%3E%3C/svg%3E");
     -webkit-mask-size: 8.67px 9.67px; mask-size: 8.67px 9.67px; }
   html[data-chatstyle="tg"][data-imsg] .tgvoice.playing .vplay::before { transform: none; -webkit-mask-size: 9px 9.67px; mask-size: 9px 9.67px; }
-  html[data-chatstyle="tg"][data-imsg] .tgvoice .vwave { flex: none; width: auto; height: 34.67px; gap: 2px; margin-left: 12.67px; }
+  /* 10-20 真机:开着「每条消息旁」头像时泡最宽只有 77% ≈ 257pt,装不下 281 的语音条,「00:14」跑出泡外 → 语音条不受 77% 限制;再窄的屏让波形自己收(从右边截) */
+  html[data-chatstyle="tg"][data-imsg] .tgvoice .vwave { flex: 0 1 auto; min-width: 0; overflow: hidden; width: auto; height: 34.67px; gap: 2px; margin-left: 12.67px; }
+  html[data-chatstyle="tg"][data-imsg] .tgvoice .vdur { flex: none; }
   html[data-chatstyle="tg"][data-imsg] .tgvoice .vwave i { flex: none; width: 2px; min-width: 2px; max-width: 2px; border-radius: 1px;
-    height: calc(4px + var(--h, 0) * 30.67px) !important; background: color-mix(in srgb, var(--tg-him-ink, #000) 9%, transparent); }
+    height: calc(4px + var(--hi, var(--h, 0)) * 30.67px) !important; background: color-mix(in srgb, var(--tg-him-ink, #000) 9%, transparent); }
   html[data-chatstyle="tg"][data-imsg] .tgvoice .vwave i.on { background: color-mix(in srgb, var(--tg-him-ink, #000) 23%, transparent); }
   html[data-chatstyle="tg"][data-imsg][data-tgdark] .tgvoice .vwave i { background: rgba(255,255,255,.2); }
   html[data-chatstyle="tg"][data-imsg][data-tgdark] .tgvoice .vwave i.on { background: rgba(255,255,255,.55); }
@@ -6100,19 +6132,31 @@ box.focus();
   html[data-chatstyle="tg"][data-imsg][data-tgdark] .tgvoice .vdur { color: rgb(141, 141, 146); }
   html[data-chatstyle="tg"][data-imsg] .tgvoice .vdur::before { content: "0"; }   /* 「0:02」→ iMessage 的「00:02」(语音不会长过 10 分钟,VOICE_MAX_CHARS 500 字) */
   html[data-chatstyle="tg"][data-imsg] .tgvoice .vtext { margin-top: 6px; font-size: calc(var(--imfs) * .87); color: color-mix(in srgb, var(--tg-him-ink, #000) 55%, transparent); }
+  /* 颜色跟她的气泡(10-20 她:「语音条的颜色我也想要和我的气泡修改能保持一致」):他那颗的蓝钮 = 她挑的色;她自己那颗 = 她的泡色,钮 / 波形 / 时长用泡里的字色(黑白按亮度配) */
+  html[data-chatstyle="tg"][data-imsg][data-imme] .tgvoice .vplay { background: var(--tg-me); }
   html[data-chatstyle="tg"][data-imsg] .row.me .tgvoice .vplay { background: #fff; }
+  html[data-chatstyle="tg"][data-imsg][data-imme] .row.me .tgvoice .vplay { background: var(--tg-me-ink); }
+  html[data-chatstyle="tg"][data-imsg][data-imme] .row.me .tgvoice .vplay::before { background: var(--tg-me); }
+  html[data-chatstyle="tg"][data-imsg][data-imme] .row.me .tgvoice .vwave i { background: color-mix(in srgb, var(--tg-me-ink) 45%, transparent); }
+  html[data-chatstyle="tg"][data-imsg][data-imme] .row.me .tgvoice .vwave i.on { background: var(--tg-me-ink); }
+  html[data-chatstyle="tg"][data-imsg][data-imme] .row.me .tgvoice .vdur, html[data-chatstyle="tg"][data-imsg][data-imme] .row.me .tgvoice .vtext { color: color-mix(in srgb, var(--tg-me-ink) 78%, transparent); }
   html[data-chatstyle="tg"][data-imsg] .row.me .tgvoice .vplay::before { background: var(--imc, var(--tg-me)); }
   html[data-chatstyle="tg"][data-imsg] .row.me .tgvoice .vwave i { background: rgba(255,255,255,.45); }
   html[data-chatstyle="tg"][data-imsg] .row.me .tgvoice .vwave i.on { background: #fff; }
   html[data-chatstyle="tg"][data-imsg] .row.me .tgvoice .vdur, html[data-chatstyle="tg"][data-imsg] .row.me .tgvoice .vtext { color: rgba(255,255,255,.78); }
   /* 「Delivered / 17:53 Read」(2026-10-20):只挂在**最后一条**她的话下面,送到了才出(按下就飞那一下 / 没送出去的不出)。脚本在 checks() 里挂 .imdlv、字写在 data-imdl。
      ~~第一版「已送达」(照她深色截图,11px、右缩 19.67)~~ 她同日发「17:53 Read」那张说「改成这种」:那张是缩放过的(上下黑边),按泡高 38pt 换算回来 ——
-     半粗 ~~12px~~ 11px(她看了 12「大太多了」;iOS 那行本来就是 11pt 的 caption2)次要灰、右端停在尾巴左边(right 21)、字顶离泡底约 5pt。时间照她 10-09 定的 12 小时制(hhmm,带 AM / PM),不照截图的 17:53。他回过话写「他开始回的时刻 + Read」,还没回写「Delivered」。左滑看时间时让位给时间。 */
+     半粗 ~~12px~~ ~~11px~~ 10px(她看了 12「大太多了」、上线后真机看 11 仍说「字太大了」)次要灰、右端停在尾巴左边(right 21)、字顶离泡底约 5pt。时间照她 10-09 定的 12 小时制(hhmm,带 AM / PM),不照截图的 17:53。他回过话写「他开始回的时刻 + Read」,还没回写「Delivered」。左滑看时间时让位给时间。 */
   html[data-chatstyle="tg"][data-imsg] .row.me.imdlv { margin-bottom: 14px; }
   html[data-chatstyle="tg"][data-imsg] .row.me.imdlv > .bubble:last-child:not(.imsw)::after { content: attr(data-imdl) !important; position: absolute; top: calc(100% + 2px); right: 21px; left: auto;
     float: none !important; margin: 0 !important; padding: 0 !important; background: none !important; transform: none; translate: none; animation: none !important;
-    white-space: nowrap; font: 600 11px/1.2 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", sans-serif; letter-spacing: .01em; font-variant-numeric: tabular-nums; color: rgb(138, 138, 142) !important; opacity: 1; pointer-events: none; }
+    white-space: nowrap; font: 600 10px/1.2 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", sans-serif; letter-spacing: .01em; font-variant-numeric: tabular-nums; color: rgb(138, 138, 142) !important; opacity: 1; pointer-events: none; }
   html[data-chatstyle="tg"][data-imsg][data-tgdark] .row.me.imdlv > .bubble:last-child:not(.imsw)::after { color: rgb(141, 141, 146) !important; }
+  /* 他的头像(「每条消息旁」那档):iMessage 主题里**贴在每轮第一颗泡旁边**(2026-10-20 她:「他的头像改成在每轮第一条信息旁边」)。
+     ~~贴这一行底边 = 最后一颗旁边~~(TG 版照旧,TG 本来就是贴底)。一轮 = 她两句话之间他说的全部:中间夹着思考 / 工具行、或一轮被拆成好几行 .gu 时,
+     只有第一行出头像(脚本 avFirst 给后面的行挂 .imavc)。位置 = 和第一颗一行泡上下居中(泡高 = 字号 × 2.55)。 */
+  html[data-chatstyle="tg"][data-imsg][data-avmode="each"] .row:has(> .gu)::before { top: calc((var(--imfs) * 2.55 - 30px) / 2); bottom: auto; }
+  html[data-chatstyle="tg"][data-imsg][data-avmode="each"] .row.imavc:has(> .gu)::before { content: none; }
   /* 输入栏 */
   html[data-chatstyle="tg"][data-imsg] footer { padding-left: 27.33px; padding-right: 25px; }
   html[data-chatstyle="tg"][data-imsg] #plusBtn { width: 41.33px; height: 41.33px; }
@@ -7468,6 +7512,7 @@ box.focus();
       reactPass(sc);
     });
     if (tg) checks(scopes[0] === log);
+    if (tg) avFirst();
     if (tg) {
       var tl = [];
       scopes.forEach(function (sc) {
@@ -7541,6 +7586,19 @@ box.focus();
   /* 她的泡上的对勾(2026-10-10,照 TG):✓ = 送到了 —— 这颗泡本来就是服务器回声(echo)之后才画的;
      ✓✓ = 他开始看了 —— 后面出现了他的任何动静(思考 / 工具 / 回话)。
      整页过时从末尾往前扫一遍;平时只看末尾那一串她连发的泡(更早的早就定了)。 */
+  /* 仿 iMessage「每条消息旁」头像只出在每轮第一行(见《仿 iMessage》那段 CSS):从上往下走,碰到她的行 = 新的一轮;
+     这一轮里第二个起的 .gu 行挂 .imavc。只改类、不量东西,整页走一遍也不重排 */
+  function avFirst() {
+    var on = root.hasAttribute("data-imsg") && root.getAttribute("data-avmode") === "each", inTurn = false;
+    for (var r = log.firstElementChild; r; r = r.nextElementSibling) {
+      if (!r.classList.contains("row")) continue;
+      if (r.classList.contains("me")) { inTurn = false; continue; }
+      if (!r.querySelector(":scope > .gu")) continue;
+      var c = on && inTurn;
+      if (r.classList.contains("imavc") !== c) r.classList.toggle("imavc", c);
+      inTurn = true;
+    }
+  }
   var dlvRow = null;   // 仿 iMessage「已送达」挂在哪一行(见《仿 iMessage》那段 CSS)
   function checks(all) {
     var seen = false, passedMe = false, dlv;
@@ -7666,7 +7724,8 @@ box.focus();
     b.classList.add("tgvoice");
     b._voice = text; b._src = opt.src || "";
     var h = hashOf(text), wave = '<span class="vwave">';
-    for (var i = 0; i < BARS; i++) { h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0; wave += '<i style="--h:' + ((h % 15) / 14).toFixed(4) + '"></i>'; }
+    for (var i = 0; i < BARS; i++) { h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0; var h2 = Math.imul(h ^ (h >>> 13), 3266489909) >>> 0, hi = h2 % 100 < 31 ? 0 : 0.15 + 0.85 * Math.sqrt(((h2 >>> 8) % 1000) / 999);
+      wave += '<i style="--h:' + ((h % 15) / 14).toFixed(4) + ";--hi:" + hi.toFixed(4) + '"></i>'; }   /* --hi:仿 iMessage 的高低(约三成是圆点,其余偏高,照 iOS 截图那条的分布);TG 版只认 --h,逐根不变 */
     wave += "</span>";
     b.innerHTML = '<span class="vrow"><button type="button" class="vplay" aria-label="播放"></button>' + wave +
       '<span class="vdur"></span></span><span class="vtext"></span>';
