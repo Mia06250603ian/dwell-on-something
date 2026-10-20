@@ -1986,16 +1986,9 @@
     if (state.appearance === "light") return false;
     try { return matchMedia("(prefers-color-scheme: dark)").matches; } catch (e) { return false; }
   }
-  /* 状态栏那条跟聊天页顶色(2026-10-20 她:「为什么这一页的顶栏不能跟随背景底色变化」):iOS 26 取的是外壳 .topcap 的色
-     (她截图量:状态栏 243 242 241 = 象牙的 --paper-top,不是聊天页的白)。TG 版聊天页顶上就是 --paper-top,本来对得上;
-     仿 iMessage 写死白 / 黑,所以对不上。打开聊天页**之前**把 .topcap 涂成那个色(iOS 在聊天页这层出现时取色),返回时还原。
-     ⚠️ 聊天页开着时再切深浅,iOS 不一定跟着重取(手册《iOS 26 状态栏那条的规矩》),这里照旧涂、并让它闪一下碰碰运气。 */
-  function chatTopColor() { return state.chatStyle === "imsg" ? (wantDark() ? "#000000" : "#ffffff") : ""; }
-  function paintChatTop(on, blink) {
-    var el = document.querySelector(".topcap"); if (!el) return;
-    el.style.background = on ? chatTopColor() : "";
-    if (blink) { el.style.display = "none"; requestAnimationFrame(function () { requestAnimationFrame(function () { el.style.display = ""; }); }); }
-  }
+  /* ~~状态栏那条跟聊天页顶色:打开聊天页前把 .topcap 涂成聊天页顶色(paintChatTop,2026-10-20 #46)~~ —— **同夜撤,别再加回来**:
+     iOS 只在打开 App 时取状态栏色(手册《「他」页照片铺到状态栏底下》开头,三次真机证实),涂了它不认;
+     反而聊天页顶栏渐隐(--im-top)和「他」页照片顶(--pc-top)都是读 .topcap 的色来接状态栏的,涂黑之后从黑起步,她真机上出了一刀分层。 */
   function lum(hex) {                    // #rrggbb → 0..1 相对亮度(够判断深浅就行)
     var m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(hex || "").trim());
     if (!m) return 1;
@@ -2087,7 +2080,6 @@
     paintAvatar(avatarUrl("him"));
     paintMe();
     state.palette = readPalette();      // 皮肤的配色交给聊天页(TG 版跟它走,各页统一)
-    if (typeof chatview !== "undefined" && chatview && chatframe && !chatview.hidden && !chatframe.hidden) paintChatTop(true, true);   // 聊天页开着时切了深浅 / 样式
     save(state);
     paintChatLook();
     tellChat();
@@ -2267,7 +2259,6 @@
       if (src) {
         if (loaded !== src) { chatframe.src = src; loaded = src; }
         chatframe.hidden = false; chatNone.hidden = true; chatbar.hidden = true;
-        paintChatTop(true, false);      // 在聊天页这层出现之前涂好,iOS 出现那一刻取色
         syncBg();
       } else {
         chatframe.hidden = true; chatNone.hidden = false; chatbar.hidden = false;
@@ -2279,7 +2270,6 @@
   });
   function goBack() {
     if (window.__dwTopTint) window.__dwTopTint(null);   // 「他」页涂过的状态栏那条,返回 Chats 时还原
-    paintChatTop(false, false);                        // 聊天页涂的顶色还原成皮肤底色
     tabbar.hidden = false;
     loadLast();
     pushTo(1, null, function () { chatview.hidden = true; });
