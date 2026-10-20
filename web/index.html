@@ -793,9 +793,29 @@
     --g5-sh: inset 0 1px 0 rgb(255 255 255 / calc(.2 + .75 * var(--g4-w))), inset 0 -.5px 0 rgb(255 255 255 / calc(.7 * var(--g4-w))),
              0 0 0 .5px rgb(0 0 0 / .07), 0 .5px .5px rgb(0 0 0 / .04);
   }
+  /* 深色单独一套(2026-10-20,她暗色截图:「这个玻璃为啥在暗色模式下像不锈钢啊」):
+     上面那套是照**浅色** iOS 键盘工具栏量的「上沿亮 → 往下约 16px 一条暗带 → 再亮回来」,深色只按 --g4-w 收暗 ——
+     她截图量出来卡片 63 → 38 → 52、底栏 78 → 56 → 65 → 54 → 88,深底上这种「亮暗亮」的竖向光带就是金属管 / 拉丝钢的反光。
+     iOS 深色玻璃(10-20 她 iMessage 深色截图量的)是:本体平的一块 rgba(58,58,60,.52)(纯黑上 31),只有上下沿各一道细亮边,上沿那点光 10px 内就淡掉,**中间没有暗带**。
+     判深色的条件和上面 --g4-w 那两条一样(雾山 / 系统深色下的象牙)。 */
+  :root { --g5-base: color-mix(in srgb, var(--card) 22%, transparent); }
+  :root[data-skin="fogmtn"] {
+    --g5-bg: linear-gradient(to bottom, rgb(255 255 255 / .08) 0, rgb(255 255 255 / .03) 4px, transparent 10px),
+             linear-gradient(to top, rgb(255 255 255 / .05) 0, transparent 8px);
+    --g5-sh: inset 0 1px 0 rgb(255 255 255 / .22), inset 0 -.5px 0 rgb(255 255 255 / .12), inset 0 0 0 .5px rgb(255 255 255 / .04), 0 0 0 .5px rgb(0 0 0 / .4);
+    --g5-base: rgb(58 58 60 / .52);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]):not([data-skin]), :root:not([data-theme="light"])[data-skin="ivory"] {
+      --g5-bg: linear-gradient(to bottom, rgb(255 255 255 / .08) 0, rgb(255 255 255 / .03) 4px, transparent 10px),
+               linear-gradient(to top, rgb(255 255 255 / .05) 0, transparent 8px);
+      --g5-sh: inset 0 1px 0 rgb(255 255 255 / .22), inset 0 -.5px 0 rgb(255 255 255 / .12), inset 0 0 0 .5px rgb(255 255 255 / .04), 0 0 0 .5px rgb(0 0 0 / .4);
+      --g5-base: rgb(58 58 60 / .52);
+    }
+  }
   /* 底栏、「+」、设置那颗圆钮、首页的卡(今天的歌 / 纪念日)都用它;卡片下面原来那团 14~32px 的影(卡片感)一并撤掉 */
   .tabbar, .tabplus, .hround, .homefeed .card, .homefeed .whisper {
-    background: var(--g5-bg), color-mix(in srgb, var(--card) 22%, transparent);
+    background: var(--g5-bg), var(--g5-base);
     -webkit-backdrop-filter: blur(14px) saturate(1.6); backdrop-filter: blur(14px) saturate(1.6);
     box-shadow: var(--g5-sh);
   }
