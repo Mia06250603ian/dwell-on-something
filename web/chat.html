@@ -6107,11 +6107,11 @@ box.focus();
   html[data-chatstyle="tg"][data-imsg] .row.me .tgvoice .vdur, html[data-chatstyle="tg"][data-imsg] .row.me .tgvoice .vtext { color: rgba(255,255,255,.78); }
   /* 「Delivered / 17:53 Read」(2026-10-20):只挂在**最后一条**她的话下面,送到了才出(按下就飞那一下 / 没送出去的不出)。脚本在 checks() 里挂 .imdlv、字写在 data-imdl。
      ~~第一版「已送达」(照她深色截图,11px、右缩 19.67)~~ 她同日发「17:53 Read」那张说「改成这种」:那张是缩放过的(上下黑边),按泡高 38pt 换算回来 ——
-     半粗 12px 次要灰、右端停在尾巴左边(right 21)、字顶离泡底约 5pt。时间照她 10-09 定的 12 小时制(hhmm,带 AM / PM),不照截图的 17:53。他回过话写「他开始回的时刻 + Read」,还没回写「Delivered」。左滑看时间时让位给时间。 */
+     半粗 ~~12px~~ 11px(她看了 12「大太多了」;iOS 那行本来就是 11pt 的 caption2)次要灰、右端停在尾巴左边(right 21)、字顶离泡底约 5pt。时间照她 10-09 定的 12 小时制(hhmm,带 AM / PM),不照截图的 17:53。他回过话写「他开始回的时刻 + Read」,还没回写「Delivered」。左滑看时间时让位给时间。 */
   html[data-chatstyle="tg"][data-imsg] .row.me.imdlv { margin-bottom: 14px; }
   html[data-chatstyle="tg"][data-imsg] .row.me.imdlv > .bubble:last-child:not(.imsw)::after { content: attr(data-imdl) !important; position: absolute; top: calc(100% + 2px); right: 21px; left: auto;
     float: none !important; margin: 0 !important; padding: 0 !important; background: none !important; transform: none; translate: none; animation: none !important;
-    white-space: nowrap; font: 600 12px/1.2 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", sans-serif; letter-spacing: .01em; font-variant-numeric: tabular-nums; color: rgb(138, 138, 142) !important; opacity: 1; pointer-events: none; }
+    white-space: nowrap; font: 600 11px/1.2 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", sans-serif; letter-spacing: .01em; font-variant-numeric: tabular-nums; color: rgb(138, 138, 142) !important; opacity: 1; pointer-events: none; }
   html[data-chatstyle="tg"][data-imsg][data-tgdark] .row.me.imdlv > .bubble:last-child:not(.imsw)::after { color: rgb(141, 141, 146) !important; }
   /* 输入栏 */
   html[data-chatstyle="tg"][data-imsg] footer { padding-left: 27.33px; padding-right: 25px; }
