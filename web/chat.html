@@ -6105,12 +6105,13 @@ box.focus();
   html[data-chatstyle="tg"][data-imsg] .row.me .tgvoice .vwave i { background: rgba(255,255,255,.45); }
   html[data-chatstyle="tg"][data-imsg] .row.me .tgvoice .vwave i.on { background: #fff; }
   html[data-chatstyle="tg"][data-imsg] .row.me .tgvoice .vdur, html[data-chatstyle="tg"][data-imsg] .row.me .tgvoice .vtext { color: rgba(255,255,255,.78); }
-  /* 「已送达」(2026-10-20,她深色截图里最后一条下面那行;iOS 是「已送達 / Delivered」):只挂在**最后一条**她的话下面,送到了才出(按下就飞那一下 / 没送出去的不出)。
-     量的:字 11px 次要灰、右端比泡右缩 19.67、字顶离泡底约 8pt。脚本在 checks() 里挂 .imdlv。左滑看时间时让位给时间。 */
-  html[data-chatstyle="tg"][data-imsg] .row.me.imdlv { margin-bottom: 17px; }
-  html[data-chatstyle="tg"][data-imsg] .row.me.imdlv > .bubble:last-child:not(.imsw)::after { content: "已送达" !important; position: absolute; top: calc(100% + 5px); right: 19.67px; left: auto;
+  /* 「Delivered / 17:53 Read」(2026-10-20):只挂在**最后一条**她的话下面,送到了才出(按下就飞那一下 / 没送出去的不出)。脚本在 checks() 里挂 .imdlv、字写在 data-imdl。
+     ~~第一版「已送达」(照她深色截图,11px、右缩 19.67)~~ 她同日发「17:53 Read」那张说「改成这种」:那张是缩放过的(上下黑边),按泡高 38pt 换算回来 ——
+     半粗 12px 次要灰、右端停在尾巴左边(right 21)、字顶离泡底约 5pt。时间照她 10-09 定的 12 小时制(hhmm,带 AM / PM),不照截图的 17:53。他回过话写「他开始回的时刻 + Read」,还没回写「Delivered」。左滑看时间时让位给时间。 */
+  html[data-chatstyle="tg"][data-imsg] .row.me.imdlv { margin-bottom: 14px; }
+  html[data-chatstyle="tg"][data-imsg] .row.me.imdlv > .bubble:last-child:not(.imsw)::after { content: attr(data-imdl) !important; position: absolute; top: calc(100% + 2px); right: 21px; left: auto;
     float: none !important; margin: 0 !important; padding: 0 !important; background: none !important; transform: none; translate: none; animation: none !important;
-    white-space: nowrap; font: 500 11px/1.2 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", sans-serif; color: rgb(138, 138, 142) !important; opacity: 1; pointer-events: none; }
+    white-space: nowrap; font: 600 12px/1.2 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", sans-serif; letter-spacing: .01em; font-variant-numeric: tabular-nums; color: rgb(138, 138, 142) !important; opacity: 1; pointer-events: none; }
   html[data-chatstyle="tg"][data-imsg][data-tgdark] .row.me.imdlv > .bubble:last-child:not(.imsw)::after { color: rgb(141, 141, 146) !important; }
   /* 输入栏 */
   html[data-chatstyle="tg"][data-imsg] footer { padding-left: 27.33px; padding-right: 25px; }
@@ -7562,6 +7563,15 @@ box.focus();
       }
     }
     if (dlv !== undefined && dlv !== dlvRow) { if (dlvRow) dlvRow.classList.remove("imdlv"); if (dlv) dlv.classList.add("imdlv"); dlvRow = dlv; }
+    /* 那行写什么(10-20 她发「17:53 Read」那张):他回过话 = 「他开始回的那一刻 + Read」,还没回 = 「Delivered」。写在最后一颗泡的 data-imdl 上给 CSS 读 */
+    if (dlvRow && dlvRow.isConnected) {
+      var lb = dlvRow.querySelector(":scope > .bubble:last-child"), txt = "Delivered";
+      for (var n = dlvRow.nextElementSibling; n; n = n.nextElementSibling) {
+        if (n === dots || !n.classList.contains("row") || n.classList.contains("me")) continue;
+        var at = n.querySelector("[data-at]"); txt = (at ? hhmm(+at.dataset.at) : (lb ? stamp(lb) : "")) + " Read"; break;
+      }
+      if (lb && lb.getAttribute("data-imdl") !== txt) lb.setAttribute("data-imdl", txt);
+    }
   }
   /* ── 他的回话怎么出来(2026-10-16 改,所有者「不是一个气泡一个气泡跳,是隔好久几个一起跳出来」→ 选「写完一行就弹一颗」)──
      ~~整句定稿后一次拆好、隔 70ms 依次弹~~(10-10 起;看着就是等很久、几颗一起蹦)。
