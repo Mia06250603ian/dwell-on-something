@@ -6102,11 +6102,15 @@ box.focus();
              0 0 0 .34px rgba(0,0,0,.18), 0 .6px 0 rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.05);
     --g4-filter: blur(8px) saturate(1.7);
   }
+  /* ⚠️ 深色 10-20 傍晚又改(她真机:「iMessage 的输入框还是不锈钢!」)—— 拿她截图和 iOS 原生深色输入框逐行比:
+     iOS 上沿只有 44(几乎看不出)→ 31 平 → 底下 33 / 36 / 40 → 下沿亮边 79;我们上沿 **125 一道亮线** → 32 平 → 底下 47 / 53 → 89。
+     上沿那道亮线 + 底下那截偏亮的光 = 金属边。照 iOS 的数收:上沿 .02、左上镜面 .04、厚边光 .035、底下化开 .035、下沿亮边 .17(本地量:上 51 → 33 平 → 底下 34~41 → 下沿 79;iOS 44 → 31 → 33~40 → 79)。
+     ~~inset 0 1px .28 / 镜面 .22 / 厚边 .07 / 底下 .07~~ 别回去。 */
   html[data-chatstyle="tg"][data-imsg][data-tgdark] {
-    --g4-bg: linear-gradient(to bottom, rgba(255,255,255,.1) 0, rgba(255,255,255,.03) 4px, rgba(255,255,255,0) 10px),
-             linear-gradient(to top, rgba(255,255,255,.07) 0, rgba(255,255,255,0) 8px),
+    --g4-bg: linear-gradient(to bottom, rgba(255,255,255,.03) 0, rgba(255,255,255,0) 8px),
+             linear-gradient(to top, rgba(255,255,255,.035) 0, rgba(255,255,255,0) 7px),
              rgba(58,58,60,.56);
-    --g4-sh: inset 0 1px 0 rgba(255,255,255,.28), inset 0 0 3px 1px rgba(255,255,255,.07), inset 1.5px 1.5px 1px -1px rgba(255,255,255,.22), inset 0 -1px 0 rgba(255,255,255,.16),
+    --g4-sh: inset 0 1px 0 rgba(255,255,255,.02), inset 0 0 3px 1px rgba(255,255,255,.035), inset 1.5px 1.5px 1px -1px rgba(255,255,255,.04), inset 0 -1px 0 rgba(255,255,255,.17),
              0 0 0 .34px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.3);
     --g4-filter: blur(8px) saturate(1.5);
   }
