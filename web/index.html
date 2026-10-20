@@ -1977,7 +1977,24 @@
     var cs = getComputedStyle(document.documentElement), g = function (n) { return cs.getPropertyValue(n).trim(); };
     var top = g("--paper-top"), card = g("--card");
     return { top: top, bot: g("--paper-bot"), card: card, ink: g("--ink"), ink2: g("--ink-2"), dim: g("--dim"), line: g("--line"),
-             dark: lum(top) < 0.42 };
+             dark: lum(top) < 0.42, want: wantDark() };
+  }
+  /* 「外观」开关本身要深还是浅(2026-10-20 她:「我设了深色网页没变」)。皮肤的 dark 是按底色算的 —— 只有象牙纸张跟昼夜,
+     其余五款永远浅;仿 iMessage 的颜色不吃皮肤,所以它只认这个(chat.html applyLook 里 imsg 那段)。 */
+  function wantDark() {
+    if (state.appearance === "dark") return true;
+    if (state.appearance === "light") return false;
+    try { return matchMedia("(prefers-color-scheme: dark)").matches; } catch (e) { return false; }
+  }
+  /* 状态栏那条跟聊天页顶色(2026-10-20 她:「为什么这一页的顶栏不能跟随背景底色变化」):iOS 26 取的是外壳 .topcap 的色
+     (她截图量:状态栏 243 242 241 = 象牙的 --paper-top,不是聊天页的白)。TG 版聊天页顶上就是 --paper-top,本来对得上;
+     仿 iMessage 写死白 / 黑,所以对不上。打开聊天页**之前**把 .topcap 涂成那个色(iOS 在聊天页这层出现时取色),返回时还原。
+     ⚠️ 聊天页开着时再切深浅,iOS 不一定跟着重取(手册《iOS 26 状态栏那条的规矩》),这里照旧涂、并让它闪一下碰碰运气。 */
+  function chatTopColor() { return state.chatStyle === "imsg" ? (wantDark() ? "#000000" : "#ffffff") : ""; }
+  function paintChatTop(on, blink) {
+    var el = document.querySelector(".topcap"); if (!el) return;
+    el.style.background = on ? chatTopColor() : "";
+    if (blink) { el.style.display = "none"; requestAnimationFrame(function () { requestAnimationFrame(function () { el.style.display = ""; }); }); }
   }
   function lum(hex) {                    // #rrggbb → 0..1 相对亮度(够判断深浅就行)
     var m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(hex || "").trim());
@@ -2070,6 +2087,7 @@
     paintAvatar(avatarUrl("him"));
     paintMe();
     state.palette = readPalette();      // 皮肤的配色交给聊天页(TG 版跟它走,各页统一)
+    if (typeof chatview !== "undefined" && chatview && chatframe && !chatview.hidden && !chatframe.hidden) paintChatTop(true, true);   // 聊天页开着时切了深浅 / 样式
     save(state);
     paintChatLook();
     tellChat();
@@ -2249,6 +2267,7 @@
       if (src) {
         if (loaded !== src) { chatframe.src = src; loaded = src; }
         chatframe.hidden = false; chatNone.hidden = true; chatbar.hidden = true;
+        paintChatTop(true, false);      // 在聊天页这层出现之前涂好,iOS 出现那一刻取色
         syncBg();
       } else {
         chatframe.hidden = true; chatNone.hidden = false; chatbar.hidden = false;
@@ -2260,6 +2279,7 @@
   });
   function goBack() {
     if (window.__dwTopTint) window.__dwTopTint(null);   // 「他」页涂过的状态栏那条,返回 Chats 时还原
+    paintChatTop(false, false);                        // 聊天页涂的顶色还原成皮肤底色
     tabbar.hidden = false;
     loadLast();
     pushTo(1, null, function () { chatview.hidden = true; });

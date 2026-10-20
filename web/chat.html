@@ -6301,7 +6301,9 @@ box.focus();
        深浅照旧跟皮肤底色走(和 TG 版同一个判断)。 */
     root.removeAttribute("data-imme");
     if (prefs.chatStyle === "imsg") {
-      if (P && P.dark) root.setAttribute("data-tgdark", "");
+      /* 深浅只认设置里的「外观」(P.want,外壳算好递来;2026-10-20 她:「我设了深色网页没变」—— 她的皮肤不跟昼夜,原来照皮肤底色判断就永远浅)。
+         旧外壳没递 want 时退回原来的判断。 */
+      if (P && (typeof P.want === "boolean" ? P.want : P.dark)) root.setAttribute("data-tgdark", "");
       /* 10-19 她:「想能和 TG 改气泡颜色一样能自己改」—— 挑过的气泡色照用(字黑白按亮度配,同 TG);没挑 = iMessage 原装的灰 / 渐变蓝。
          她的泡换了色就是纯色(data-imme 关掉随屏幕高低变色那条)。壁纸仍不吃(iMessage 是白底)。 */
       var hb = prefs.himBubble || "", mb = prefs.meBubble || "";
