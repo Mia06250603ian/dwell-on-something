@@ -6031,7 +6031,9 @@ box.focus();
     -webkit-mask-image: var(--im-r); mask-image: var(--im-r); }
   /* 顶栏 */
   html[data-chatstyle="tg"][data-imsg] header { padding-top: calc(var(--dw-sat, env(safe-area-inset-top)) - .83px); padding-left: 15.33px; padding-right: 15.33px; }
-  html[data-chatstyle="tg"][data-imsg] header::before { height: calc(118px + var(--dw-sat, env(safe-area-inset-top))) !important; }
+  /* 顶上那层从**状态栏的实际色**起步(2026-10-20,她「最上方的状态栏分层」):iMessage 主题页面底写死纯白,而 iOS 状态栏那条取的是外壳 .topcap 的皮肤色
+     (她截图里 251)—— 渐隐从 #fff 起步,那条下沿就是一刀色差。--im-top 由脚本 applyPrefs 读外壳 .topcap 的底色;单独打开聊天页时退回本页底色。 */
+  html[data-chatstyle="tg"][data-imsg] header::before { height: calc(118px + var(--dw-sat, env(safe-area-inset-top))) !important; background: var(--im-top, var(--tg-page)) !important; }
   html[data-chatstyle="tg"][data-imsg] #menuBtn, html[data-chatstyle="tg"][data-imsg] .tgsrch { width: 45.33px !important; height: 45.33px !important; }
   html[data-chatstyle="tg"][data-imsg] #menuBtn svg { width: 10.9px; height: 17.95px; stroke-width: 1.75; margin-left: 0 !important; translate: -3.6px 0; }
   html[data-chatstyle="tg"][data-imsg] .tgsrch::before { width: 20px; height: 20px; }   /* 她 10-19:「右上角的摄像头换成搜索的放大镜」—— ~~视频图标~~ 换回 TG 那支放大镜,点了还是同一个搜关键词面板 */
@@ -6050,7 +6052,9 @@ box.focus();
   html[data-chatstyle="tg"][data-imsg] #plusBtn { width: 41.33px; height: 41.33px; }
   html[data-chatstyle="tg"][data-imsg] #plusBtn::before { width: 24px; height: 24px; translate: 0 -.33px;
     -webkit-mask: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 5.15v13.7M5.15 12h13.7'/%3E%3C/svg%3E"); mask: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 5.15v13.7M5.15 12h13.7'/%3E%3C/svg%3E"); }
-  html[data-chatstyle="tg"][data-imsg] #box { margin-left: 10.67px; min-height: 41.67px; border-radius: 20.83px; font-size: 15px; line-height: 20px;
+  /* 字号 16 不是 15(2026-10-20,她「一打字整个网页就乱跑偏移,只能退后台重新进」):iOS 遇到字号小于 16px 的输入框,一聚焦就把**整个外壳**放大
+     (聊天页那行 maximum-scale 管不到外壳),放大后不会自己缩回去 = 页面跑偏。TG 版 16 就是这个原因(那条注释「16 正好」)。⚠️ **别改回 15 以下**。 */
+  html[data-chatstyle="tg"][data-imsg] #box { margin-left: 10.67px; min-height: 41.67px; border-radius: 20.83px; font-size: 16px; line-height: 20px;
     padding: 10.83px 80px 10.83px 16.5px; }
   html[data-chatstyle="tg"][data-imsg][data-tghas] #box { padding-right: 84px; }
   html[data-chatstyle="tg"][data-imsg] #box::placeholder { color: rgba(60,60,67,.3); }
@@ -6081,15 +6085,18 @@ box.focus();
      三个点:浅灰、透明度 1 ↔ .5、每颗 .5s 来回、依次错开 .33s(MessageKit 默认关了上下跳);主泡缩放 1 ↔ 1.04(1s 来回)、两颗小圆 1 ↔ 1.1(.5s 来回)。
      **iMessage 主题里他想着 / 写着都只出这颗泡**(TG 版是「想的时候那行 Thinking 在扫光、想完才出三个点」),想的那行(.row.tgthinklive)这时藏着,想完以「In Ian's Mind」出来 —— 一次只动一样,同她给 TG 定的规矩。 */
   html[data-chatstyle="tg"][data-imsg] .row.tgthinklive { display: none !important; }
-  html[data-chatstyle="tg"][data-imsg] .tgtyping { padding-bottom: 9px; }
-  html[data-chatstyle="tg"][data-imsg] .tgdots { position: relative; width: 68.4px; height: 38px; box-sizing: border-box; padding: 0; gap: 5px; justify-content: center;
-    border-radius: 19px !important; background: var(--tg-him); box-shadow: none; transform-origin: 30% 70%;
+  html[data-chatstyle="tg"][data-imsg] .tgtyping { padding-bottom: calc(9px * var(--imk)); }
+  /* 整颗按 --imk 等比缩(2026-10-20,她「思考时的动画气泡太大」:原来主泡 68.4×38 = 一行消息那么高)。现 .75 → 主泡 51.3×28.5、点 6.4;
+     比例和动画照旧是 MessageKit 那套,**嫌大嫌小只改 --imk 这一个数**。 */
+  html[data-chatstyle="tg"][data-imsg] .tgtyping { --imk: .75; }
+  html[data-chatstyle="tg"][data-imsg] .tgdots { position: relative; width: calc(68.4px * var(--imk)); height: calc(38px * var(--imk)); box-sizing: border-box; padding: 0; gap: calc(5px * var(--imk)); justify-content: center;
+    border-radius: calc(19px * var(--imk)) !important; background: var(--tg-him); box-shadow: none; transform-origin: 30% 70%;
     animation: imtypb 1s ease-in-out infinite alternate; }
   html[data-chatstyle="tg"][data-imsg] .tgdots::before, html[data-chatstyle="tg"][data-imsg] .tgdots::after { content: ""; position: absolute; border-radius: 50%; background: var(--tg-him);
     animation: imtypc .5s ease-in-out infinite alternate; }
-  html[data-chatstyle="tg"][data-imsg] .tgdots::before { width: 15.67px; height: 15.67px; left: -2.6px; top: 24.8px; }
-  html[data-chatstyle="tg"][data-imsg] .tgdots::after { width: 7.83px; height: 7.83px; left: -9.13px; top: 39.17px; }
-  html[data-chatstyle="tg"][data-imsg] .tgdots i { width: 8.5px; height: 8.5px; transform: none; color: #8e8e93; opacity: 1; animation: imtypd .5s ease-in-out infinite alternate; }
+  html[data-chatstyle="tg"][data-imsg] .tgdots::before { width: calc(15.67px * var(--imk)); height: calc(15.67px * var(--imk)); left: calc(-2.6px * var(--imk)); top: calc(24.8px * var(--imk)); }
+  html[data-chatstyle="tg"][data-imsg] .tgdots::after { width: calc(7.83px * var(--imk)); height: calc(7.83px * var(--imk)); left: calc(-9.13px * var(--imk)); top: calc(39.17px * var(--imk)); }
+  html[data-chatstyle="tg"][data-imsg] .tgdots i { width: calc(8.5px * var(--imk)); height: calc(8.5px * var(--imk)); transform: none; color: #8e8e93; opacity: 1; animation: imtypd .5s ease-in-out infinite alternate; }
   html[data-chatstyle="tg"][data-imsg][data-tgdark] .tgdots i { color: #8d8d93; }
   html[data-chatstyle="tg"][data-imsg] .tgdots i:nth-child(2) { animation-delay: .33s; }
   html[data-chatstyle="tg"][data-imsg] .tgdots i:nth-child(3) { animation-delay: .66s; }
@@ -6174,6 +6181,12 @@ box.focus();
     if (prefs.chatStyle === "tg" || prefs.chatStyle === "imsg") root.setAttribute("data-chatstyle", "tg");
     else root.removeAttribute("data-chatstyle");
     if (prefs.chatStyle === "imsg") root.setAttribute("data-imsg", ""); else root.removeAttribute("data-imsg");
+    /* 仿 iMessage 顶上那层从状态栏的实际色起步(= 外壳 .topcap 的底色,iOS 打开 App 时取的就是它;见《仿 iMessage》顶栏那段) */
+    try {
+      var cap = window.parent !== window && window.parent.document.querySelector(".topcap");
+      var capc = cap && window.parent.getComputedStyle(cap).backgroundColor;
+      if (capc && !/rgba\(0, 0, 0, 0\)|transparent/.test(capc)) root.style.setProperty("--im-top", capc); else root.style.removeProperty("--im-top");
+    } catch (e) { root.style.removeProperty("--im-top"); }
     root.setAttribute("data-avmode", prefs.avatarMode === "each" ? "each" : "top");
     ["me", "him"].forEach(function (w) {
       var v = prefs.avatars && prefs.avatars[w];
