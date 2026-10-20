@@ -6111,7 +6111,7 @@ box.focus();
      隔 12.67 是波形:**42 根**、每根 2pt 宽、间距 2(共 166pt)、高 4 ~ 34.67pt(最矮的是圆点);没放过的 9% 墨、放过的 23% 墨(截图 213 / 179 压在 233 上);
      再隔 13.33 是时长「00:02」12pt、次要灰 rgb(129,129,133)、右留白 15.67。整颗约 281pt 宽。
      她自己那颗(蓝泡)照 iMessage:白钮、蓝三角、白波形。转写文字照旧在下面(设置里「语音文字」决定默认收不收)。 */
-  html[data-chatstyle="tg"][data-imsg] :is(.gu, .tgb, .bubble).tgvoice:not(.stkonly) { min-width: 0; padding: 11.83px 15.67px 11.83px 16.33px; }
+  html[data-chatstyle="tg"][data-imsg] :is(.gu, .tgb, .bubble).tgvoice:not(.stkonly) { min-width: 0; max-width: 100%; padding: 11.83px 15.67px 11.83px 16.33px; }
   html[data-chatstyle="tg"][data-imsg] .tgvoice .vrow { gap: 0; min-height: 34.67px; }
   html[data-chatstyle="tg"][data-imsg] .tgvoice .vplay { width: 25.67px; height: 25.67px; background: rgb(59, 134, 247); }
   html[data-chatstyle="tg"][data-imsg] .tgvoice .vplay::before { width: 9.67px; height: 9.67px; background: var(--tg-him); transform: translateX(.8px);
@@ -6119,9 +6119,11 @@ box.focus();
             mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 29'%3E%3Cpath d='M0 3.2C0 .8 2.6-.7 4.7.6l19.6 11.3c2.1 1.2 2.1 4.2 0 5.4L4.7 28.5C2.6 29.7 0 28.2 0 25.8Z'/%3E%3C/svg%3E");
     -webkit-mask-size: 8.67px 9.67px; mask-size: 8.67px 9.67px; }
   html[data-chatstyle="tg"][data-imsg] .tgvoice.playing .vplay::before { transform: none; -webkit-mask-size: 9px 9.67px; mask-size: 9px 9.67px; }
-  html[data-chatstyle="tg"][data-imsg] .tgvoice .vwave { flex: none; width: auto; height: 34.67px; gap: 2px; margin-left: 12.67px; }
+  /* 10-20 真机:开着「每条消息旁」头像时泡最宽只有 77% ≈ 257pt,装不下 281 的语音条,「00:14」跑出泡外 → 语音条不受 77% 限制;再窄的屏让波形自己收(从右边截) */
+  html[data-chatstyle="tg"][data-imsg] .tgvoice .vwave { flex: 0 1 auto; min-width: 0; overflow: hidden; width: auto; height: 34.67px; gap: 2px; margin-left: 12.67px; }
+  html[data-chatstyle="tg"][data-imsg] .tgvoice .vdur { flex: none; }
   html[data-chatstyle="tg"][data-imsg] .tgvoice .vwave i { flex: none; width: 2px; min-width: 2px; max-width: 2px; border-radius: 1px;
-    height: calc(4px + var(--h, 0) * 30.67px) !important; background: color-mix(in srgb, var(--tg-him-ink, #000) 9%, transparent); }
+    height: calc(4px + var(--hi, var(--h, 0)) * 30.67px) !important; background: color-mix(in srgb, var(--tg-him-ink, #000) 9%, transparent); }
   html[data-chatstyle="tg"][data-imsg] .tgvoice .vwave i.on { background: color-mix(in srgb, var(--tg-him-ink, #000) 23%, transparent); }
   html[data-chatstyle="tg"][data-imsg][data-tgdark] .tgvoice .vwave i { background: rgba(255,255,255,.2); }
   html[data-chatstyle="tg"][data-imsg][data-tgdark] .tgvoice .vwave i.on { background: rgba(255,255,255,.55); }
@@ -6130,7 +6132,14 @@ box.focus();
   html[data-chatstyle="tg"][data-imsg][data-tgdark] .tgvoice .vdur { color: rgb(141, 141, 146); }
   html[data-chatstyle="tg"][data-imsg] .tgvoice .vdur::before { content: "0"; }   /* 「0:02」→ iMessage 的「00:02」(语音不会长过 10 分钟,VOICE_MAX_CHARS 500 字) */
   html[data-chatstyle="tg"][data-imsg] .tgvoice .vtext { margin-top: 6px; font-size: calc(var(--imfs) * .87); color: color-mix(in srgb, var(--tg-him-ink, #000) 55%, transparent); }
+  /* 颜色跟她的气泡(10-20 她:「语音条的颜色我也想要和我的气泡修改能保持一致」):他那颗的蓝钮 = 她挑的色;她自己那颗 = 她的泡色,钮 / 波形 / 时长用泡里的字色(黑白按亮度配) */
+  html[data-chatstyle="tg"][data-imsg][data-imme] .tgvoice .vplay { background: var(--tg-me); }
   html[data-chatstyle="tg"][data-imsg] .row.me .tgvoice .vplay { background: #fff; }
+  html[data-chatstyle="tg"][data-imsg][data-imme] .row.me .tgvoice .vplay { background: var(--tg-me-ink); }
+  html[data-chatstyle="tg"][data-imsg][data-imme] .row.me .tgvoice .vplay::before { background: var(--tg-me); }
+  html[data-chatstyle="tg"][data-imsg][data-imme] .row.me .tgvoice .vwave i { background: color-mix(in srgb, var(--tg-me-ink) 45%, transparent); }
+  html[data-chatstyle="tg"][data-imsg][data-imme] .row.me .tgvoice .vwave i.on { background: var(--tg-me-ink); }
+  html[data-chatstyle="tg"][data-imsg][data-imme] .row.me .tgvoice .vdur, html[data-chatstyle="tg"][data-imsg][data-imme] .row.me .tgvoice .vtext { color: color-mix(in srgb, var(--tg-me-ink) 78%, transparent); }
   html[data-chatstyle="tg"][data-imsg] .row.me .tgvoice .vplay::before { background: var(--imc, var(--tg-me)); }
   html[data-chatstyle="tg"][data-imsg] .row.me .tgvoice .vwave i { background: rgba(255,255,255,.45); }
   html[data-chatstyle="tg"][data-imsg] .row.me .tgvoice .vwave i.on { background: #fff; }
@@ -7715,7 +7724,8 @@ box.focus();
     b.classList.add("tgvoice");
     b._voice = text; b._src = opt.src || "";
     var h = hashOf(text), wave = '<span class="vwave">';
-    for (var i = 0; i < BARS; i++) { h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0; wave += '<i style="--h:' + ((h % 15) / 14).toFixed(4) + '"></i>'; }
+    for (var i = 0; i < BARS; i++) { h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0; var h2 = Math.imul(h ^ (h >>> 13), 3266489909) >>> 0, hi = h2 % 100 < 31 ? 0 : 0.15 + 0.85 * Math.sqrt(((h2 >>> 8) % 1000) / 999);
+      wave += '<i style="--h:' + ((h % 15) / 14).toFixed(4) + ";--hi:" + hi.toFixed(4) + '"></i>'; }   /* --hi:仿 iMessage 的高低(约三成是圆点,其余偏高,照 iOS 截图那条的分布);TG 版只认 --h,逐根不变 */
     wave += "</span>";
     b.innerHTML = '<span class="vrow"><button type="button" class="vplay" aria-label="播放"></button>' + wave +
       '<span class="vdur"></span></span><span class="vtext"></span>';
