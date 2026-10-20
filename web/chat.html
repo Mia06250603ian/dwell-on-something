@@ -6133,7 +6133,16 @@ box.focus();
     -webkit-mask: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 15.33' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 7.33v.67M5 5.33v4.67M9 1v13.33M13 5.33v4.67M17 7.33v.67'/%3E%3C/svg%3E"); mask: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 15.33' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 7.33v.67M5 5.33v4.67M9 1v13.33M13 5.33v4.67M17 7.33v.67'/%3E%3C/svg%3E"); }
   html[data-chatstyle="tg"][data-imsg] .tgstk { right: 40px; bottom: 5.33px; }
   html[data-chatstyle="tg"][data-imsg][data-tghas] .tgstk { right: 46px; }
-  html[data-chatstyle="tg"][data-imsg] #send:not(.stop) { background: rgb(64, 142, 245) !important; color: #fff !important; }
+  /* 发送键 + 光标(2026-10-20,她发 iMessage 打字中的截图:「这个 ui 可以改成和我的气泡颜色修改一致吗」):
+     照截图(1206px = 402pt@3x)量:胶囊里右端一颗 **37.33×28 的扁胶囊**(圆角 14)、离胶囊右 6.67、上下居中;白色上箭头 12.33×15、线 2.5;光标同色 2pt。
+     ~~TG 那颗 40×34 的飞机~~。颜色**跟她的气泡**:没挑 = iMessage 原装蓝 rgb(64,141,247)(截图取的),挑过(data-imme)= 她挑的色,箭头黑白跟着泡里的字。 */
+  html[data-chatstyle="tg"][data-imsg] #send { width: 37.33px; height: 28px; right: 6.67px; bottom: 6.83px; border-radius: 14px; }
+  html[data-chatstyle="tg"][data-imsg] #send:not(.stop) { background: rgb(64, 141, 247) !important; color: #fff !important; }
+  html[data-chatstyle="tg"][data-imsg][data-imme] #send:not(.stop) { background: var(--tg-me) !important; color: var(--tg-me-ink) !important; }
+  html[data-chatstyle="tg"][data-imsg] #send:not(.stop)::before { width: 12.33px; height: 15px; translate: 0 0;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 37 45' fill='none' stroke='black' stroke-width='7.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18.5 41.7V4.3M4.3 18.2 18.5 4 32.7 18.2'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 37 45' fill='none' stroke='black' stroke-width='6.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18.5 41.7V4.3M4.3 18.2 18.5 4 32.7 18.2'/%3E%3C/svg%3E"); }
+  html[data-chatstyle="tg"][data-imsg] #box { caret-color: rgb(64, 141, 247); }
+  html[data-chatstyle="tg"][data-imsg][data-imme] #box { caret-color: var(--tg-me); }
   /* 他的思考 / 工具那行(2026-10-19 深夜,她发 iMessage 里「Text Message • SMS / Today 17:47」那行字:「他的 thinking 想用这个字体,用 TG 那边的排版」):
      排版照 TG 版(靠左、⌄、点了原地展开),字换成 iOS 系统小号灰字 —— 量她那张图:大写高 24px(3x)≈ 8pt → 11.5pt、竖笔 / 大写高 .17 = 中粗(600)、灰 ≈ #86868a。
      展开的正文同一族字、常规粗细。~~TG 版那行是衬线 12.5~~(只在 iMessage 主题里换)。 */
