@@ -6038,8 +6038,29 @@ box.focus();
   /* 2026-10-20 第二轮(她发 iMessage 浅 / 深两张截图「1:1 复刻」):iOS 里消息是**从按钮底下透过去**的(返回钮后面那颗泡糊着但看得见,名字胶囊旁边那颗已经全清楚)。
      ~~高 118 + 往下伸 20 的实心渐隐~~ 把顶栏一带的消息整个盖掉了;现在只留 64(到返回钮下沿),最上面那截照旧实心接状态栏,往下化开 + 一点模糊。
      ⚠️ 状态栏那 62pt 本身网页画不进去(《「他」页照片铺到状态栏底下》),所以 iOS 截图里「消息一直糊到屏顶」那段做不了。 */
-  html[data-chatstyle="tg"][data-imsg] header::before { height: calc(64px + var(--dw-sat, env(safe-area-inset-top))) !important; inset: 0 0 auto !important; background: var(--im-top, var(--tg-page)) !important;
-    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  /* ~~实心 --im-top + 缓动遮罩 + 一层 6px 模糊~~(10-20 上午那版)—— 她真机:「上方那个模糊做的很不自然」:她截图里自己那颗黑泡被刷成
+     「上灰下黑」的一段渐变色、字反而清楚 = 那是**颜色在淡出**,不是模糊。iOS 26 的 scroll edge 是**渐进模糊**:越靠顶越糊、颜色基本还在,只在最顶上一小截化进状态栏。
+     现在两层(header 的 ::before / ::after,都在按钮底下、不接点击):
+       ① ::before = 轻糊 2px,盖到状态栏下 84px,实到 40px 再缓动收掉;颜色只在最上面约 40px 从 --im-top 化开(接状态栏那条,接缝不回来);
+       ② ::after  = 重糊 6px,只在最上面 44px、往下缓动收掉。
+     两层叠出来是「顶上糊得厉害、往下越来越清楚」,没有一条看得见的边。⚠️ 别再加颜色往下盖 —— 那就是她说的不自然。调强弱只动这两层的 blur 和遮罩长度。 */
+  html[data-chatstyle="tg"][data-imsg] header::before, html[data-chatstyle="tg"][data-imsg] header::after {
+    content: ""; position: absolute; left: 0; right: 0; top: 0; z-index: -1; pointer-events: none; }
+  html[data-chatstyle="tg"][data-imsg] header::before { height: calc(84px + var(--dw-sat, env(safe-area-inset-top))) !important; inset: 0 0 auto !important;
+    background: linear-gradient(to bottom, var(--im-top, var(--tg-page)) 0, var(--im-top, var(--tg-page)) var(--dw-sat, env(safe-area-inset-top)),
+      color-mix(in srgb, var(--im-top, var(--tg-page)) 62%, transparent) calc(8px + var(--dw-sat, env(safe-area-inset-top))),
+      color-mix(in srgb, var(--im-top, var(--tg-page)) 30%, transparent) calc(20px + var(--dw-sat, env(safe-area-inset-top))),
+      color-mix(in srgb, var(--im-top, var(--tg-page)) 10%, transparent) calc(32px + var(--dw-sat, env(safe-area-inset-top))),
+      transparent calc(44px + var(--dw-sat, env(safe-area-inset-top)))) !important;
+    -webkit-backdrop-filter: blur(2px) saturate(1.15); backdrop-filter: blur(2px) saturate(1.15);
+    --im-m1: linear-gradient(to bottom, #000 0, #000 calc(40px + var(--dw-sat, env(safe-area-inset-top))), rgba(0,0,0,.7) calc(52px + var(--dw-sat, env(safe-area-inset-top))),
+      rgba(0,0,0,.35) calc(66px + var(--dw-sat, env(safe-area-inset-top))), rgba(0,0,0,.1) calc(77px + var(--dw-sat, env(safe-area-inset-top))), transparent 100%);
+    -webkit-mask: var(--im-m1); mask: var(--im-m1); }
+  html[data-chatstyle="tg"][data-imsg] header::after { height: calc(44px + var(--dw-sat, env(safe-area-inset-top)));
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    --im-m2: linear-gradient(to bottom, #000 0, #000 calc(6px + var(--dw-sat, env(safe-area-inset-top))), rgba(0,0,0,.75) calc(14px + var(--dw-sat, env(safe-area-inset-top))),
+      rgba(0,0,0,.4) calc(24px + var(--dw-sat, env(safe-area-inset-top))), rgba(0,0,0,.12) calc(35px + var(--dw-sat, env(safe-area-inset-top))), transparent 100%);
+    -webkit-mask: var(--im-m2); mask: var(--im-m2); }
   /* 输入栏底下也没有白雾:iOS 26 里消息直接从「+」和胶囊后面滑过去(她浅色截图里「不许躲」那颗就在胶囊底下) */
   html[data-chatstyle="tg"][data-imsg] footer::before { content: none; }
   html[data-chatstyle="tg"][data-imsg] #menuBtn, html[data-chatstyle="tg"][data-imsg] .tgsrch { width: 45.33px !important; height: 45.33px !important; }
