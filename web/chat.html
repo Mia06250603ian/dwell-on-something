@@ -5232,9 +5232,11 @@ box.focus();
   .tgvoice.loading .vplay { animation: tgvload 1s ease-in-out infinite; }
   @keyframes tgvload { 50% { opacity: .55; } }
   .tgvoice .vwave { flex: 1; display: flex; align-items: center; gap: 2px; height: 24px; min-width: 0; }
-  .tgvoice .vwave i { flex: 1; max-width: 3px; min-width: 2px; border-radius: 2px;
+  .tgvoice .vwave i { flex: 1; max-width: 3px; min-width: 2px; border-radius: 2px; height: calc(4px + var(--h, 0) * 14px);
     background: color-mix(in srgb, var(--tg-him-ink, var(--text)) 26%, transparent); transition: background .12s linear; }
   .tgvoice .vwave i.on { background: var(--tg-him-ink, var(--text)); }
+  /* 2026-10-20:条上画 42 根(iMessage 主题照截图要 42 根),TG 版照旧只露前 28 根 —— 前 28 根的高度和原来逐根一样 */
+  html:not([data-imsg]) .tgvoice .vwave i:nth-child(n+29) { display: none; }
   /* 语音文字:折叠 / 显示(2026-10-10 她:「我可以自己选折叠或者显示,我的和他的都是」)。
      设置里「语音文字」定默认(data-tgvfold = 默认折叠);单独一条在**长按菜单**里点「Show Text / Hide Text」(.vopen / .vshut,只在本页、不存)。
      ~~每颗语音条右边一颗「文」按钮~~ —— 她:「那个文太丑了」,撤了,挪进长按菜单(照她发的 TG 截图)。 */
@@ -6033,7 +6035,13 @@ box.focus();
   html[data-chatstyle="tg"][data-imsg] header { padding-top: calc(var(--dw-sat, env(safe-area-inset-top)) - .83px); padding-left: 15.33px; padding-right: 15.33px; }
   /* 顶上那层从**状态栏的实际色**起步(2026-10-20,她「最上方的状态栏分层」):iMessage 主题页面底写死纯白,而 iOS 状态栏那条取的是外壳 .topcap 的皮肤色
      (她截图里 251)—— 渐隐从 #fff 起步,那条下沿就是一刀色差。--im-top 由脚本 applyPrefs 读外壳 .topcap 的底色;单独打开聊天页时退回本页底色。 */
-  html[data-chatstyle="tg"][data-imsg] header::before { height: calc(118px + var(--dw-sat, env(safe-area-inset-top))) !important; background: var(--im-top, var(--tg-page)) !important; }
+  /* 2026-10-20 第二轮(她发 iMessage 浅 / 深两张截图「1:1 复刻」):iOS 里消息是**从按钮底下透过去**的(返回钮后面那颗泡糊着但看得见,名字胶囊旁边那颗已经全清楚)。
+     ~~高 118 + 往下伸 20 的实心渐隐~~ 把顶栏一带的消息整个盖掉了;现在只留 64(到返回钮下沿),最上面那截照旧实心接状态栏,往下化开 + 一点模糊。
+     ⚠️ 状态栏那 62pt 本身网页画不进去(《「他」页照片铺到状态栏底下》),所以 iOS 截图里「消息一直糊到屏顶」那段做不了。 */
+  html[data-chatstyle="tg"][data-imsg] header::before { height: calc(64px + var(--dw-sat, env(safe-area-inset-top))) !important; inset: 0 0 auto !important; background: var(--im-top, var(--tg-page)) !important;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  /* 输入栏底下也没有白雾:iOS 26 里消息直接从「+」和胶囊后面滑过去(她浅色截图里「不许躲」那颗就在胶囊底下) */
+  html[data-chatstyle="tg"][data-imsg] footer::before { content: none; }
   html[data-chatstyle="tg"][data-imsg] #menuBtn, html[data-chatstyle="tg"][data-imsg] .tgsrch { width: 45.33px !important; height: 45.33px !important; }
   html[data-chatstyle="tg"][data-imsg] #menuBtn svg { width: 10.9px; height: 17.95px; stroke-width: 1.75; margin-left: 0 !important; translate: -3.6px 0; }
   html[data-chatstyle="tg"][data-imsg] .tgsrch::before { width: 20px; height: 20px; }   /* 她 10-19:「右上角的摄像头换成搜索的放大镜」—— ~~视频图标~~ 换回 TG 那支放大镜,点了还是同一个搜关键词面板 */
@@ -6047,6 +6055,63 @@ box.focus();
   html[data-chatstyle="tg"][data-imsg] .tgname b, html[data-chatstyle="tg"][data-imsg] .tgname .tgnm { top: 0; font-size: 17px; font-weight: 600; letter-spacing: -.02em; line-height: 22px; }
   html[data-chatstyle="tg"][data-imsg] .tgname::after { content: ""; flex: none; width: 6.5px; height: 11.5px; background: #acacac;
     -webkit-mask: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6.5 11.5' fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.2 1.2 5.3 5.75 1.2 10.3'/%3E%3C/svg%3E"); mask: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6.5 11.5' fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.2 1.2 5.3 5.75 1.2 10.3'/%3E%3C/svg%3E"); }
+  /* 玻璃(2026-10-20 她「玻璃质感 1:1 复刻」,浅 / 深两张 iMessage 截图逐像素量的,1206px = 402pt@3x):
+     浅色:摄像头圆钮在纯白上本体是 249~250(**比背后还暗一点**,不是发白)、上沿内侧一道 255 亮线、离上沿约 1/3 最暗、底边亮回 254;
+           外圈一道 1 物理像素的细边,两侧深(176)、上沿浅(241)、下沿居中(227);外面几乎没有影(下沿外 252)。
+           同一种玻璃压在灰泡(238)上读 240~242 —— 背后被提亮了一点、又罩了一层浅灰,所以 = 浅灰 32% + 背后提亮 6% + 轻模糊。
+     深色:在纯黑上本体 31、压在 132 的东西上 100 → 反推 = rgba(58,58,60,.52);上沿内侧 96、往下约 10px 退到 31,下沿 79 → 上下两道亮边 + 两头各一截淡光。
+     返回 / 搜索 / 名字胶囊 / 「+」/ 输入胶囊 / ⌄ 全用这一套(TG 版那套 --g4 变量,只在 iMessage 主题里换值)。⚠️ 折射 Safari 做不了,只做光。 */
+  html[data-chatstyle="tg"][data-imsg] {
+    --g4-bg: linear-gradient(to bottom, rgba(255,255,255,.8) 0, rgba(255,255,255,.3) 3px, rgba(255,255,255,0) 7px),
+             linear-gradient(to top, rgba(255,255,255,.65) 0, rgba(255,255,255,.2) 3px, rgba(255,255,255,0) 6px),
+             rgba(238,238,240,.32);
+    --g4-sh: inset 0 1px 0 rgba(255,255,255,.95), inset 0 -1px 0 rgba(255,255,255,.75),
+             0 0 0 .34px rgba(0,0,0,.24), 0 .5px 0 rgba(0,0,0,.05), 0 1px 3px rgba(0,0,0,.03);
+    --g4-filter: blur(3px) saturate(1.5) brightness(1.06);
+  }
+  html[data-chatstyle="tg"][data-imsg][data-tgdark] {
+    --g4-bg: linear-gradient(to bottom, rgba(255,255,255,.09) 0, rgba(255,255,255,.03) 5px, rgba(255,255,255,0) 11px),
+             linear-gradient(to top, rgba(255,255,255,.08) 0, rgba(255,255,255,.03) 5px, rgba(255,255,255,0) 11px),
+             rgba(58,58,60,.52);
+    --g4-sh: inset 0 1px 0 rgba(255,255,255,.26), inset 0 -1px 0 rgba(255,255,255,.17), inset 0 0 0 .34px rgba(255,255,255,.05), 0 0 0 .34px rgba(0,0,0,.55);
+    --g4-filter: blur(3px) saturate(1.4);
+  }
+  /* 语音条(2026-10-20,她「语音条做了吗」—— 功能 10-10 就有,但 iMessage 主题里还是 TG 那颗黑钮;现在照她截图 1:1):
+     他那颗:泡高 58.33、圆角同文字泡;蓝圆钮 25.67(左留白 16.33、rgb(59,134,247))、里面的三角是**镂空成泡色**的 8.67×9.67、略偏右;
+     隔 12.67 是波形:**42 根**、每根 2pt 宽、间距 2(共 166pt)、高 4 ~ 34.67pt(最矮的是圆点);没放过的 9% 墨、放过的 23% 墨(截图 213 / 179 压在 233 上);
+     再隔 13.33 是时长「00:02」12pt、次要灰 rgb(129,129,133)、右留白 15.67。整颗约 281pt 宽。
+     她自己那颗(蓝泡)照 iMessage:白钮、蓝三角、白波形。转写文字照旧在下面(设置里「语音文字」决定默认收不收)。 */
+  html[data-chatstyle="tg"][data-imsg] :is(.gu, .tgb, .bubble).tgvoice:not(.stkonly) { min-width: 0; padding: 11.83px 15.67px 11.83px 16.33px; }
+  html[data-chatstyle="tg"][data-imsg] .tgvoice .vrow { gap: 0; min-height: 34.67px; }
+  html[data-chatstyle="tg"][data-imsg] .tgvoice .vplay { width: 25.67px; height: 25.67px; background: rgb(59, 134, 247); }
+  html[data-chatstyle="tg"][data-imsg] .tgvoice .vplay::before { width: 9.67px; height: 9.67px; background: var(--tg-him); transform: translateX(.8px);
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 29'%3E%3Cpath d='M0 3.2C0 .8 2.6-.7 4.7.6l19.6 11.3c2.1 1.2 2.1 4.2 0 5.4L4.7 28.5C2.6 29.7 0 28.2 0 25.8Z'/%3E%3C/svg%3E");
+            mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 29'%3E%3Cpath d='M0 3.2C0 .8 2.6-.7 4.7.6l19.6 11.3c2.1 1.2 2.1 4.2 0 5.4L4.7 28.5C2.6 29.7 0 28.2 0 25.8Z'/%3E%3C/svg%3E");
+    -webkit-mask-size: 8.67px 9.67px; mask-size: 8.67px 9.67px; }
+  html[data-chatstyle="tg"][data-imsg] .tgvoice.playing .vplay::before { transform: none; -webkit-mask-size: 9px 9.67px; mask-size: 9px 9.67px; }
+  html[data-chatstyle="tg"][data-imsg] .tgvoice .vwave { flex: none; width: auto; height: 34.67px; gap: 2px; margin-left: 12.67px; }
+  html[data-chatstyle="tg"][data-imsg] .tgvoice .vwave i { flex: none; width: 2px; min-width: 2px; max-width: 2px; border-radius: 1px;
+    height: calc(4px + var(--h, 0) * 30.67px) !important; background: color-mix(in srgb, var(--tg-him-ink, #000) 9%, transparent); }
+  html[data-chatstyle="tg"][data-imsg] .tgvoice .vwave i.on { background: color-mix(in srgb, var(--tg-him-ink, #000) 23%, transparent); }
+  html[data-chatstyle="tg"][data-imsg][data-tgdark] .tgvoice .vwave i { background: rgba(255,255,255,.2); }
+  html[data-chatstyle="tg"][data-imsg][data-tgdark] .tgvoice .vwave i.on { background: rgba(255,255,255,.55); }
+  html[data-chatstyle="tg"][data-imsg] .tgvoice .vdur { margin-left: 13.33px; font: 400 12px/1 -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    font-variant-numeric: tabular-nums; color: rgb(129, 129, 133); }
+  html[data-chatstyle="tg"][data-imsg][data-tgdark] .tgvoice .vdur { color: rgb(141, 141, 146); }
+  html[data-chatstyle="tg"][data-imsg] .tgvoice .vdur::before { content: "0"; }   /* 「0:02」→ iMessage 的「00:02」(语音不会长过 10 分钟,VOICE_MAX_CHARS 500 字) */
+  html[data-chatstyle="tg"][data-imsg] .tgvoice .vtext { margin-top: 6px; font-size: calc(var(--imfs) * .87); color: color-mix(in srgb, var(--tg-him-ink, #000) 55%, transparent); }
+  html[data-chatstyle="tg"][data-imsg] .row.me .tgvoice .vplay { background: #fff; }
+  html[data-chatstyle="tg"][data-imsg] .row.me .tgvoice .vplay::before { background: var(--imc, var(--tg-me)); }
+  html[data-chatstyle="tg"][data-imsg] .row.me .tgvoice .vwave i { background: rgba(255,255,255,.45); }
+  html[data-chatstyle="tg"][data-imsg] .row.me .tgvoice .vwave i.on { background: #fff; }
+  html[data-chatstyle="tg"][data-imsg] .row.me .tgvoice .vdur, html[data-chatstyle="tg"][data-imsg] .row.me .tgvoice .vtext { color: rgba(255,255,255,.78); }
+  /* 「已送达」(2026-10-20,她深色截图里最后一条下面那行;iOS 是「已送達 / Delivered」):只挂在**最后一条**她的话下面,送到了才出(按下就飞那一下 / 没送出去的不出)。
+     量的:字 11px 次要灰、右端比泡右缩 19.67、字顶离泡底约 8pt。脚本在 checks() 里挂 .imdlv。左滑看时间时让位给时间。 */
+  html[data-chatstyle="tg"][data-imsg] .row.me.imdlv { margin-bottom: 17px; }
+  html[data-chatstyle="tg"][data-imsg] .row.me.imdlv > .bubble:last-child:not(.imsw)::after { content: "已送达" !important; position: absolute; top: calc(100% + 5px); right: 19.67px; left: auto;
+    float: none !important; margin: 0 !important; padding: 0 !important; background: none !important; transform: none; translate: none; animation: none !important;
+    white-space: nowrap; font: 500 11px/1.2 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", sans-serif; color: rgb(138, 138, 142) !important; opacity: 1; pointer-events: none; }
+  html[data-chatstyle="tg"][data-imsg][data-tgdark] .row.me.imdlv > .bubble:last-child:not(.imsw)::after { color: rgb(141, 141, 146) !important; }
   /* 输入栏 */
   html[data-chatstyle="tg"][data-imsg] footer { padding-left: 27.33px; padding-right: 25px; }
   html[data-chatstyle="tg"][data-imsg] #plusBtn { width: 41.33px; height: 41.33px; }
@@ -7466,11 +7531,13 @@ box.focus();
   /* 她的泡上的对勾(2026-10-10,照 TG):✓ = 送到了 —— 这颗泡本来就是服务器回声(echo)之后才画的;
      ✓✓ = 他开始看了 —— 后面出现了他的任何动静(思考 / 工具 / 回话)。
      整页过时从末尾往前扫一遍;平时只看末尾那一串她连发的泡(更早的早就定了)。 */
+  var dlvRow = null;   // 仿 iMessage「已送达」挂在哪一行(见《仿 iMessage》那段 CSS)
   function checks(all) {
-    var seen = false, passedMe = false;
+    var seen = false, passedMe = false, dlv;
     for (var r = log.lastElementChild; r; r = r.previousElementSibling) {
       if (r === dots || !r.classList.contains("row")) continue;
       if (r.classList.contains("me")) {
+        if (dlv === undefined) dlv = (r.classList.contains("tgsending") || r.classList.contains("tgfail")) ? null : r;
         passedMe = true;
         var b = r.querySelector(":scope > .bubble"), v = seen ? "2" : "1";
         /* 2026-10-16 按下就飞:还没送到 / 没送出去的那颗不打勾(送到那一刻再放 ✓ 那一下) */
@@ -7485,6 +7552,7 @@ box.focus();
         seen = true;
       }
     }
+    if (dlv !== undefined && dlv !== dlvRow) { if (dlvRow) dlvRow.classList.remove("imdlv"); if (dlv) dlv.classList.add("imdlv"); dlvRow = dlv; }
   }
   /* ── 他的回话怎么出来(2026-10-16 改,所有者「不是一个气泡一个气泡跳,是隔好久几个一起跳出来」→ 选「写完一行就弹一颗」)──
      ~~整句定稿后一次拆好、隔 70ms 依次弹~~(10-10 起;看着就是等很久、几颗一起蹦)。
@@ -7573,13 +7641,13 @@ box.focus();
     .then(function (d) { if (d && d.ok) caps = d; }).catch(function () {});
   function hashOf(t) { var h = 2166136261; for (var i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
   function fmtSec(x) { x = Math.max(0, Math.round(x || 0)); return Math.floor(x / 60) + ":" + (x % 60 < 10 ? "0" : "") + (x % 60); }
-  var BARS = 28;
+  var BARS = 42, BARS_TG = 28;   // 2026-10-20:iMessage 主题照截图 42 根,TG 版照旧露前 28 根(CSS 藏掉后面的)
   function voiceBubble(b, text, opt) {
     opt = opt || {};
     b.classList.add("tgvoice");
     b._voice = text; b._src = opt.src || "";
     var h = hashOf(text), wave = '<span class="vwave">';
-    for (var i = 0; i < BARS; i++) { h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0; wave += '<i style="height:' + (4 + (h % 15)) + 'px"></i>'; }
+    for (var i = 0; i < BARS; i++) { h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0; wave += '<i style="--h:' + ((h % 15) / 14).toFixed(4) + '"></i>'; }
     wave += "</span>";
     b.innerHTML = '<span class="vrow"><button type="button" class="vplay" aria-label="播放"></button>' + wave +
       '<span class="vdur"></span></span><span class="vtext"></span>';
@@ -7595,7 +7663,7 @@ box.focus();
     paintProg(cur.b, 0); cur = null;
   }
   function paintProg(b, f) {
-    var bars = b.querySelectorAll(".vwave i"), n = Math.round(f * bars.length);
+    var bars = b.querySelectorAll(".vwave i"), shown = root.hasAttribute("data-imsg") ? bars.length : Math.min(bars.length, BARS_TG), n = Math.round(f * shown);
     for (var i = 0; i < bars.length; i++) bars[i].classList.toggle("on", i < n);
   }
   log.addEventListener("click", function (e) {
