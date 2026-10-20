@@ -6124,6 +6124,9 @@ box.focus();
     --g4-sh: inset 0 1px 0 rgba(255,255,255,.95), inset 0 -.5px 0 rgba(255,255,255,.7), 0 0 0 .5px rgba(0,0,0,.07), 0 .5px .5px rgba(0,0,0,.04);
     --g4-filter: blur(14px) saturate(1.6);
   }
+  /* 「他」页底板(10-20 夜她:「玻璃质感没了变成平面卡」+ 发来以前 TG 版的截图):iMessage 主题把整页 --bg 换成了纯白,
+     「他」页底板(.psheet)用的也是它 → 白底白卡,玻璃看不出来。浅色时只把底板换回以前那层暖灰(她截图量的 243 242 240),卡片照旧那套玻璃;**只动 .psheet,别动整页 --bg** —— 顶上那截要和 iOS 涂的纯白状态栏接得上(dwell 手册《iOS 26 状态栏那条的规矩》)。深色不动。 */
+  html[data-chatstyle="tg"][data-imsg]:not([data-tgdark]) .tgprof .psheet { --bg: #f3f2f0; }   /* 底板的颜色画在 .psheet::before 上(读 --bg),所以在这一层换变量 */
   html[data-chatstyle="tg"][data-imsg][data-tgdark] :is(.tgprof, .tgrmenu, .tgpick) {
     --g4-bg: linear-gradient(to bottom, rgba(255,255,255,.08) 0, rgba(255,255,255,.03) 4px, rgba(255,255,255,0) 10px),
              linear-gradient(to top, rgba(255,255,255,.05) 0, rgba(255,255,255,0) 8px),
