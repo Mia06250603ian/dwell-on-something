@@ -669,6 +669,14 @@
   .homefeed .wsong { background: none; padding: 2px 0 0; margin-top: 2px; border-radius: 0; }
   .homefeed .wsong .cv { width: 44px; height: 44px; border-radius: 9px; }
   .homefeed .wsong .pl { background: color-mix(in srgb, var(--ink) 6%, transparent); }
+  /* 歌卡瘦身(2026-10-20,她:「卡片整体有点胖」→ 选 A「只收留白」):她截图量的现状 = 高 146pt,上下留白 23 / 20、小标题→正文 15、正文→歌那行 18、封面 44、圆角 24,
+     内容只有三行,一大半是空。改:上下留白 16、两处间距收到 8 / 12(.txt gap 是 10,行盒自带的空隙另算)、封面 40、圆角 20。样子不变,只是紧。
+     ⚠️ 没歌时(只有占位那句)同样收紧;撤回 = 删这一段。 */
+  .homefeed .whisper { padding-top: 16px; padding-bottom: 16px; border-radius: 20px; }
+  .homefeed .whisper .txt { gap: 6px; }
+  .homefeed .whisper .body { line-height: 1.42; }
+  .homefeed .wsong { margin-top: 4px; padding-top: 0; }
+  .homefeed .wsong .cv { width: 40px; height: 40px; border-radius: 8px; }
   .weather { font-family: var(--sans); }
   /* ── 经期(2026-10-12)── 一行 + 底下弹出的日历。全页零彩色照旧:来过 = 实心深色,预测 = 虚线圈 */
   /* Days(2026-10-12,她「Days 特别割裂」):去掉「Days」标题(和上面的 Day 132 撞词、全页只有它单独一个标题)。
