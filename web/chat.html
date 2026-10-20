@@ -6067,9 +6067,11 @@ box.focus();
   html[data-chatstyle="tg"][data-imsg] #menuBtn svg { width: 10.9px; height: 17.95px; stroke-width: 1.75; margin-left: 0 !important; translate: -3.6px 0; }
   html[data-chatstyle="tg"][data-imsg] .tgsrch::before { width: 20px; height: 20px; }   /* 她 10-19:「右上角的摄像头换成搜索的放大镜」—— ~~视频图标~~ 换回 TG 那支放大镜,点了还是同一个搜关键词面板 */
   html[data-chatstyle="tg"][data-imsg] .tgav { display: block !important; position: absolute; left: 50%; top: calc(3.33px + var(--dw-sat, env(safe-area-inset-top)));
-    width: 59.67px; height: 59.67px; margin: 0; transform: translateX(-50%); border-radius: 50%; z-index: 1;
+    width: 59.67px; height: 59.67px; margin: 0; transform: translateX(-50%); border-radius: 50%; z-index: 3;
     box-shadow: none !important; -webkit-backdrop-filter: none; backdrop-filter: none; }
   html[data-chatstyle="tg"][data-imsg] .tgav:active { transform: translateX(-50%) scale(.94); }
+  /* 谁压谁(2026-10-20 她拿 iOS 特写问「你再看一下呢 谁压谁」):**头像压在名字胶囊上面** —— 头像圆的下沿完整清楚,胶囊上沿只在头像两侧露出来。
+     ~~头像 z 1、胶囊 z 2(胶囊盖住头像下沿)~~ 是看反了,别改回去。 */
   html[data-chatstyle="tg"][data-imsg] .tgname { top: calc(55px + var(--dw-sat, env(safe-area-inset-top))); height: 32px !important; min-width: 0 !important;
     padding: 0 13px 0 15px !important; flex-direction: row; align-items: center; gap: 3.5px; z-index: 2; }
   html[data-chatstyle="tg"][data-imsg] .tgname .tgst { display: none; }
