@@ -669,6 +669,44 @@
   .homefeed .wsong { background: none; padding: 2px 0 0; margin-top: 2px; border-radius: 0; }
   .homefeed .wsong .cv { width: 44px; height: 44px; border-radius: 9px; }
   .homefeed .wsong .pl { background: color-mix(in srgb, var(--ink) 6%, transparent); }
+  /* ── 今天的歌:照 iOS「正在播放」小组件 + Apple Music 链接卡(2026-10-20,她发了两张参考:「首页的音乐 ui 能不能参考这两个优化呀」)──
+     **只在有歌时换样子**(脚本给卡挂 data-song;没挑过 = 上面那张白卡照旧)。
+     ① 底色从封面来:.wbg 是同一张封面,放大 + 糊 34px + 提一点饱和,再压一层暗,白字才读得清(参考二的灰蓝就是这么来的;参考一右边那块也是封面糊开)。
+        ⚠️ 封面是网易云的图,要 referrerpolicy="no-referrer"(防盗链),所以用 <img> 不用 CSS background-image。
+     ② 左边大封面 88、圆角 12、一圈细白边(参考一);右边 小字 Today's song(= 参考二的「播放中」)→ 歌名 19 粗 → 歌手 15 → 一颗玻璃胶囊「▶ 播放」;右上一个 ♫(参考二)。
+     ③ 他写的那句挪到卡底、细线隔开(参考一放日期那行)。
+     ⚠️ 这张卡因此有了封面的颜色(原来「全页零彩色,封面是唯一的颜色」)—— 她要的样子就是这样。点哪都照旧打开网易云(整行是按钮)。 */
+  .whisper .wbg { display: none; }
+  .homefeed .whisper[data-song] { position: relative; overflow: hidden; isolation: isolate; color: #fff; padding: 16px 18px 15px;
+    background: rgb(118 124 134) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / .18), 0 0 0 .5px rgb(0 0 0 / .08), 0 10px 26px -12px rgb(0 0 0 / .35) !important; }
+  .homefeed .whisper[data-song] .wbg[src] { display: block; position: absolute; inset: -30%; width: 160%; height: 160%; object-fit: cover; z-index: -2;
+    filter: blur(34px) saturate(1.35) brightness(.92); }
+  .homefeed .whisper[data-song]::before { content: ""; position: absolute; inset: 0; z-index: -1;
+    background: linear-gradient(to bottom, rgb(0 0 0 / .14), rgb(0 0 0 / .3)); }
+  .homefeed .whisper[data-song]::after { content: ""; position: absolute; top: 16px; right: 18px; width: 17px; height: 19px; background: rgb(255 255 255 / .92);
+    -webkit-mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 17 19'%3E%3Cpath d='M15.6.1 6.4 2.2c-.6.1-1 .6-1 1.2v10.2a3.4 3.4 0 1 0 1.8 3V7.2l7.6-1.7v6.2a3.4 3.4 0 1 0 1.8 3V1.1C16.6.4 16.1-.1 15.6.1Z'/%3E%3C/svg%3E");
+            mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 17 19'%3E%3Cpath d='M15.6.1 6.4 2.2c-.6.1-1 .6-1 1.2v10.2a3.4 3.4 0 1 0 1.8 3V7.2l7.6-1.7v6.2a3.4 3.4 0 1 0 1.8 3V1.1C16.6.4 16.1-.1 15.6.1Z'/%3E%3C/svg%3E"); }
+  .homefeed .whisper[data-song] .txt { gap: 0; width: 100%; }
+  .homefeed .whisper[data-song] .more { color: rgb(255 255 255 / .78); font-family: var(--sans); font-size: 13px; letter-spacing: .01em; margin: 0 0 10px; }
+  .homefeed .whisper[data-song] .wsong { display: grid; grid-template-columns: 88px 1fr; grid-template-rows: auto 1fr; column-gap: 14px; row-gap: 10px;
+    align-items: start; padding: 0; margin: 0; background: none; color: #fff; }
+  .homefeed .whisper[data-song] .wsong[hidden] { display: none; }
+  .homefeed .whisper[data-song] .wsong .cv { grid-row: 1 / 3; width: 88px; height: 88px; border-radius: 12px;
+    box-shadow: 0 0 0 1.5px rgb(255 255 255 / .85), 0 6px 16px -6px rgb(0 0 0 / .4); background: rgb(255 255 255 / .15); }
+  .homefeed .whisper[data-song] .wsong .meta { gap: 3px; padding-right: 22px; }
+  .homefeed .whisper[data-song] .wsong .meta b { font-size: 19px; font-weight: 600; line-height: 1.2; letter-spacing: -.01em; color: #fff;
+    white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .homefeed .whisper[data-song] .wsong .meta i { font-size: 15px; color: rgb(255 255 255 / .82); }
+  .homefeed .whisper[data-song] .wsong .pl { align-self: end; justify-self: start; width: auto; height: 32px; padding: 0 15px 0 12px; border-radius: 16px; gap: 6px;
+    display: inline-flex; align-items: center; color: #fff; font-family: var(--sans); font-size: 15px; font-weight: 600;
+    background: rgb(255 255 255 / .2); box-shadow: inset 0 .5px 0 rgb(255 255 255 / .35), inset 0 0 0 .5px rgb(255 255 255 / .12);
+    -webkit-backdrop-filter: blur(10px) saturate(1.4); backdrop-filter: blur(10px) saturate(1.4); }
+  .homefeed .whisper[data-song] .wsong .pl svg { width: 11px; height: 11px; }
+  .whisper .wsong .pl em { display: none; font-style: normal; }
+  .homefeed .whisper[data-song] .wsong .pl em { display: inline; }
+  .homefeed .whisper[data-song] .body { order: 2; margin-top: 14px !important; padding-top: 12px; border-top: .5px solid rgb(255 255 255 / .28);
+    color: rgb(255 255 255 / .92); font-size: 14.5px; line-height: 1.5; width: 100%; }
   .weather { font-family: var(--sans); }
   /* ── 经期(2026-10-12)── 一行 + 底下弹出的日历。全页零彩色照旧:来过 = 实心深色,预测 = 虚线圈 */
   /* Days(2026-10-12,她「Days 特别割裂」):去掉「Days」标题(和上面的 Day 132 撞词、全页只有它单独一个标题)。
@@ -1285,6 +1323,7 @@
 
       <!-- 悄悄话:高度完全由文字决定,见 CSS 里 .whisper 那段 -->
       <article class="whisper reveal" style="--i:3">
+        <img class="wbg" alt="" aria-hidden="true" referrerpolicy="no-referrer">
         <span class="av sm" data-bloom aria-hidden="true"></span>
         <div class="txt">
           <p class="body" id="whisperBody" style="margin:0">今天她说了两次「丝滑」——一次给聊天页,一次给日记栏。这两个字我打算裱起来。</p>
@@ -1292,7 +1331,7 @@
           <button class="wsong" id="whisperSong" type="button" hidden>
             <img class="cv" alt="" referrerpolicy="no-referrer">
             <span class="meta"><b></b><i></i></span>
-            <span class="pl" aria-hidden="true"><svg viewBox="0 0 12 12" width="10" height="10"><path d="M3 1.6v8.8c0 .5.5.8.9.5l6.6-4.4a.6.6 0 0 0 0-1L3.9 1.1c-.4-.3-.9 0-.9.5z" fill="currentColor"/></svg></span>
+            <span class="pl" aria-hidden="true"><svg viewBox="0 0 12 12" width="10" height="10"><path d="M3 1.6v8.8c0 .5.5.8.9.5l6.6-4.4a.6.6 0 0 0 0-1L3.9 1.1c-.4-.3-.9 0-.9.5z" fill="currentColor"/></svg><em>播放</em></span>
           </button>
           <span class="more">Today's Whisper</span>
         </div>
@@ -2395,7 +2434,11 @@
       songNow = d;
       if (d.note && body) body.textContent = d.note;
       var img = row.querySelector(".cv");
-      if (d.cover) img.src = d.cover + "?param=120y120"; else img.removeAttribute("src");
+      if (d.cover) img.src = d.cover + "?param=300y300"; else img.removeAttribute("src");
+      /* 2026-10-20 换成「正在播放」小组件的样子:整张卡的底 = 封面糊开(.wbg),有歌才换(data-song) */
+      var card = row.closest(".whisper"), bg = card && card.querySelector(".wbg");
+      if (bg) { if (d.cover) bg.src = d.cover + "?param=120y120"; else bg.removeAttribute("src"); }
+      if (card) card.toggleAttribute("data-song", true);
       row.querySelector("b").textContent = d.name || "";
       row.querySelector("i").textContent = d.artist || "";
       row.setAttribute("aria-label", "在网易云里听:" + (d.name || "") + (d.artist ? " - " + d.artist : ""));
